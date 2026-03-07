@@ -1,0 +1,28 @@
+{
+  "avaliacoes": [
+    {
+      "id": 1,
+      "lojaId": 1,
+      "nomeUsuario": "Maria Silva",
+      "nota": 5,
+      "comentario": "Comida deliciosa e entrega super rápida! Recomendo.",
+      "data": "2024-05-20T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "lojaId": 1,
+      "nomeUsuario": "João Santos",
+      "nota": 4,
+      "comentario": "Gostei bastante, mas a embalagem veio um pouco amassada.",
+      "data": "2024-05-19T18:30:00Z"
+    },
+    {
+      "id": 3,
+      "lojaId": 2,
+      "nomeUsuario": "Ana Costa",
+      "nota": 5,
+      "comentario": "Melhor pizza do Rio! Virei cliente fiel.",
+      "data": "2024-05-21T20:00:00Z"
+    }
+  ]
+}

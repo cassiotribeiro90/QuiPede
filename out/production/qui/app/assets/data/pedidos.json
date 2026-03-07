@@ -1,0 +1,63 @@
+{
+  "pedidos": [
+    {
+      "id": 1001,
+      "usuarioId": 1,
+      "lojaId": 1,
+      "status": "entregue",
+      "dataPedido": "2024-03-25T19:30:00Z",
+      "dataEntrega": "2024-03-25T20:15:00Z",
+      "itens": [
+        {
+          "produtoId": 101,
+          "nome": "X-Burger Clássico",
+          "quantidade": 2,
+          "precoUnitario": 22.90,
+          "observacao": "Sem cebola"
+        },
+        {
+          "produtoId": 102,
+          "nome": "X-Bacon Supreme",
+          "quantidade": 1,
+          "precoUnitario": 26.90,
+          "observacao": ""
+        }
+      ],
+      "subtotal": 72.70,
+      "taxaEntrega": 5.99,
+      "total": 78.69,
+      "formaPagamento": "Crédito",
+      "enderecoEntrega": {
+        "rua": "Rua das Acácias, 123",
+        "bairro": "Jardim América",
+        "complemento": "Apto 45"
+      }
+    },
+    {
+      "id": 1002,
+      "usuarioId": 2,
+      "lojaId": 3,
+      "status": "preparando",
+      "dataPedido": "2024-03-27T12:15:00Z",
+      "dataEntrega": null,
+      "itens": [
+        {
+          "produtoId": 301,
+          "nome": "Combinado Sushi 20 peças",
+          "quantidade": 1,
+          "precoUnitario": 65.00,
+          "observacao": "Sem wasabi"
+        }
+      ],
+      "subtotal": 65.00,
+      "taxaEntrega": 6.99,
+      "total": 71.99,
+      "formaPagamento": "Pix",
+      "enderecoEntrega": {
+        "rua": "Rua dos Pinheiros, 500",
+        "bairro": "Pinheiros",
+        "complemento": ""
+      }
+    }
+  ]
+}

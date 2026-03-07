@@ -1,0 +1,103 @@
+{
+  "lojas": [
+    {
+      "id": 1,
+      "nome": "Hamburgueria do Centro",
+      "descricao": "Os melhores hambúrgueres artesanais da cidade",
+      "categoria": "Hamburgueria",
+      "logo": "https://images.unsplash.com/photo-1571091718767-18b5b1457add",
+      "capa": "https://images.unsplash.com/photo-1550547660-d9450f859349",
+      "nota": 4.8,
+      "tempoEntregaMin": 30,
+      "tempoEntregaMax": 45,
+      "taxaEntrega": 5.99,
+      "pedidoMinimo": 20.00,
+      "endereco": {
+        "rua": "Av. Central, 123",
+        "bairro": "Centro",
+        "cidade": "São Paulo",
+        "uf": "SP",
+        "lat": -23.5505,
+        "lng": -46.6333
+      },
+      "horarioFuncionamento": {
+        "segunda": "18:00-23:00",
+        "terca": "18:00-23:00",
+        "quarta": "18:00-23:00",
+        "quinta": "18:00-23:00",
+        "sexta": "18:00-00:00",
+        "sabado": "18:00-00:00",
+        "domingo": "18:00-22:00"
+      },
+      "formasPagamento": ["Crédito", "Débito", "Dinheiro", "Pix"],
+      "ativo": true,
+      "destaque": true
+    },
+    {
+      "id": 2,
+      "nome": "Pizzaria Napoli",
+      "descricao": "Pizzas tradicionais e especiais",
+      "categoria": "Pizzaria",
+      "logo": "https://images.unsplash.com/photo-1513104890138-7c749659a591",
+      "capa": "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3",
+      "nota": 4.6,
+      "tempoEntregaMin": 40,
+      "tempoEntregaMax": 60,
+      "taxaEntrega": 4.50,
+      "pedidoMinimo": 25.00,
+      "endereco": {
+        "rua": "Rua das Flores, 456",
+        "bairro": "Jardins",
+        "cidade": "São Paulo",
+        "uf": "SP",
+        "lat": -23.5612,
+        "lng": -46.6556
+      },
+      "horarioFuncionamento": {
+        "segunda": "18:00-23:30",
+        "terca": "18:00-23:30",
+        "quarta": "18:00-23:30",
+        "quinta": "18:00-23:30",
+        "sexta": "18:00-00:00",
+        "sabado": "18:00-00:00",
+        "domingo": "18:00-23:00"
+      },
+      "formasPagamento": ["Crédito", "Débito", "Pix"],
+      "ativo": true,
+      "destaque": true
+    },
+    {
+      "id": 3,
+      "nome": "Sushi House",
+      "descricao": "Comida japonesa fresca e saborosa",
+      "categoria": "Japonesa",
+      "logo": "https://images.unsplash.com/photo-1617196035154-1e7e6e28b0db",
+      "capa": "https://images.unsplash.com/photo-1553621042-f6e147245754",
+      "nota": 4.9,
+      "tempoEntregaMin": 35,
+      "tempoEntregaMax": 50,
+      "taxaEntrega": 6.99,
+      "pedidoMinimo": 30.00,
+      "endereco": {
+        "rua": "Av. Paulista, 1000",
+        "bairro": "Bela Vista",
+        "cidade": "São Paulo",
+        "uf": "SP",
+        "lat": -23.5614,
+        "lng": -46.6558
+      },
+      "horarioFuncionamento": {
+        "segunda": "11:30-15:00,18:00-22:00",
+        "terca": "11:30-15:00,18:00-22:00",
+        "quarta": "11:30-15:00,18:00-22:00",
+        "quinta": "11:30-15:00,18:00-22:00",
+        "sexta": "11:30-15:00,18:00-23:00",
+        "sabado": "12:00-16:00,18:00-23:00",
+        "domingo": "12:00-16:00"
+      },
+      "formasPagamento": ["Crédito", "Débito", "Dinheiro", "Pix", "VR"],
+      "ativo": true,
+      "destaque": false
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "usuarios": [
+    {
+      "id": 1,
+      "nome": "Carlos Eduardo",
+      "email": "carlos.edu@email.com",
+      "telefone": "(11) 99999-1234",
+      "tipo": "cliente",
+      "avatar": "https://randomuser.me/api/portraits/men/32.jpg",
+      "dataCadastro": "2024-01-10T14:30:00Z",
+      "enderecos": [
+        {
+          "id": 101,
+          "tipo": "Casa",
+          "rua": "Rua das Acácias, 123",
+          "bairro": "Jardim América",
+          "cidade": "São Paulo",
+          "uf": "SP",
+          "cep": "01234-567",
+          "complemento": "Apto 45",
+          "principal": true
+        },
+        {
+          "id": 102,
+          "tipo": "Trabalho",
+          "rua": "Av. Brigadeiro Faria Lima, 1500",
+          "bairro": "Pinheiros",
+          "cidade": "São Paulo",
+          "uf": "SP",
+          "cep": "01452-000",
+          "complemento": "Sala 1208",
+          "principal": false
+        }
+      ],
+      "cartoes": [
+        {
+          "id": 201,
+          "tipo": "Crédito",
+          "bandeira": "Visa",
+          "ultimosDigitos": "1234",
+          "nomeTitular": "CARLOS E SILVA",
+          "principal": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nome": "Ana Beatriz",
+      "email": "ana.beatriz@email.com",
+      "telefone": "(11) 98888-5678",
+      "tipo": "cliente",
+      "avatar": "https://randomuser.me/api/portraits/women/44.jpg",
+      "dataCadastro": "2024-02-15T09:45:00Z",
+      "enderecos": [
+        {
+          "id": 103,
+          "tipo": "Casa",
+          "rua": "Rua dos Pinheiros, 500",
+          "bairro": "Pinheiros",
+          "cidade": "São Paulo",
+          "uf": "SP",
+          "cep": "04567-890",
+          "complemento": "",
+          "principal": true
+        }
+      ],
+      "cartoes": [
+        {
+          "id": 202,
+          "tipo": "Débito",
+          "bandeira": "Mastercard",
+          "ultimosDigitos": "5678",
+          "nomeTitular": "ANA B SOUZA",
+          "principal": true
+        }
+      ]
+    }
+  ]
+}

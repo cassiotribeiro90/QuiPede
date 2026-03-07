@@ -1,0 +1,32 @@
+{
+  "categorias": [
+    {
+      "id": 1,
+      "nome": "Hamburgueria",
+      "icone": "🍔",
+      "imagem": "https://images.unsplash.com/photo-1571091718767-18b5b1457add",
+      "cor": "#FF6B6B"
+    },
+    {
+      "id": 2,
+      "nome": "Pizzaria",
+      "icone": "🍕",
+      "imagem": "https://images.unsplash.com/photo-1513104890138-7c749659a591",
+      "cor": "#FECA57"
+    },
+    {
+      "id": 3,
+      "nome": "Japonesa",
+      "icone": "🍣",
+      "imagem": "https://images.unsplash.com/photo-1617196035154-1e7e6e28b0db",
+      "cor": "#48A9A6"
+    },
+    {
+      "id": 4,
+      "nome": "Brasileira",
+      "icone": "🍖",
+      "imagem": "https://images.unsplash.com/photo-1629975269679-3d6f3184d485",
+      "cor": "#E67E22"
+    }
+  ]
+}

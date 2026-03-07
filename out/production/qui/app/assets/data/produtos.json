@@ -1,0 +1,56 @@
+{
+  "produtos": [
+    {
+      "id": 101,
+      "lojaId": 1,
+      "nome": "X-Burger Clássico",
+      "descricao": "Hambúrguer 180g, queijo, alface, tomate e molho especial",
+      "preco": 24.90,
+      "precoPromocional": 22.90,
+      "categoria": "Hambúrgueres",
+      "imagem": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd",
+      "ingredientes": ["Pão brioche", "Hambúrguer 180g", "Queijo cheddar", "Alface", "Tomate", "Molho especial"],
+      "disponivel": true,
+      "destaque": true
+    },
+    {
+      "id": 102,
+      "lojaId": 1,
+      "nome": "X-Bacon Supreme",
+      "descricao": "Hambúrguer 200g, bacon crocante, queijo prato e cebola caramelizada",
+      "preco": 29.90,
+      "precoPromocional": 26.90,
+      "categoria": "Hambúrgueres",
+      "imagem": "https://images.unsplash.com/photo-1553979459-d2229ba518fb",
+      "ingredientes": ["Pão australiano", "Hambúrguer 200g", "Bacon", "Queijo prato", "Cebola caramelizada", "Molho barbecue"],
+      "disponivel": true,
+      "destaque": true
+    },
+    {
+      "id": 201,
+      "lojaId": 2,
+      "nome": "Pizza Margherita",
+      "descricao": "Molho de tomate, mussarela, manjericão e azeite",
+      "preco": 49.90,
+      "precoPromocional": 44.90,
+      "categoria": "Pizzas Salgadas",
+      "imagem": "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3",
+      "ingredientes": ["Molho de tomate", "Mussarela", "Manjericão", "Azeite"],
+      "disponivel": true,
+      "destaque": false
+    },
+    {
+      "id": 202,
+      "lojaId": 2,
+      "nome": "Pizza Calabresa",
+      "descricao": "Molho de tomate, mussarela, calabresa e cebola",
+      "preco": 54.90,
+      "precoPromocional": null,
+      "categoria": "Pizzas Salgadas",
+      "imagem": "https://images.unsplash.com/photo-1628840042765-356cda07504e",
+      "ingredientes": ["Molho de tomate", "Mussarela", "Calabresa", "Cebola", "Orégano"],
+      "disponivel": true,
+      "destaque": true
+    }
+  ]
+}

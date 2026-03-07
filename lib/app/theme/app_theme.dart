@@ -1,68 +1,116 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
+import 'app_text_styles.dart';
 
 class AppTheme {
   AppTheme._();
 
-  // Cores
-  static const Color primaryColor = Color(0xFFEA1D2C);
-  static const Color accentColor = Color(0xFFF0C421);
-  static const Color darkColor = Color(0xFF333333);
-  static const Color lightGreyColor = Color(0xFFF5F5F5);
-  static const Color greyColor = Color(0xFF888888);
-
-  // ThemeData
   static ThemeData get themeData {
     final baseTheme = ThemeData.light(useMaterial3: true);
 
     return baseTheme.copyWith(
-      primaryColor: primaryColor,
-      scaffoldBackgroundColor: Colors.white,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.background,
+      
+      // Color Scheme
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        primary: AppColors.primary,
+        secondary: AppColors.secondary,
+        surface: AppColors.surface,
+        error: AppColors.error,
+        onPrimary: AppColors.white,
+        onSecondary: AppColors.black,
+        onSurface: AppColors.textPrimary,
+        onError: AppColors.white,
+      ),
+
+      // AppBar Theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
-          fontWeight: FontWeight.normal,
-          fontSize: 20,
-          color: darkColor,
-          fontFamily: 'Roboto',
-        ),
-        iconTheme: IconThemeData(color: primaryColor),
+        titleTextStyle: AppTextStyles.h2,
+        iconTheme: IconThemeData(color: AppColors.primary),
       ),
+
+      // Bottom Navigation Bar
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        selectedItemColor: primaryColor,
-        unselectedItemColor: greyColor,
+        backgroundColor: AppColors.white,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
         showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        elevation: 10,
       ),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        primary: primaryColor,
-        secondary: accentColor,
+
+      // Buttons
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.white,
+          textStyle: AppTextStyles.button,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 2,
+        ),
       ),
+
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+
+      // Input Decoration (TextForms)
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.grey50,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.grey300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.grey300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        labelStyle: AppTextStyles.bodyMedium,
+        hintStyle: AppTextStyles.bodySmall,
+      ),
+
+      // Card Theme
+      cardTheme: CardTheme(
+        color: AppColors.white,
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      ),
+
+      // Text Theme
+      textTheme: const TextTheme(
+        displayLarge: AppTextStyles.h1,
+        headlineMedium: AppTextStyles.h2,
+        titleLarge: AppTextStyles.h3,
+        bodyLarge: AppTextStyles.bodyLarge,
+        bodyMedium: AppTextStyles.bodyMedium,
+        bodySmall: AppTextStyles.bodySmall,
+        labelLarge: AppTextStyles.button,
+      ),
+      
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: primaryColor,
-      ),
-      // Definindo a fonte padrão e os estilos de texto customizados
-      textTheme: baseTheme.textTheme.apply(fontFamily: 'Roboto').copyWith(
-        titleMedium: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          shadows: [Shadow(blurRadius: 2, color: Colors.black54, offset: Offset(1, 1))],
-        ),
-        bodySmall: const TextStyle(
-          color: Colors.white,
-          shadows: [Shadow(blurRadius: 2, color: Colors.black54, offset: Offset(1, 1))],
-        ),
-        labelLarge: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          shadows: [Shadow(blurRadius: 2, color: Colors.black54, offset: Offset(1, 1))],
-        ),
-        bodyLarge: baseTheme.textTheme.bodyLarge?.copyWith(
-          color: greyColor,
-          fontSize: 16,
-        ),
+        color: AppColors.primary,
       ),
     );
   }
