@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../models/loja.dart';
-import '../../../routes/app_routes.dart';
-import '../../../theme/theme_extensions.dart';
-import '../../../widgets/common/app_text.dart';
+import 'package:qui/app/modules/lojas/models/loja.dart';
+import 'package:qui/app/routes/app_routes.dart';
+import 'package:qui/app/core/theme/app_theme_extension.dart';
+import 'package:qui/app/core/utils/text_utils.dart';
 
 class LojaItemWidget extends StatelessWidget {
   final Loja loja;
@@ -15,6 +15,9 @@ class LojaItemWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final colorScheme = theme.colorScheme;
+    
+    // ✅ LIMPAR A CATEGORIA PARA EXIBIÇÃO
+    final displayCategory = TextUtils.getDisplayCategory(loja.categoria);
 
     return InkWell(
       onTap: () {
@@ -28,7 +31,7 @@ class LojaItemWidget extends StatelessWidget {
               width: 72,
               height: 72,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: context.borderRadiusSmall,
                 child: CachedNetworkImage(
                   imageUrl: loja.logo ?? '',
                   fit: BoxFit.cover,
@@ -43,7 +46,7 @@ class LojaItemWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AppText(
+                  Text(
                     loja.nome, 
                     style: textTheme.titleMedium?.copyWith(
                       color: context.textPrimary, 
@@ -53,23 +56,23 @@ class LojaItemWidget extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.star, color: colorScheme.secondary, size: 15),
+                      Icon(Icons.star, color: context.ratingColor, size: 15),
                       const SizedBox(width: 4),
-                      AppText(
+                      Text(
                         loja.notaMedia.toString(),
                         style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold, 
                           color: context.textPrimary
                         ),
                       ),
-                      AppText(
-                        ' • ${loja.categoria}',
+                      Text(
+                        ' • $displayCategory',
                         style: textTheme.bodyMedium?.copyWith(color: context.textSecondary),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  AppText(
+                  Text(
                     '${loja.tempoEntregaFormatado} • ${loja.taxaEntregaFormatada}',
                     style: textTheme.bodyMedium?.copyWith(color: context.textSecondary),
                   ),

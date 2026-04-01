@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:qui/app/modules/lojas/bloc/lojas_cubit.dart';
 import 'package:qui/app/modules/lojas/bloc/lojas_state.dart';
-import 'package:qui/app/modules/home/bloc/address_cubit.dart';
-import 'package:qui/app/modules/lojas/widgets/custom_home_app_bar.dart';
 import 'package:qui/app/modules/lojas/widgets/filter_search_bottom_sheet.dart';
 import 'package:qui/app/modules/lojas/views/loja_item_widget.dart';
+import 'package:qui/app/core/utils/text_utils.dart';
 
 class LojasView extends StatefulWidget {
   const LojasView({super.key});
@@ -22,7 +21,6 @@ class _LojasViewState extends State<LojasView> {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AddressCubit>().getCurrentLocation();
       context.read<LojasCubit>().fetchLojas();
     });
   }
@@ -65,62 +63,50 @@ class _LojasViewState extends State<LojasView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: CustomHomeAppBar(
-        onAddressTap: () {
-          // TODO: Implementar gerenciamento de endereços
-        },
-        onSearchTap: _showFilterBottomSheet,
-        onProfileTap: () {
-          Navigator.pushNamed(context, '/perfil');
-        },
-      ),
-      body: BlocBuilder<LojasCubit, LojasState>(
-        builder: (context, state) {
-          if (state is LojasLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return BlocBuilder<LojasCubit, LojasState>(
+      builder: (context, state) {
+        if (state is LojasLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          if (state is LojasError) {
-            return Center(child: Text(state.message));
-          }
+        if (state is LojasError) {
+          return Center(child: Text(state.message));
+        }
 
-          if (state is LojasLoaded) {
-            return Column(
-              children: [
-                _buildFilterSummary(state),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () => context.read<LojasCubit>().refreshList(),
-                    child: state.lojasFiltradas.isEmpty
-                        ? _buildEmptyState(state)
-                        : ListView.separated(
-                            controller: _scrollController,
-                            itemCount: state.lojasFiltradas.length + (state.isLoadingMore ? 1 : 0),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              if (index == state.lojasFiltradas.length) {
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
-                              return LojaItemWidget(loja: state.lojasFiltradas[index]);
-                            },
-                          ),
-                  ),
+        if (state is LojasLoaded) {
+          return Column(
+            children: [
+              _buildFilterSummary(state),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () => context.read<LojasCubit>().refreshList(),
+                  child: state.lojasFiltradas.isEmpty
+                      ? _buildEmptyState(state)
+                      : ListView.separated(
+                          controller: _scrollController,
+                          itemCount: state.lojasFiltradas.length + (state.isLoadingMore ? 1 : 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            if (index == state.lojasFiltradas.length) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            return LojaItemWidget(loja: state.lojasFiltradas[index]);
+                          },
+                        ),
                 ),
-              ],
-            );
-          }
+              ),
+            ],
+          );
+        }
 
-          return const SizedBox.shrink();
-        },
-      ),
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -194,11 +180,13 @@ class _LojasViewState extends State<LojasView> {
     }
 
     if (state.categoriaSelecionada != null) {
-      // Remove emojis do label se necessário, mas aqui vamos buscar do state.categorias se o state.categoriaSelecionada for o value
       final cat = state.categorias.firstWhere((c) => c.value == state.categoriaSelecionada, 
           orElse: () => state.categorias.isNotEmpty ? state.categorias.first : state.categorias.first);
-      final categoriaClean = cat.label.replaceAll(RegExp(r'[^\w\s]'), '').trim();
-      parts.add(categoriaClean);
+      
+      final categoriaClean = TextUtils.getDisplayCategory(cat.label);
+      if (categoriaClean.isNotEmpty) {
+        parts.add(categoriaClean);
+      }
     }
 
     if (state.ordenacaoAtual != null) {

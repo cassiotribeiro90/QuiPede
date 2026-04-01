@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:qui/app/core/utils/text_utils.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
 
@@ -22,10 +23,9 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
   String? _selectedOrdenacao;
 
   final List<Map<String, String>> _ordenacoes = [
-    {'value': 'relevancia', 'label': 'Relevância'},
     {'value': 'nota', 'label': 'Melhor avaliados'},
-    {'value': 'tempo_entrega', 'label': 'Entrega mais rápida'},
-    {'value': 'distancia', 'label': 'Mais próximo'},
+    {'value': 'tempo_entrega', 'label': 'Mais rápidos'},
+    {'value': 'distancia', 'label': 'Mais próximos'},
   ];
 
   @override
@@ -35,8 +35,7 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
     if (state is LojasLoaded) {
       _selectedCategoria = state.categoriaSelecionada;
       _selectedOrdenacao = state.ordenacaoAtual;
-      // Note: _searchQuery should be in LojasCubit state if we want to restore it.
-      // Assuming we'll add it or it's managed by the cubit.
+      _searchController.text = state.searchQuery ?? '';
     }
   }
 
@@ -96,22 +95,14 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return const Row(
       children: [
-        const Text(
+        Text(
           'Filtrar lojas',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
-          ),
-        ),
-        TextButton(
-          onPressed: _clearAllFilters,
-          child: const Text(
-            'Limpar tudo',
-            style: TextStyle(color: Colors.orange),
           ),
         ),
       ],
@@ -210,7 +201,7 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
               children: state.categorias.map((categoria) {
                 final isSelected = _selectedCategoria == categoria.value;
                 return ChoiceChip(
-                  label: Text('${categoria.label} (${categoria.count})'),
+                  label: Text('${TextUtils.getDisplayCategory(categoria.label)} (${categoria.count})'),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -237,14 +228,14 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: _clearAllFilters,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Cancelar'),
+            child: const Text('Limpar tudo'),
           ),
         ),
         const SizedBox(width: 12),
@@ -285,5 +276,7 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
       _selectedCategoria = null;
       _selectedOrdenacao = null;
     });
+    widget.onApplyFilters(null, null, null);
+    Navigator.pop(context);
   }
 }

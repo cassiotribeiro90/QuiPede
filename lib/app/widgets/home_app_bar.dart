@@ -32,7 +32,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         tooltip: 'Menu',
       ),
       title: _buildAddressTitle(context),
-      actions: [
+      actions: const [/*
         if (isMobile) ...[
           IconButton(
             icon: Icon(Icons.search_outlined, color: colors.textSecondary),
@@ -57,7 +57,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             label: Text('Perfil', style: TextStyle(color: colors.textSecondary)),
           ),
           const SizedBox(width: 8),
-        ],
+        ],*/
       ],
     );
   }
