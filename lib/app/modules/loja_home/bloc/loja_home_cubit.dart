@@ -2,201 +2,154 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'loja_home_state.dart';
 import '../../../models/produto_model.dart';
 import '../../lojas/models/loja.dart';
-import '../../../../shared/api/api_client.dart';
+import '../repositories/loja_repository.dart';
 
 class LojaHomeCubit extends Cubit<LojaHomeState> {
-  final ApiClient _apiClient;
+  final LojaHomeRepository _repository;
   final int lojaId;
   
-  int _currentPage = 1;
-  bool _hasMore = true;
-  List<Produto> _todosProdutos = [];
   String? _searchQuery;
   List<String> _selectedCategories = [];
+  String? _orderBy;
 
-  LojaHomeCubit(this._apiClient, this.lojaId) : super(LojaHomeInitial());
+  LojaHomeCubit(this._repository, this.lojaId) : super(LojaHomeInitial());
 
   Future<void> fetchLojaDetails() async {
     emit(LojaHomeLoading());
     try {
-      final lojaResponse = await _apiClient.get('/app/loja/$lojaId');
-      
-      final produtosResponse = await _apiClient.get(
-        '/app/loja/$lojaId/produtos',
-        queryParameters: {
-          'page': 1,
-          'per_page': 10,
-          if (_searchQuery != null && _searchQuery!.isNotEmpty) 'search': _searchQuery,
-          if (_selectedCategories.isNotEmpty) 'categoria': _selectedCategories.join(','),
-        },
+      // Usando o endpoint unificado /api/app/loja-home?id={id}
+      final lojaDetalhe = await _repository.getLojaDetalhe(
+        lojaId,
+        orderBy: _orderBy,
+        categoriaId: _selectedCategories.isNotEmpty ? int.tryParse(_selectedCategories.first) : null,
       );
 
-      if (lojaResponse.data['success'] == true &&
-          produtosResponse.data['success'] == true) {
-        
-        final loja = Loja.fromJson(lojaResponse.data['data']);
-        final items = List<Map<String, dynamic>>.from(produtosResponse.data['data']['items']);
-        final pagination = produtosResponse.data['data']['pagination'];
-        
-        _todosProdutos = items.map((json) => Produto.fromJson(json)).toList();
-        _currentPage = pagination['page'];
-        _hasMore = _currentPage < pagination['total_pages'];
+      // Mapear LojaDetalheModel para Loja (modelo esperado pelo estado atual)
+      final loja = Loja(
+        id: lojaDetalhe.id,
+        nome: lojaDetalhe.nome,
+        logo: lojaDetalhe.logo,
+        capa: lojaDetalhe.capa,
+        categoria: lojaDetalhe.categoria,
+        cidade: '', // Campos não presentes no detalhe mas exigidos pelo construtor de Loja
+        uf: '',
+        notaMedia: lojaDetalhe.notaMedia,
+        tempoEntregaMin: lojaDetalhe.tempoEntregaMin,
+        tempoEntregaMax: lojaDetalhe.tempoEntregaMax,
+        taxaEntrega: lojaDetalhe.taxaEntrega,
+        pedidoMinimo: lojaDetalhe.pedidoMinimo,
+        verificado: lojaDetalhe.verificado,
+        destaque: lojaDetalhe.destaque,
+      );
 
-        emit(LojaHomeLoaded(
-          loja: loja,
-          produtos: _todosProdutos,
-          produtosPorCategoria: _agruparPorCategoria(_todosProdutos),
-          selectedCategories: _selectedCategories,
-          activeFilterCount: _selectedCategories.length,
-          hasMore: _hasMore,
-          currentPage: _currentPage,
-        ));
-      } else {
-        emit(LojaHomeError('Erro ao carregar dados'));
+      final List<Produto> allProdutos = [];
+      final Map<String, List<Produto>> porCategoria = {};
+
+      for (var secao in lojaDetalhe.secoes) {
+        final produtosSecao = secao.produtos.map((p) => Produto(
+          id: p.id,
+          lojaId: lojaId,
+          nome: p.nome,
+          descricao: p.descricao ?? '',
+          preco: p.preco,
+          precoPromocional: p.precoPromocional,
+          categoria: secao.nome,
+          imagem: p.imagem ?? '',
+          ingredientes: const [],
+          disponivel: p.disponivel,
+          destaque: p.destaque,
+          avaliacao: p.notaMedia,
+        )).toList();
+
+        allProdutos.addAll(produtosSecao);
+        porCategoria[secao.nome] = produtosSecao;
       }
+
+      emit(LojaHomeLoaded(
+        loja: loja,
+        produtos: allProdutos,
+        produtosPorCategoria: porCategoria,
+        selectedCategories: _selectedCategories,
+        activeFilterCount: _selectedCategories.length + (_orderBy != null ? 1 : 0),
+        hasMore: false, // Endpoint /loja-home não tem paginação
+        currentPage: 1,
+      ));
     } catch (e) {
-      emit(LojaHomeError('Erro de conexão: $e'));
+      emit(LojaHomeError('Erro ao carregar dados da loja: $e'));
     }
   }
 
   Future<void> loadMoreProdutos() async {
-    if (!_hasMore || state is LojaHomeLoadingMore) return;
-
-    final currentState = state;
-    if (currentState is! LojaHomeLoaded) return;
-
-    emit(LojaHomeLoadingMore(
-      loja: currentState.loja,
-      produtos: currentState.produtos,
-      produtosPorCategoria: currentState.produtosPorCategoria,
-      selectedCategories: currentState.selectedCategories,
-      activeFilterCount: currentState.activeFilterCount,
-      hasMore: currentState.hasMore,
-      currentPage: currentState.currentPage,
-    ));
-    
-    try {
-      final response = await _apiClient.get(
-        '/app/loja/$lojaId/produtos',
-        queryParameters: {
-          'page': _currentPage + 1,
-          'per_page': 10,
-          if (_searchQuery != null && _searchQuery!.isNotEmpty) 'search': _searchQuery,
-          if (_selectedCategories.isNotEmpty) 'categoria': _selectedCategories.join(','),
-        },
-      );
-
-      if (response.data['success'] == true) {
-        final items = List<Map<String, dynamic>>.from(response.data['data']['items']);
-        final pagination = response.data['data']['pagination'];
-        final novosProdutos = items.map((json) => Produto.fromJson(json)).toList();
-        
-        _todosProdutos = [..._todosProdutos, ...novosProdutos];
-        _currentPage = pagination['page'];
-        _hasMore = _currentPage < pagination['total_pages'];
-
-        emit(LojaHomeLoaded(
-          loja: currentState.loja,
-          produtos: _todosProdutos,
-          produtosPorCategoria: _agruparPorCategoria(_todosProdutos),
-          selectedCategories: _selectedCategories,
-          activeFilterCount: _selectedCategories.length,
-          hasMore: _hasMore,
-          currentPage: _currentPage,
-        ));
-      }
-    } catch (e) {
-      emit(LojaHomeError('Erro ao carregar mais produtos'));
-    }
+    // Sem paginação no endpoint unificado por enquanto
+    return;
   }
 
   Future<void> searchQueryChanged(String query) async {
     _searchQuery = query.trim().isEmpty ? null : query;
-    await _applyCurrentFiltersAndSearch();
-  }
-
-  // 🏷️ APLICAR FILTROS (múltiplos de uma vez)
-  Future<void> applyFilters(Set<String> categories) async {
-    _selectedCategories = categories.toList();
-    await _applyCurrentFiltersAndSearch();
-  }
-
-  Future<void> _applyCurrentFiltersAndSearch() async {
-    _currentPage = 1;
-    _hasMore = true;
-    _todosProdutos = [];
-    
-    Loja? currentLoja;
-    if (state is LojaHomeLoaded) {
-      currentLoja = (state as LojaHomeLoaded).loja;
+    if (_searchQuery == null) {
+      await fetchLojaDetails();
+      return;
     }
 
     emit(LojaHomeLoading());
-    
     try {
-      final response = await _apiClient.get(
-        '/app/loja/$lojaId/produtos',
-        queryParameters: {
-          'page': 1,
-          'per_page': 10,
-          if (_searchQuery != null && _searchQuery!.isNotEmpty) 'search': _searchQuery,
-          if (_selectedCategories.isNotEmpty) 'categoria': _selectedCategories.join(','),
-        },
+      final secoes = await _repository.searchProdutos(
+        lojaId,
+        _searchQuery!,
+        orderBy: _orderBy,
       );
 
-      if (response.data['success'] == true) {
-        final items = List<Map<String, dynamic>>.from(response.data['data']['items']);
-        final pagination = response.data['data']['pagination'];
-        
-        _todosProdutos = items.map((json) => Produto.fromJson(json)).toList();
-        _currentPage = pagination['page'];
-        _hasMore = _currentPage < pagination['total_pages'];
+      final currentState = state;
+      if (currentState is LojaHomeLoaded) {
+        final List<Produto> allProdutos = [];
+        final Map<String, List<Produto>> porCategoria = {};
 
-        if (currentLoja != null) {
-          emit(LojaHomeLoaded(
-            loja: currentLoja,
-            produtos: _todosProdutos,
-            produtosPorCategoria: _agruparPorCategoria(_todosProdutos),
-            selectedCategories: _selectedCategories,
-            activeFilterCount: _selectedCategories.length,
-            hasMore: _hasMore,
-            currentPage: _currentPage,
-          ));
-        } else {
-          await fetchLojaDetails();
+        for (var secao in secoes) {
+          final produtosSecao = secao.produtos.map((p) => Produto(
+            id: p.id,
+            lojaId: lojaId,
+            nome: p.nome,
+            descricao: p.descricao ?? '',
+            preco: p.preco,
+            precoPromocional: p.precoPromocional,
+            categoria: secao.nome,
+            imagem: p.imagem ?? '',
+            ingredientes: const [],
+            disponivel: p.disponivel,
+            destaque: p.destaque,
+            avaliacao: p.notaMedia,
+          )).toList();
+
+          allProdutos.addAll(produtosSecao);
+          porCategoria[secao.nome] = produtosSecao;
         }
+
+        emit(currentState.copyWith(
+          produtos: allProdutos,
+          produtosPorCategoria: porCategoria,
+        ));
       }
     } catch (e) {
-      emit(LojaHomeError('Erro ao aplicar filtros ou busca: $e'));
+      emit(LojaHomeError('Erro na busca: $e'));
     }
   }
 
-  // 🏷️ FILTRAR POR CATEGORIA (individual)
-  void toggleCategoryFilter(String categoria) {
-    if (_selectedCategories.contains(categoria)) {
-      _selectedCategories.remove(categoria);
-    } else {
-      _selectedCategories.add(categoria);
-    }
-    _applyCurrentFiltersAndSearch();
+  Future<void> applyFilters(Set<String> categories) async {
+    _selectedCategories = categories.toList();
+    await fetchLojaDetails();
   }
 
-  Map<String, List<Produto>> _agruparPorCategoria(List<Produto> produtos) {
-    final agrupados = <String, List<Produto>>{};
-    for (var p in produtos) {
-      final cat = p.categoria;
-      if (!agrupados.containsKey(cat)) agrupados[cat] = [];
-      agrupados[cat]!.add(p);
-    }
-    return agrupados;
+  Future<void> setOrderBy(String? orderBy) async {
+    _orderBy = orderBy;
+    await fetchLojaDetails();
   }
 
   Future<void> refresh() async {
-    _currentPage = 1;
-    _hasMore = true;
     _searchQuery = null;
     _selectedCategories = [];
-    _todosProdutos = [];
+    _orderBy = null;
     await fetchLojaDetails();
   }
+
+  void toggleCategoryFilter(String categoria) {}
 }

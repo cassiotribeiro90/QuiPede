@@ -1,42 +1,39 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
-import '../../lojas/models/loja.dart';
 
-abstract class ILojaRepository {
-  Future<Loja> getLojaById(int id);
-}
+import '../../../../shared/api/api_client.dart';
+import '../models/loja_detalhe_model.dart';
+import '../models/secao_produto_model.dart';
 
-class LojaRepositoryMock implements ILojaRepository {
-  @override
-  Future<Loja> getLojaById(int id) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+class LojaHomeRepository {
+  final ApiClient _apiClient;
 
+  LojaHomeRepository(this._apiClient);
+
+  Future<LojaDetalheModel> getLojaDetalhe(int id, {String? orderBy, int? categoriaId}) async {
     try {
-      final String jsonString = await rootBundle.loadString('lib/app/assets/data/lojas.json');
-      final data = json.decode(jsonString);
-      final List<dynamic> lojasData = data['lojas'];
-
-      final lojaData = lojasData.firstWhere((loja) => loja['id'] == id, orElse: () => null);
-
-      if (lojaData != null) {
-        return Loja.fromJson(lojaData);
-      } else {
-        throw Exception('Loja não encontrada');
-      }
+      final response = await _apiClient.get('/app/loja-home', queryParameters: {
+        'id': id,
+        'order_by': orderBy,
+        'categoria_id': categoriaId,
+      });
+      return LojaDetalheModel.fromJson(response.data['data']);
     } catch (e) {
-      // Fallback para quando o JSON não existe ou o ID não é encontrado no mock
-      return Loja(
-        id: id,
-        nome: 'Loja $id',
-        categoria: 'Alimentação',
-        cidade: 'Cidade',
-        uf: 'UF',
-        notaMedia: 4.5,
-        tempoEntregaMin: 30,
-        tempoEntregaMax: 45,
-        taxaEntrega: 5.0,
-        pedidoMinimo: 20.0,
-      );
+      rethrow;
+    }
+  }
+
+  Future<List<SecaoProdutoModel>> searchProdutos(int lojaId, String query, {String? orderBy, int? categoriaId}) async {
+    try {
+      final response = await _apiClient.get('/app/loja-home/search', queryParameters: {
+        'id': lojaId,
+        'q': query,
+        'order_by': orderBy,
+        'categoria_id': categoriaId,
+      });
+      return (response.data['data']['secoes'] as List)
+          .map((e) => SecaoProdutoModel.fromJson(e))
+          .toList();
+    } catch (e) {
+      rethrow;
     }
   }
 }
