@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'produto_model.dart';
+import 'package:quipede/app/models/produto_model.dart';
 
 class SecaoProdutoModel extends Equatable {
   final int id;

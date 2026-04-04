@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../models/loja_resumo_model.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
-import '../models/loja.dart';
 import '../widgets/filtros_bar.dart';
 import 'loja_item_widget.dart';
 
@@ -85,7 +85,7 @@ class _LojaViewState extends State<LojaView> {
     );
   }
 
-  Widget _buildLoadedState(List<Loja> lojas) {
+  Widget _buildLoadedState(List<LojaResumo> lojas) {
     final listContent = lojas.isEmpty
         ? const Center(child: Text('Nenhuma loja encontrada com os filtros selecionados.'))
         : ListView.separated(

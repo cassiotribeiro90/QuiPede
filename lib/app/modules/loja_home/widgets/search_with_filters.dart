@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme_extension.dart';
-import '../models/categoria_filter_model.dart';
+import '../../../models/categoria_filter_model.dart';
 import 'filter_bottom_sheet.dart';
 
 class SearchWithFilters extends StatelessWidget {

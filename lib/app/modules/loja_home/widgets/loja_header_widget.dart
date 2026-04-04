@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../models/loja_detalhe_model.dart';
+import '../../../models/loja_detalhe_model.dart';
 import '../../../core/theme/app_theme_extension.dart';
 
 class LojaHeaderWidget extends StatelessWidget {

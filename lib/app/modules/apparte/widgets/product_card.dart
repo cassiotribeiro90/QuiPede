@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quipede/app/modules/loja_home/models/produto_model.dart';
+import '../../../models/produto_model.dart';
 import '../../../theme/app_theme.dart';
 
 class ProductCard extends StatelessWidget {

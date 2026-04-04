@@ -1,5 +1,5 @@
 import '../../../../shared/api/api_client.dart';
-import '../models/loja_detalhe_model.dart';
+import '../../../models/loja_detalhe_model.dart';
 
 class LojaHomeRepository {
   final ApiClient _apiClient;

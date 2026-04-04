@@ -1,11 +1,11 @@
-import '../models/enums.dart';
-import '../models/loja.dart';
-import '../models/loja_response_model.dart';
+import '../../../models/enums.dart';
+import '../../../models/loja_resumo_model.dart';
+import '../../../models/loja_resumo_response_model.dart';
 
 /// Abstração do repositório de lojas
 abstract class LojaRepository {
   /// Busca lojas com filtros e paginação
-  Future<LojaResponseModel> getLojas({
+  Future<LojaResumoResponseModel> getLojas({
     String? categoria,
     String? busca,
     String? ordenarPor,
@@ -17,10 +17,10 @@ abstract class LojaRepository {
   });
 
   /// Busca lojas em destaque
-  Future<List<Loja>> getLojasDestaque();
+  Future<List<LojaResumo>> getLojasDestaque();
 
   /// Busca uma loja específica por ID
-  Future<Loja> getLojaById(int id);
+  Future<LojaResumo> getLojaById(int id);
 
   /// Busca categorias disponíveis (opcional se usar o filter_options do getLojas)
   Future<List<CategoriaTipo>> getCategorias();

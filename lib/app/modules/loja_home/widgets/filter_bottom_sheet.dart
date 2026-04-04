@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme_extension.dart';
-import '../models/categoria_filter_model.dart';
+import '../../../models/categoria_filter_model.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final List<CategoriaFilterModel> categorias;

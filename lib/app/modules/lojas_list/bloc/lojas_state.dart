@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
-import '../models/loja.dart';
-import '../models/filter_option_model.dart';
-import '../../loja_home/models/pagination_model.dart';
+import '../../../models/loja_resumo_model.dart';
+import '../../../models/lojas_list_filter_option_model.dart';
+import '../../../models/pagination_model.dart';
 
 abstract class LojasState extends Equatable {
   const LojasState();
@@ -13,9 +13,9 @@ class LojasInitial extends LojasState {}
 class LojasLoading extends LojasState {}
 
 class LojasLoaded extends LojasState {
-  final List<Loja> lojas;
-  final List<Loja> lojasFiltradas;
-  final List<FilterOptionModel> categorias;
+  final List<LojaResumo> lojas;
+  final List<LojaResumo> lojasFiltradas;
+  final List<LojasListFilterOptionModel> categorias;
   final String? categoriaSelecionada;
   final String? ordenacaoAtual;
   final String? searchQuery;
@@ -46,9 +46,9 @@ class LojasLoaded extends LojasState {
       ];
 
   LojasLoaded copyWith({
-    List<Loja>? lojas,
-    List<Loja>? lojasFiltradas,
-    List<FilterOptionModel>? categorias,
+    List<LojaResumo>? lojas,
+    List<LojaResumo>? lojasFiltradas,
+    List<LojasListFilterOptionModel>? categorias,
     String? categoriaSelecionada,
     String? ordenacaoAtual,
     String? searchQuery,

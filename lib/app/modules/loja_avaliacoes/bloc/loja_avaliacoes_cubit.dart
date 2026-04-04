@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
-import '../models/avaliacao_model.dart';
+import '../../../models/avaliacao_model.dart';
 import 'loja_avaliacoes_state.dart';
 
 class LojaAvaliacoesCubit extends Cubit<LojaAvaliacoesState> {

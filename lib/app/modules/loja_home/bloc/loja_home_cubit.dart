@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../models/produto_model.dart';
 import '../repository/loja_repository.dart';
 import 'loja_home_state.dart';
-import '../models/produto_model.dart'; 
-import '../models/loja_detalhe_model.dart';
 
 class LojaHomeCubit extends Cubit<LojaHomeState> {
   final LojaHomeRepository _repository;

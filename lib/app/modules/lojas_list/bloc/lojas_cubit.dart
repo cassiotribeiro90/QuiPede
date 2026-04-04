@@ -1,16 +1,15 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../models/loja_resumo_model.dart';
 import 'lojas_state.dart';
 import '../repository/loja_repository.dart';
-import '../models/loja.dart';
-import '../../loja_home/models/pagination_model.dart';
-import '../models/filter_option_model.dart';
+import '../../../models/pagination_model.dart';
 
 class LojasCubit extends Cubit<LojasState> {
   final LojaRepository _repository;
   String? _categoriaAtual;
   String? _ordenacaoAtual;
   String? _searchQuery;
-  List<Loja> _todasLojas = [];
+  List<LojaResumo> _todasLojas = [];
   PaginationModel? _lastPagination;
 
   LojasCubit(this._repository) : super(LojasInitial());

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/produto_model.dart';
+import '../../../models/produto_model.dart';
 import 'produto_card_widget.dart';
 import '../../../core/theme/app_theme_extension.dart';
 

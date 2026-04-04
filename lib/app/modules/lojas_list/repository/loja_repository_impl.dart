@@ -1,7 +1,7 @@
 import '../../../../shared/api/api_client.dart';
-import '../models/loja.dart';
-import '../models/loja_response_model.dart';
-import '../models/enums.dart';
+import '../../../models/loja_resumo_model.dart';
+import '../../../models/loja_resumo_response_model.dart';
+import '../../../models/enums.dart';
 import 'loja_repository.dart';
 
 class LojaRepositoryImpl implements LojaRepository {
@@ -10,7 +10,7 @@ class LojaRepositoryImpl implements LojaRepository {
   LojaRepositoryImpl(this._apiClient);
 
   @override
-  Future<LojaResponseModel> getLojas({
+  Future<LojaResumoResponseModel> getLojas({
     int page = 1,
     int perPage = 10,
     String? categoria,
@@ -34,24 +34,24 @@ class LojaRepositoryImpl implements LojaRepository {
     );
 
     if (response.data['success'] == true) {
-      return LojaResponseModel.fromJson(response.data);
+      return LojaResumoResponseModel.fromJson(response.data);
     } else {
       throw Exception(response.data['message'] ?? 'Erro ao buscar lojas');
     }
   }
 
   @override
-  Future<Loja> getLojaById(int id) async {
+  Future<LojaResumo> getLojaById(int id) async {
     final response = await _apiClient.get('/app/loja/$id');
-    return Loja.fromJson(response.data['data']);
+    return LojaResumo.fromJson(response.data['data']);
   }
 
   @override
-  Future<List<Loja>> getLojasDestaque() async {
+  Future<List<LojaResumo>> getLojasDestaque() async {
     final response = await _apiClient.get('/app/loja/destaque');
     if (response.data['success'] == true) {
       final List items = response.data['data'];
-      return items.map((json) => Loja.fromJson(json)).toList();
+      return items.map((json) => LojaResumo.fromJson(json)).toList();
     }
     return [];
   }

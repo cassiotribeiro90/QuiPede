@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../models/avaliacao_model.dart';
+import '../../../models/avaliacao_model.dart';
 
 abstract class LojaAvaliacoesState extends Equatable {
   const LojaAvaliacoesState();

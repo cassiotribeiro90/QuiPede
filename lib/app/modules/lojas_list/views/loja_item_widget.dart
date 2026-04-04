@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/loja.dart';
+import '../../../models/loja_resumo_model.dart';
 import '../../../routes/app_routes.dart';
-import '../../../core/theme/app_theme_extension.dart';
-import '../../../core/utils/text_utils.dart';
 
 class LojaItemWidget extends StatelessWidget {
-  final Loja loja;
+  final LojaResumo loja;
 
   const LojaItemWidget({super.key, required this.loja});
 

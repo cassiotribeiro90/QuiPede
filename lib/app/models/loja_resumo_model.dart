@@ -1,6 +1,8 @@
-import '../../loja_home/models/filter_options_model.dart';
 
-class Loja {
+
+import 'filter_options_model.dart';
+
+class LojaResumo {
   final int id;
   final String nome;
   final String? logo;
@@ -20,7 +22,7 @@ class Loja {
   final String? emoji;
   final LojaFilterOptions? filterOptions;
 
-  Loja({
+  LojaResumo({
     required this.id,
     required this.nome,
     this.logo,
@@ -45,8 +47,8 @@ class Loja {
   String get displayName => nome;
   double get nota => notaMedia;
 
-  factory Loja.fromJson(Map<String, dynamic> json) {
-    return Loja(
+  factory LojaResumo.fromJson(Map<String, dynamic> json) {
+    return LojaResumo(
       id: json['id'] as int,
       nome: json['nome'] as String,
       logo: json['logo'] as String?,
