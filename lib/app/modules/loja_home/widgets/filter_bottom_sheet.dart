@@ -73,11 +73,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   const SizedBox(height: 16),
                   _buildSearchField(),
                   const SizedBox(height: 24),
+                  _buildCategoriesSection(),
+                  const SizedBox(height: 24),
                   _buildOrderSection(),
                   const SizedBox(height: 32),
-                  _buildCategoriesSection(),
-                  const SizedBox(height: 32),
-                  _buildButtons(),
+                  _buildActionButtons(),
                   SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 20),
                 ],
               ),
@@ -102,19 +102,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   Widget _buildHeader() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Filtrar produtos', style: context.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-        TextButton(
-          onPressed: () {
-            setState(() {
-              _tempCategoriaId = null;
-              _tempOrderBy = null;
-              _searchController.clear();
-            });
-            widget.onClear();
-          },
-          child: Text('Limpar tudo', style: TextStyle(color: context.primaryColor)),
+        Text(
+          'Filtrar produtos',
+          style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -126,21 +117,32 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       decoration: InputDecoration(
         hintText: 'Pesquisar produtos...',
         prefixIcon: Icon(Icons.search, color: context.textHint),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                onPressed: () {
+                  setState(() {
+                    _searchController.clear();
+                  });
+                },
+              )
+            : null,
         filled: true,
         fillColor: context.surfaceColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: context.borderColor),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: context.borderColor),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: context.primaryColor, width: 1.5),
         ),
       ),
+      onChanged: (val) => setState(() {}),
     );
   }
 
@@ -151,36 +153,35 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         Text('Ordenar por', style: context.titleSmall.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 8,
+          runSpacing: 8,
           children: _orderOptions.map((option) {
             final isSelected = _tempOrderBy == option['value'];
-            return GestureDetector(
-              onTap: () => setState(() {
-                _tempOrderBy = isSelected ? null : option['value'];
-              }),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isSelected ? context.primarySurface : context.surfaceColor,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: isSelected ? context.primaryColor : context.borderColor,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(option['icon'], style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 6),
-                    Text(
-                      option['label'],
-                      style: context.bodyMedium.copyWith(
-                        color: isSelected ? context.primaryColor : context.textSecondary,
-                        fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                      ),
-                    ),
-                  ],
+            return ChoiceChip(
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(option['icon'], style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 6),
+                  Text(option['label']),
+                ],
+              ),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  _tempOrderBy = selected ? option['value'] : null;
+                });
+              },
+              selectedColor: context.primarySurface,
+              backgroundColor: context.surfaceColor,
+              labelStyle: context.bodyMedium.copyWith(
+                color: isSelected ? context.primaryColor : context.textSecondary,
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+                side: BorderSide(
+                  color: isSelected ? context.primaryColor : context.borderColor,
                 ),
               ),
             );
@@ -191,51 +192,67 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   Widget _buildCategoriesSection() {
+    if (widget.categorias.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Categorias', style: context.titleSmall.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: widget.categorias.length,
-          separatorBuilder: (_, __) => const Divider(),
-          itemBuilder: (context, index) {
-            final cat = widget.categorias[index];
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: widget.categorias.map((cat) {
             final isSelected = _tempCategoriaId == cat.id;
-            
-            return CheckboxListTile(
-              title: Text(cat.nome),
-              secondary: cat.icone != null ? Text(cat.icone!) : null,
-              value: isSelected,
-              onChanged: (value) {
+            return ChoiceChip(
+              label: Text('${cat.icone ?? ''} ${cat.nome}'.trim()),
+              selected: isSelected,
+              onSelected: (selected) {
                 setState(() {
-                  _tempCategoriaId = value == true ? cat.id : null;
+                  _tempCategoriaId = selected ? cat.id : null;
                 });
               },
-              contentPadding: EdgeInsets.zero,
-              activeColor: context.primaryColor,
-              controlAffinity: ListTileControlAffinity.trailing,
+              selectedColor: context.primarySurface,
+              backgroundColor: context.surfaceColor,
+              labelStyle: context.bodyMedium.copyWith(
+                color: isSelected ? context.primaryColor : context.textSecondary,
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+                side: BorderSide(
+                  color: isSelected ? context.primaryColor : context.borderColor,
+                ),
+              ),
             );
-          },
+          }).toList(),
         ),
       ],
     );
   }
 
-  Widget _buildButtons() {
+  Widget _buildActionButtons() {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              setState(() {
+                _tempCategoriaId = null;
+                _tempOrderBy = null;
+                _searchController.clear();
+              });
+              widget.onClear();
+              Navigator.pop(context);
+            },
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: context.borderColor),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              side: BorderSide(color: context.borderColor),
             ),
-            child: Text('Cancelar', style: TextStyle(color: context.textSecondary)),
+            child: Text('Limpar tudo', style: TextStyle(color: context.textPrimary)),
           ),
         ),
         const SizedBox(width: 12),
@@ -253,9 +270,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               backgroundColor: context.primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text('Aplicar filtros', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Aplicar filtros',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],

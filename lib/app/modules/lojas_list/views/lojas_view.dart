@@ -71,7 +71,19 @@ class _LojasViewState extends State<LojasView> {
         }
 
         if (state is LojasError) {
-          return Center(child: Text(state.message));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(state.message),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => context.read<LojasCubit>().refreshList(),
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+          );
         }
 
         if (state is LojasLoaded) {
@@ -181,13 +193,13 @@ class _LojasViewState extends State<LojasView> {
     }
 
     if (state.categoriaSelecionada != null) {
-      final cat = state.categorias.firstWhere((c) => c.value == state.categoriaSelecionada, 
-          orElse: () => state.categorias.isNotEmpty ? state.categorias.first : state.categorias.first);
-      
-      final categoriaClean = TextUtils.getDisplayCategory(cat.label);
-      if (categoriaClean.isNotEmpty) {
-        parts.add(categoriaClean);
-      }
+      try {
+        final cat = state.categorias.firstWhere((c) => c.value == state.categoriaSelecionada);
+        final categoriaClean = TextUtils.getDisplayCategory(cat.label);
+        if (categoriaClean.isNotEmpty) {
+          parts.add(categoriaClean);
+        }
+      } catch (_) {}
     }
 
     if (state.ordenacaoAtual != null) {
@@ -213,22 +225,45 @@ class _LojasViewState extends State<LojasView> {
   }
 
   Widget _buildEmptyState(LojasLoaded state) {
+    final isSearching = state.searchQuery != null && state.searchQuery!.isNotEmpty;
+    
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.restaurant_menu, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'Nenhuma loja encontrada',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: () => context.read<LojasCubit>().clearAllFilters(),
-            child: const Text('Limpar filtros'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSearching ? Icons.search_off : Icons.restaurant_menu, 
+              size: 64, 
+              color: Colors.grey[300]
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isSearching 
+                ? 'Nenhuma loja encontrada para "${state.searchQuery}"'
+                : 'Nenhuma loja encontrada',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600], fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tente mudar os filtros ou o termo de busca.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => context.read<LojasCubit>().clearAllFilters(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange[700],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Limpar todos os filtros'),
+            ),
+          ],
+        ),
       ),
     );
   }

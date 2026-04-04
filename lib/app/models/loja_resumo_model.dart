@@ -1,8 +1,7 @@
-
-
+import 'package:equatable/equatable.dart';
 import 'filter_options_model.dart';
 
-class LojaResumo {
+class LojaResumo extends Equatable {
   final int id;
   final String nome;
   final String? logo;
@@ -42,6 +41,27 @@ class LojaResumo {
     this.emoji,
     this.filterOptions,
   });
+
+  @override
+  List<Object?> get props => [
+        id,
+        nome,
+        logo,
+        capa,
+        categoria,
+        cidade,
+        uf,
+        notaMedia,
+        tempoEntregaMin,
+        tempoEntregaMax,
+        taxaEntrega,
+        pedidoMinimo,
+        destaque,
+        verificado,
+        distancia,
+        distanciaTexto,
+        emoji,
+      ];
 
   bool get isOpenNow => true; 
   String get displayName => nome;

@@ -17,9 +17,6 @@ class LojasCubit extends Cubit<LojasState> {
   Future<void> fetchLojas({
     int page = 1,
     int perPage = 10,
-    String? categoria,
-    String? ordenacao,
-    String? search,
     bool isLoadMore = false,
   }) async {
     try {
@@ -29,10 +26,6 @@ class LojasCubit extends Cubit<LojasState> {
       } else if (state is LojasLoaded) {
         emit((state as LojasLoaded).copyWith(isLoadingMore: true));
       }
-      
-      _categoriaAtual = categoria ?? _categoriaAtual;
-      _ordenacaoAtual = ordenacao ?? _ordenacaoAtual;
-      _searchQuery = search ?? _searchQuery;
 
       final response = await _repository.getLojas(
         page: page,
@@ -47,12 +40,12 @@ class LojasCubit extends Cubit<LojasState> {
       if (isLoadMore) {
         _todasLojas.addAll(response.items);
       } else {
-        _todasLojas = response.items;
+        _todasLojas = List.from(response.items); 
       }
 
       emit(LojasLoaded(
-        lojas: _todasLojas,
-        lojasFiltradas: _todasLojas, 
+        lojas: List.from(_todasLojas),
+        lojasFiltradas: List.from(_todasLojas),
         categorias: response.filterOptions.categorias,
         categoriaSelecionada: _categoriaAtual,
         ordenacaoAtual: _ordenacaoAtual,
@@ -76,7 +69,7 @@ class LojasCubit extends Cubit<LojasState> {
   }
 
   void searchLojas(String? query) {
-    _searchQuery = query;
+    _searchQuery = query?.trim().isEmpty == true ? null : query?.trim();
     fetchLojas(page: 1);
   }
 
@@ -85,7 +78,7 @@ class LojasCubit extends Cubit<LojasState> {
     String? categoria,
     String? ordenacao,
   }) {
-    _searchQuery = search;
+    _searchQuery = search?.trim().isEmpty == true ? null : search?.trim();
     _categoriaAtual = categoria;
     _ordenacaoAtual = ordenacao;
     fetchLojas(page: 1);
