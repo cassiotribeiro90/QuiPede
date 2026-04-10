@@ -32,32 +32,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         tooltip: 'Menu',
       ),
       title: _buildAddressTitle(context),
-      actions: const [/*
-        if (isMobile) ...[
-          IconButton(
-            icon: Icon(Icons.search_outlined, color: colors.textSecondary),
-            onPressed: onSearchTap,
-            tooltip: 'Filtrar e pesquisar',
-          ),
-          IconButton(
-            icon: Icon(Icons.person_outline, color: colors.textSecondary),
-            onPressed: onProfileTap,
-            tooltip: 'Perfil',
-          ),
-        ] else ...[
-          TextButton.icon(
-            onPressed: onSearchTap,
-            icon: Icon(Icons.search, color: colors.textSecondary),
-            label: Text('Filtrar', style: TextStyle(color: colors.textSecondary)),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: onProfileTap,
-            icon: Icon(Icons.person_outline, color: colors.textSecondary),
-            label: Text('Perfil', style: TextStyle(color: colors.textSecondary)),
-          ),
-          const SizedBox(width: 8),
-        ],*/
+      actions: const [
       ],
     );
   }

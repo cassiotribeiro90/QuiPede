@@ -10,8 +10,6 @@ import 'package:quipede/app/models/pagination_model.dart';
 import 'package:quipede/app/models/filter_options_model.dart';
 import 'package:quipede/app/models/categoria_filter_model.dart';
 
-import '../../../helpers/test_models.dart';
-
 // ===== FAKE REPOSITORY =====
 class FakeLojaHomeRepository implements LojaHomeRepository {
   bool shouldThrowError = false;
@@ -142,7 +140,7 @@ void main() {
       act: (cubit) => cubit.applyFilters(search: 'pizza'),
       expect: () => [
         isA<LojaHomeLoading>(),
-        isA<LojaHomeLoaded>().having((s) => (s as LojaHomeLoaded).searchQuery, 'searchQuery', 'pizza'),
+        isA<LojaHomeLoaded>().having((s) => (s).searchQuery, 'searchQuery', 'pizza'),
       ],
     );
   });

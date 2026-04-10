@@ -5,7 +5,6 @@ import '../../../models/carrinho_item.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../services/carrinho_service.dart';
-import '../../../models/carrinho_result.dart';
 
 abstract class CarrinhoState extends Equatable {
   const CarrinhoState();

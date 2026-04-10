@@ -75,7 +75,7 @@ class SecoesListWidget extends StatelessWidget {
               Expanded(
                 child: Text(
                   secao.nome,
-                  style: context.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               Container(
@@ -86,7 +86,7 @@ class SecoesListWidget extends StatelessWidget {
                 ),
                 child: Text(
                   '${produtosUnicos.length}',
-                  style: context.caption?.copyWith(
+                  style: context.caption.copyWith(
                     color: context.primaryColor,
                     fontWeight: FontWeight.w500,
                   ),

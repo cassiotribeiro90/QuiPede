@@ -46,7 +46,7 @@ class ProdutoCardUnificado extends StatelessWidget {
                   if (produto.destaque) _buildDestaqueBadge(context),
                   Text(
                     produto.nome,
-                    style: context.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
                   ),
                   if (produto.descricao != null) ...[
                     const SizedBox(height: 4),
@@ -124,7 +124,7 @@ class ProdutoCardUnificado extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             'DESTAQUE',
-            style: context.bodySmall?.copyWith(
+            style: context.bodySmall.copyWith(
               color: Colors.orange[900],
               fontWeight: FontWeight.bold,
               fontSize: 10,
@@ -141,7 +141,7 @@ class ProdutoCardUnificado extends StatelessWidget {
         children: [
           Text(
             'R\$ ${produto.precoPromocional!.toStringAsFixed(2).replaceAll('.', ',')}',
-            style: context.bodyMedium?.copyWith(
+            style: context.bodyMedium.copyWith(
               color: context.successColor,
               fontWeight: FontWeight.bold,
             ),
@@ -149,7 +149,7 @@ class ProdutoCardUnificado extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'R\$ ${produto.preco.toStringAsFixed(2).replaceAll('.', ',')}',
-            style: context.bodySmall?.copyWith(
+            style: context.bodySmall.copyWith(
               decoration: TextDecoration.lineThrough,
             ),
           ),
@@ -158,7 +158,7 @@ class ProdutoCardUnificado extends StatelessWidget {
     }
     return Text(
       produto.precoFormatado,
-      style: context.bodyMedium?.copyWith(
+      style: context.bodyMedium.copyWith(
         color: context.textPrimary,
         fontWeight: FontWeight.bold,
       ),
@@ -179,7 +179,7 @@ class ProdutoCardUnificado extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             produto.notaMedia.toString(),
-            style: context.bodySmall?.copyWith(color: context.ratingColor, fontWeight: FontWeight.bold),
+            style: context.bodySmall.copyWith(color: context.ratingColor, fontWeight: FontWeight.bold),
           ),
         ],
       ],

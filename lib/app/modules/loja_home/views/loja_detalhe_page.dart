@@ -157,7 +157,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
               leading: BackButton(color: context.textPrimary),
               title: Text(
                 state.loja?.nome ?? 'Carregando...',
-                style: context.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
               ),
               backgroundColor: context.surfaceColor,
               elevation: 0,

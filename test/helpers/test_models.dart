@@ -3,7 +3,6 @@ import 'package:quipede/app/models/loja_resumo_response_model.dart';
 import 'package:quipede/app/models/pagination_model.dart';
 import 'package:quipede/app/models/lojas_list_filter_option_model.dart';
 import 'package:quipede/app/models/loja_detalhe_model.dart';
-import 'package:quipede/app/models/secao_model.dart';
 import 'package:quipede/app/models/filter_options_model.dart';
 
 class TestModels {

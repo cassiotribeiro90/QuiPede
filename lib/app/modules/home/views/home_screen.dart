@@ -13,7 +13,6 @@ import '../../perfil/views/pedidos_view.dart';
 import '../../perfil/views/perfil_view.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../carrinho/widgets/carrinho_bottom_bar.dart';
-import '../../auth/views/login_screen.dart';
 import '../bloc/home_cubit.dart';
 
 class HomeScreen extends StatelessWidget {
