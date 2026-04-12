@@ -3,16 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/carrinho_cubit.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../../shared/widgets/shimmer_loading.dart';
+import '../../../routes/app_routes.dart';
 
 class CarrinhoBottomBar extends StatelessWidget {
-  final VoidCallback onTap;
-  final String lojaNome;
+  final VoidCallback? onTap;
+  final String? lojaNome;
   final bool isLoading;
 
   const CarrinhoBottomBar({
     super.key,
-    required this.onTap,
-    required this.lojaNome,
+    this.onTap,
+    this.lojaNome,
     this.isLoading = false,
   });
 
@@ -20,17 +21,30 @@ class CarrinhoBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<CarrinhoCubit, CarrinhoState>(
       builder: (context, state) {
+        if (state is CarrinhoInitial) {
+          context.read<CarrinhoCubit>().carregarCarrinho();
+          return const SizedBox.shrink();
+        }
+
         int totalItens = 0;
         double subtotal = 0;
+        String? nomeLojaDisplay = lojaNome;
         
         if (state is CarrinhoLoaded) {
           totalItens = state.totalItens;
           subtotal = state.subtotal;
+          nomeLojaDisplay ??= state.lojaNome;
         }
         
         if (totalItens == 0) {
           return const SizedBox.shrink();
         }
+
+        final VoidCallback onTapAction = onTap ?? () {
+          Navigator.pushNamed(context, Routes.carrinho);
+        };
+        
+        final bool isBarLoading = isLoading || (state is CarrinhoLoaded && state.isUpdating);
         
         return Container(
           decoration: BoxDecoration(
@@ -45,7 +59,7 @@ class CarrinhoBottomBar extends StatelessWidget {
           ),
           child: SafeArea(
             child: InkWell(
-              onTap: isLoading ? null : onTap,
+              onTap: isBarLoading ? null : onTapAction,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
@@ -56,7 +70,7 @@ class CarrinhoBottomBar extends StatelessWidget {
                         color: context.primaryColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: isLoading 
+                      child: isBarLoading 
                         ? const SizedBox(
                             width: 20,
                             height: 20,
@@ -78,7 +92,7 @@ class CarrinhoBottomBar extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (isLoading)
+                          if (isBarLoading)
                             ShimmerLoading(
                               isLoading: true,
                               child: Container(
@@ -92,13 +106,13 @@ class CarrinhoBottomBar extends StatelessWidget {
                             )
                           else
                             Text(
-                              'Sacola - $lojaNome',
+                              'Sacola - ${nomeLojaDisplay ?? "Loja"}',
                               style: context.bodyMedium.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           const SizedBox(height: 4),
-                          if (isLoading)
+                          if (isBarLoading)
                             ShimmerLoading(
                               isLoading: true,
                               child: Container(
@@ -121,7 +135,7 @@ class CarrinhoBottomBar extends StatelessWidget {
                       ),
                     ),
                     
-                    if (isLoading)
+                    if (isBarLoading)
                       ShimmerLoading(
                         isLoading: true,
                         child: Container(

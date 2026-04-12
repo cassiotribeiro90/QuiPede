@@ -21,17 +21,17 @@ class LojaRepositoryImpl implements LojaRepository {
     double? longitude,
   }) async {
     final response = await _apiClient.get(
-      '/app/loja',
+      '/app/lojas', // Corrigido de '/app/loja' para '/app/lojas'
       queryParameters: {
         'page': page,
         'per_page': perPage,
-        if (categoria != null) 'categoria': categoria,
-        if (busca != null) 'search': busca,
-        if (ordenarPor != null) 'order_by': ordenarPor,
+        if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
+        if (busca != null && busca.isNotEmpty) 'search': busca,
+        if (ordenarPor != null && ordenarPor.isNotEmpty) 'order_by': ordenarPor,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       },
-      requiresAuth: false, // ✅ Permitindo acesso público
+      requiresAuth: false,
     );
 
     if (response.data['success'] == true) {
@@ -43,13 +43,13 @@ class LojaRepositoryImpl implements LojaRepository {
 
   @override
   Future<LojaResumo> getLojaById(int id) async {
-    final response = await _apiClient.get('/app/loja/$id', requiresAuth: false); // ✅ Público
+    final response = await _apiClient.get('/app/lojas/$id', requiresAuth: false);
     return LojaResumo.fromJson(response.data['data']);
   }
 
   @override
   Future<List<LojaResumo>> getLojasDestaque() async {
-    final response = await _apiClient.get('/app/loja/destaque', requiresAuth: false); // ✅ Público
+    final response = await _apiClient.get('/app/lojas/destaque', requiresAuth: false);
     if (response.data['success'] == true) {
       final List items = response.data['data'];
       return items.map((json) => LojaResumo.fromJson(json)).toList();

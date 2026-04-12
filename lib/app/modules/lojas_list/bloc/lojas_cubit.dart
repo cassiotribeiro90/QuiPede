@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../models/loja_resumo_model.dart';
 import 'lojas_state.dart';
@@ -12,7 +13,6 @@ class LojasCubit extends Cubit<LojasState> {
   List<LojaResumo> _todasLojas = [];
   PaginationModel? _lastPagination;
   
-  // ✅ Flag para evitar loop infinito e múltiplas chamadas simultâneas
   bool _isFetching = false;
 
   LojasCubit(this._repository) : super(LojasInitial());
@@ -21,11 +21,19 @@ class LojasCubit extends Cubit<LojasState> {
     int page = 1,
     int perPage = 10,
     bool isLoadMore = false,
+    String? categoria,
+    String? ordenacao,
+    String? search,
   }) async {
     if (_isFetching) return;
     _isFetching = true;
 
     try {
+      // Atualiza os filtros internos se forem passados
+      if (categoria != null) _categoriaAtual = categoria;
+      if (ordenacao != null) _ordenacaoAtual = ordenacao;
+      if (search != null) _searchQuery = search;
+
       if (!isLoadMore) {
         emit(LojasLoading());
         _todasLojas = [];
@@ -67,12 +75,12 @@ class LojasCubit extends Cubit<LojasState> {
   }
 
   void filterByCategoria(String? categoria) {
-    _categoriaAtual = _categoriaAtual == categoria ? null : categoria;
+    _categoriaAtual = categoria;
     fetchLojas(page: 1);
   }
 
   void sortLojasBy(String? ordenacao) {
-    _ordenacaoAtual = _ordenacaoAtual == ordenacao ? null : ordenacao;
+    _ordenacaoAtual = ordenacao;
     fetchLojas(page: 1);
   }
 

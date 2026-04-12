@@ -3,9 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
 import '../widgets/filter_bottom_sheet.dart';
+import '../widgets/loja_item.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
-import '../../../../shared/widgets/qui_card.dart';
+import '../../../core/theme/app_theme_extension.dart';
 import '../../../routes/app_routes.dart';
+import '../../../models/lojas_list_filter_option_model.dart';
+import '../../carrinho/widgets/carrinho_bottom_bar.dart';
+import '../../carrinho/bloc/carrinho_cubit.dart';
+import '../../../di/dependencies.dart';
 
 class LojasListScreen extends StatefulWidget {
   const LojasListScreen({super.key});
@@ -53,13 +58,21 @@ class _LojasListScreenState extends State<LojasListScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => FilterBottomSheet(
-        categorias: state.categorias.map((c) => CategoriaFilter(
-          label: c.label,
-          value: c.value,
-        )).toList(),
+        categorias: state.categorias,
         selectedCategoria: state.categoriaSelecionada,
-        onApply: (val) {
-          context.read<LojasCubit>().filterByCategoria(val);
+        selectedOrdenacao: state.ordenacaoAtual,
+        initialSearch: _searchController.text,
+        onApply: (search, categoria, ordenacao) {
+          _searchController.text = search ?? '';
+          context.read<LojasCubit>().applyFilters(
+            categoria: categoria,
+            ordenacao: ordenacao,
+            search: search,
+          );
+        },
+        onClear: () {
+          _searchController.clear();
+          context.read<LojasCubit>().clearAllFilters();
         },
       ),
     );
@@ -67,57 +80,123 @@ class _LojasListScreenState extends State<LojasListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<LojasCubit, LojasState>(
-      builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Lojas'),
-            actions: [
-              if (state is LojasLoaded)
-                IconButton(
-                  icon: Stack(
-                    children: [
-                      const Icon(Icons.filter_list),
-                      if (state.categoriaSelecionada != null)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-                            constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
-                          ),
-                        ),
-                    ],
-                  ),
-                  onPressed: () => _showFilter(state),
-                ),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar lojas...',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: (value) => context.read<LojasCubit>().searchLojas(value),
-                ),
-              ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: getIt<CarrinhoCubit>()),
+      ],
+      child: BlocBuilder<LojasCubit, LojasState>(
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: context.backgroundColor,
+            appBar: AppBar(
+              title: Text('Lojas', style: context.titleLarge),
+              elevation: 0,
+              backgroundColor: context.backgroundColor,
+              foregroundColor: context.textPrimary,
+            ),
+            body: Column(
+              children: [
+                _buildSearchTrigger(state),
+                Expanded(child: _buildBody(state)),
+              ],
+            ),
+            bottomNavigationBar: const CarrinhoBottomBar(),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchTrigger(LojasState state) {
+    String summary = 'Pesquisar lojas...';
+    bool hasFilters = false;
+
+    if (state is LojasLoaded) {
+      final List<String> parts = [];
+      if (state.searchQuery != null && state.searchQuery!.isNotEmpty) {
+        parts.add('"${state.searchQuery}"');
+      }
+      if (state.categoriaSelecionada != null) {
+        parts.add(_getCategoriaLabel(state.categoriaSelecionada!, state.categorias));
+      }
+      if (state.ordenacaoAtual != null) {
+        parts.add(_getOrdenacaoLabel(state.ordenacaoAtual!));
+      }
+
+      if (parts.isNotEmpty) {
+        summary = parts.join(' • ');
+        hasFilters = true;
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: GestureDetector(
+        onTap: () {
+          if (state is LojasLoaded) _showFilter(state);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: context.surfaceColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasFilters ? context.primaryColor : context.borderColor,
+              width: hasFilters ? 1.5 : 1.0,
             ),
           ),
-          body: _buildBody(state),
-        );
-      },
+          child: Row(
+            children: [
+              Icon(
+                Icons.search, 
+                color: hasFilters ? context.primaryColor : context.textHint,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  summary,
+                  style: context.bodyMedium.copyWith(
+                    color: hasFilters ? context.textPrimary : context.textHint,
+                    fontWeight: hasFilters ? FontWeight.w500 : FontWeight.normal,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (hasFilters)
+                GestureDetector(
+                  onTap: () {
+                    _searchController.clear();
+                    context.read<LojasCubit>().clearAllFilters();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Icon(Icons.close, size: 20, color: context.primaryColor),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+
+  String _getCategoriaLabel(String value, List<LojasListFilterOptionModel> categorias) {
+    try {
+      return categorias.firstWhere((c) => c.value == value).label;
+    } catch (_) {
+      return value;
+    }
+  }
+
+  String _getOrdenacaoLabel(String value) {
+    switch (value) {
+      case 'nota': return 'Melhor avaliados';
+      case 'tempo_entrega': return 'Menor tempo';
+      case 'taxa_entrega': return 'Menor taxa';
+      case 'pedido_minimo': return 'Menor pedido mínimo';
+      default: return value;
+    }
   }
 
   Widget _buildBody(LojasState state) {
@@ -131,80 +210,54 @@ class _LojasListScreenState extends State<LojasListScreen> {
 
       return RefreshIndicator(
         onRefresh: () => context.read<LojasCubit>().refreshList(),
-        child: ListView.builder(
+        child: ListView.separated(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
           itemCount: lojas.length + (state.isLoadingMore ? 1 : 0),
+          separatorBuilder: (_, __) => Divider(
+            height: 1, 
+            thickness: 0.5, 
+            indent: 16, 
+            endIndent: 16,
+            color: context.borderColor.withOpacity(0.5),
+          ),
           itemBuilder: (context, index) {
             if (index == lojas.length) {
               return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
             }
-            return _LojaCard(loja: lojas[index]);
+            final loja = lojas[index];
+            return LojaItem(
+              loja: loja,
+              onTap: () => Navigator.pushNamed(context, Routes.lojaHome, arguments: loja.id),
+            );
           },
         ),
       );
     }
+    
+    if (state is LojasError) {
+      return Center(child: Text(state.message));
+    }
+
     return const SizedBox();
   }
 
   Widget _buildLoadingState() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 5,
-      itemBuilder: (_, __) => const Padding(padding: EdgeInsets.only(bottom: 12), child: LoadingSkeleton(height: 100)),
-    );
-  }
-
-  Widget _buildEmptyState(bool isOverallEmpty) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.storefront_outlined, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          const Text('Nenhuma loja encontrada', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          Text(isOverallEmpty ? 'Volte mais tarde!' : 'Tente outros filtros'),
-        ],
-      ),
-    );
-  }
-}
-
-class _LojaCard extends StatelessWidget {
-  final dynamic loja;
-  const _LojaCard({required this.loja});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: QuiCard(
-        onTap: () => Navigator.pushNamed(context, Routes.lojaHome, arguments: loja.id),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: 8,
+      itemBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            _buildLogo(),
-            const SizedBox(width: 16),
-            Expanded(
+            LoadingSkeleton(width: 52, height: 52, borderRadius: 8),
+            const SizedBox(width: 12),
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(loja.nome, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text('${loja.categoria} • ${loja.cidade}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, size: 14, color: Colors.amber),
-                      Text(' ${loja.notaMedia} ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      Expanded(
-                        child: Text(
-                          '• ${loja.tempoEntregaMin}-${loja.tempoEntregaMax} min • ${loja.taxaEntrega == 0 ? "Grátis" : "R\$ ${loja.taxaEntrega.toStringAsFixed(2)}"}',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                  LoadingSkeleton(width: 150, height: 16),
+                  SizedBox(height: 8),
+                  LoadingSkeleton(width: 100, height: 12),
                 ],
               ),
             ),
@@ -214,15 +267,25 @@ class _LojaCard extends StatelessWidget {
     );
   }
 
-  Widget _buildLogo() {
-    return Container(
-      width: 60, height: 60,
-      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: (loja.logo != null) 
-          ? Image.network(loja.logo!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.store))
-          : const Center(child: Icon(Icons.store, color: Colors.grey)),
+  Widget _buildEmptyState(bool isOverallEmpty) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.storefront_outlined, size: 80, color: context.textHint.withOpacity(0.5)),
+          const SizedBox(height: 16),
+          Text('Nenhuma loja encontrada', style: context.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            isOverallEmpty ? 'Volte mais tarde!' : 'Tente outros filtros', 
+            style: context.bodyMedium.copyWith(color: context.textSecondary),
+          ),
+          if (!isOverallEmpty)
+            TextButton(
+              onPressed: () => context.read<LojasCubit>().clearAllFilters(),
+              child: const Text('Limpar filtros'),
+            ),
+        ],
       ),
     );
   }
