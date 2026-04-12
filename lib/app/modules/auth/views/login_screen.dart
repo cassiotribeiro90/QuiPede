@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../routes/app_routes.dart';
+import '../../carrinho/bloc/carrinho_cubit.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,9 +38,27 @@ class _LoginScreenState extends State<LoginScreen> {
     context.read<AuthCubit>().login(email, password);
   }
 
+  Future<void> _processarAcaoPendente(Map<String, dynamic> acao) async {
+    if (acao['tipo'] == 'adicionar_ao_carrinho') {
+      final dados = acao['dados'] as Map<String, dynamic>;
+      try {
+        await context.read<CarrinhoCubit>().adicionarItem(
+          produtoId: dados['produto_id'],
+          quantidade: dados['quantidade'],
+          observacao: dados['observacao'],
+          applyDebounce: false,
+        );
+        print('✅ Ação pendente executada: Produto ${dados['produto_id']} adicionado');
+      } catch (e) {
+        print('❌ Erro ao executar ação pendente: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     return Scaffold(
       appBar: AppBar(
@@ -52,13 +71,27 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
       ),
       body: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is AuthAuthenticated) {
             print('✅ Login bem-sucedido');
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, Routes.home);
+            
+            // ✅ Processar ação pendente se existir
+            final acaoPendente = args?['acaoPendente'];
+            if (acaoPendente != null) {
+              await _processarAcaoPendente(acaoPendente);
+            }
+
+            if (mounted) {
+              final redirectTo = args?['redirectTo'] as String?;
+              final params = args?['params'];
+
+              if (redirectTo != null) {
+                Navigator.pushReplacementNamed(context, redirectTo, arguments: params);
+              } else if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacementNamed(context, Routes.home);
+              }
             }
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(

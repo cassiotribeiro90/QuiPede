@@ -10,56 +10,75 @@ class CarrinhoService {
 
   CarrinhoService(this._apiClient);
 
-  // ✅ ÚNICO método para adicionar/atualizar/remover
   Future<CarrinhoResult> atualizarItem({
-    int? itemId,      // Para atualizar/remover item existente
-    int? produtoId,   // Para adicionar novo item
+    int? itemId,
+    int? produtoId,
     int quantidade = 1,
     List<int> opcoes = const [],
     String? observacao,
   }) async {
     try {
-      final Map<String, dynamic> data = {'quantidade': quantidade};
+      final Map<String, dynamic> data = {
+        'quantidade': quantidade,
+        'opcoes': opcoes,
+      };
       
       if (itemId != null) data['item_id'] = itemId;
       if (produtoId != null) data['produto_id'] = produtoId;
-      if (opcoes.isNotEmpty) data['opcoes'] = opcoes;
-      if (observacao != null && observacao.isNotEmpty) data['observacao'] = observacao;
+      if (observacao != null && observacao.isNotEmpty) {
+        data['observacao'] = observacao;
+      }
 
       if (kDebugMode) {
-        print('📤 [CarrinhoService] Enviando: $data');
+        print('📤 [CarrinhoService] PUT app/carrinho/atualizar -> $data');
       }
 
       final response = await _apiClient.put('app/carrinho/atualizar', data: data);
       
+      final int? statusCode = response.statusCode;
+      final responseData = response.data;
+
       if (kDebugMode) {
-        print('✅ [CarrinhoService] Sucesso: ${response.statusCode}');
+        print('📥 [CarrinhoService] Resposta: $statusCode - $responseData');
       }
 
-      if (response.statusCode == 200) {
-        final resData = CarrinhoResponse.fromJson(response.data['data']);
+      // ✅ 1. Trata Conflito de Loja (Prioridade)
+      if (statusCode == 409 || (responseData is Map && responseData['code'] == 409)) {
+        if (kDebugMode) print('⚠️ [CarrinhoService] Conflito detectado (409)');
+        return CarrinhoResult.conflito(CarrinhoConflito.fromJson(responseData));
+      }
+
+      // ✅ 2. Trata Sucesso
+      if (statusCode == 200 && responseData is Map && responseData['code'] == 200) {
+        final resData = CarrinhoResponse.fromJson(responseData['data']);
         return CarrinhoResult.success(resData);
-      }else if(response.statusCode == 409){
-        if (kDebugMode) print('⚠️ [CarrinhoService] 409 detectado - Conflito de loja');
-        final json = response.data;
-        if (json != null) {
-          return CarrinhoResult.conflito(CarrinhoConflito.fromJson(json));
-        }
+      } 
+
+      // ✅ 3. Erro Genérico na resposta (mas status 200)
+      if (responseData is Map && responseData['success'] == false) {
+        return CarrinhoResult.error(responseData['message'] ?? 'Erro na operação');
       }
 
-      final error = response.statusCode.toString();
-      return CarrinhoResult.error(error);
+      return CarrinhoResult.error('Erro inesperado: $statusCode');
 
     } on DioException catch (e) {
-      if (kDebugMode) print('❌ [CarrinhoService] Erro Dio: $e');
-      return CarrinhoResult.error(e.message ?? 'Erro na requisição', code: e.response?.statusCode);
-    } catch (e) {
-      if (kDebugMode) print('❌ [CarrinhoService] Erro inesperado: $e');
-      return CarrinhoResult.error(e.toString());
+      if (kDebugMode) print('❌ [CarrinhoService] DioException: ${e.type} - ${e.response?.statusCode}');
+      
+      // ✅ Trata 409 vindo como exceção
+      if (e.response?.statusCode == 409 || e.response?.data?['code'] == 409) {
+        return CarrinhoResult.conflito(CarrinhoConflito.fromJson(e.response?.data));
+      }
+
+      return CarrinhoResult.error(
+        e.response?.data?['message'] ?? e.message ?? 'Erro de conexão',
+        code: e.response?.statusCode,
+      );
+    } catch (e, stack) {
+      if (kDebugMode) print('❌ [CarrinhoService] Erro Fatal: $e\n$stack');
+      return CarrinhoResult.error('Ocorreu um erro interno');
     }
   }
 
-  /// Verifica se o carrinho atual é de uma loja específica
   Future<VerificacaoLojaResponse> verificarLoja(int lojaId) async {
     try {
       final response = await _apiClient.get('app/carrinho/verificar-loja', 
@@ -67,7 +86,6 @@ class CarrinhoService {
       );
       return VerificacaoLojaResponse.fromJson(response.data['data']);
     } catch (e) {
-      if (kDebugMode) print('❌ Erro ao verificar loja: $e');
       rethrow;
     }
   }

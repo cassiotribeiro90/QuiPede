@@ -156,7 +156,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     bool applyDebounce = true,
   }) async {
     if (_authCubit.state is! AuthAuthenticated) throw Exception('Usuário não autenticado');
-    if (_isAdding || _isUpdating) return;
+    if (_isAdding) return;
 
     _isAdding = true;
     emit(CarrinhoLoading());
@@ -213,19 +213,26 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
   }
 
   Future<void> atualizarQuantidade(int itemId, int quantidade) async {
-    if (_isUpdating || _isAdding) return;
+    // ✅ Permite atualizar se não houver adição em curso
+    if (_isAdding) return;
 
+    // ✅ Atualização local (Otimista)
     if (quantidade == 0) {
       _itensMap.remove(itemId);
     } else if (_itensMap.containsKey(itemId)) {
-      _itensMap[itemId] = _itensMap[itemId]!.copyWith(quantidade: quantidade);
+      final item = _itensMap[itemId]!;
+      _itensMap[itemId] = item.copyWith(
+        quantidade: quantidade,
+        precoTotal: item.precoUnitario * quantidade
+      );
     }
     
     _emitirEstadoAtualizado(isUpdating: true, updatingItemId: itemId);
+    
+    // ✅ Debounce de 1500ms conforme solicitado
     _pendingUpdates[itemId] = quantidade;
-
     _updateDebounce?.cancel();
-    _updateDebounce = Timer(const Duration(milliseconds: 500), () => _executarAtualizacoes());
+    _updateDebounce = Timer(const Duration(milliseconds: 1500), () => _executarAtualizacoes());
   }
 
   Future<void> _executarAtualizacoes() async {
@@ -265,8 +272,18 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
   }
 
   Future<void> limparCarrinho() async {
-    await _service.limparCarrinho();
-    _limparEstado();
+    emit(CarrinhoLoading());
+    try {
+      await _service.limparCarrinho();
+      _limparEstado();
+    } catch (e) {
+      emit(CarrinhoError('Erro ao limpar carrinho'));
+      await carregarCarrinho();
+    }
+  }
+
+  Future<void> removerItem(int itemId) async {
+    await atualizarQuantidade(itemId, 0);
   }
 
   Future<void> limparEAdicionar({
@@ -302,30 +319,6 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     } catch (e) {
       _isAdding = false;
       emit(const CarrinhoError('Erro ao processar requisição'));
-    }
-  }
-
-  /// Retorna o ID da loja atual do carrinho, ou null se vazio
-  int? getLojaIdAtual() {
-    final currentState = state;
-    if (currentState is CarrinhoLoaded && currentState.itens.isNotEmpty) {
-      return currentState.itens.first.lojaId;
-    }
-    return null;
-  }
-
-  /// Verifica se o carrinho tem itens de outra loja
-  bool temConflitoComLoja(int novaLojaId) {
-    final lojaAtual = getLojaIdAtual();
-    return lojaAtual != null && lojaAtual != novaLojaId;
-  }
-
-  Future<bool> verificarConflitoLoja(int lojaId) async {
-    try {
-      final response = await _service.verificarLoja(lojaId);
-      return response.carrinhoVazio || response.mesmaLoja;
-    } catch (e) {
-      return true;
     }
   }
 

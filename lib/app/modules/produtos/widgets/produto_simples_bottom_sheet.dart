@@ -1,19 +1,24 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../di/dependencies.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
-import '../../auth/views/login_screen.dart';
+import '../../../routes/app_routes.dart';
 
 class ProdutoSimplesBottomSheet extends StatefulWidget {
   final dynamic produto;
   final int lojaId;
+  final int? initialQuantidade;
+  final String? initialObservacao;
 
   const ProdutoSimplesBottomSheet({
     super.key,
     required this.produto,
     required this.lojaId,
+    this.initialQuantidade,
+    this.initialObservacao,
   });
 
   @override
@@ -21,9 +26,16 @@ class ProdutoSimplesBottomSheet extends StatefulWidget {
 }
 
 class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
-  int _quantidade = 1;
+  late int _quantidade;
   bool _isAdding = false;
-  final TextEditingController _observacaoController = TextEditingController();
+  late final TextEditingController _observacaoController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantidade = widget.initialQuantidade ?? 1;
+    _observacaoController = TextEditingController(text: widget.initialObservacao);
+  }
 
   @override
   void dispose() {
@@ -35,12 +47,18 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
   Widget build(BuildContext context) {
     return BlocListener<CarrinhoCubit, CarrinhoState>(
       listener: (context, state) {
+        if (kDebugMode) {
+          print('📥 [ProdutoModal] Novo estado recebido: ${state.runtimeType}');
+        }
+
         if (state is CarrinhoConflitoLoja) {
+          if (kDebugMode) print('⚠️ [ProdutoModal] Conflito de loja detectado');
           setState(() => _isAdding = false);
           _mostrarDialogoConflito(state);
         } else if (state is CarrinhoLoaded && _isAdding) {
+          if (kDebugMode) print('✅ [ProdutoModal] Sucesso ao adicionar ao carrinho');
           setState(() => _isAdding = false);
-          Navigator.pop(context);
+          Navigator.pop(context); // Sucesso: Fecha o modal
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${widget.produto.nome} adicionado ao carrinho!'),
@@ -49,9 +67,19 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
             ),
           );
         } else if (state is CarrinhoError && _isAdding) {
+          if (kDebugMode) print('❌ [ProdutoModal] Erro ao adicionar: ${state.message}');
+          // ✅ Se falhar (inclusive erro de conexão), resetamos o estado para o botão voltar a funcionar
           setState(() => _isAdding = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message), 
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'FECHAR',
+                textColor: Colors.white,
+                onPressed: () => Navigator.pop(context), // Permite fechar pelo SnackBar
+              ),
+            ),
           );
         }
       },
@@ -66,7 +94,6 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Handle
               Center(
                 child: Container(
                   margin: const EdgeInsets.only(top: 12, bottom: 8),
@@ -78,14 +105,12 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
                   ),
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildProdutoHeader(),
-                    
                     if (widget.produto.descricao != null) ...[
                       const SizedBox(height: 16),
                       Text(
@@ -93,9 +118,7 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],
-
                     const SizedBox(height: 20),
-
                     TextField(
                       controller: _observacaoController,
                       enabled: !_isAdding,
@@ -107,18 +130,13 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
                       ),
                       maxLines: 2,
                     ),
-
                     const SizedBox(height: 20),
-
                     _buildQuantidadeSelector(),
-
                     const SizedBox(height: 24),
-
                     _buildBotaoAdicionar(),
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
             ],
           ),
@@ -228,12 +246,12 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         ),
         child: _isAdding
-            ? Row(
+            ? const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
-                  const SizedBox(width: 12),
-                  const Text('Adicionando...', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
+                  SizedBox(width: 12),
+                  Text('Adicionando...', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               )
             : Text('Adicionar • R\$ ${precoTotal.toStringAsFixed(2)}',
@@ -245,9 +263,19 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
   Future<void> _handleAdicionar() async {
     final authCubit = getIt<AuthCubit>();
     if (authCubit.state is! AuthAuthenticated) {
-      Navigator.pop(context);
-      _mostrarSnackBarLogin();
+      if (kDebugMode) print('ℹ️ [ProdutoModal] Usuário não autenticado, solicitando login');
+      Navigator.pop(context, {
+        'requestLogin': true,
+        'produto': widget.produto,
+        'lojaId': widget.lojaId,
+        'quantidade': _quantidade,
+        'observacao': _observacaoController.text.trim(),
+      });
       return;
+    }
+
+    if (kDebugMode) {
+      print('📤 [ProdutoModal] Adicionando item: produtoId=${widget.produto.id}, quantidade=$_quantidade, observacao=${_observacaoController.text.trim()}');
     }
 
     setState(() => _isAdding = true);
@@ -276,9 +304,9 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
           ),
           ElevatedButton(
             onPressed: () async {
+              if (kDebugMode) print('🧹 [ProdutoModal] Limpando carrinho e adicionando novo item');
               Navigator.pop(dialogContext);
               setState(() => _isAdding = true);
-              
               await context.read<CarrinhoCubit>().limparEAdicionar(
                 produtoId: widget.produto.id,
                 quantidade: _quantidade,
@@ -292,49 +320,5 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
         ],
       ),
     );
-  }
-
-  void _mostrarSnackBarLogin() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Faça login para adicionar itens'),
-        backgroundColor: Colors.orange.shade700,
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'LOGIN',
-          textColor: Colors.white,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginScreen()),
-            ).then((_) {
-              final authCubit = getIt<AuthCubit>();
-              if (authCubit.state is AuthAuthenticated) {
-                _abrirBottomSheetNovamente();
-              }
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  void _abrirBottomSheetNovamente() {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => BlocProvider.value(
-            value: getIt<CarrinhoCubit>(),
-            child: ProdutoSimplesBottomSheet(
-              produto: widget.produto,
-              lojaId: widget.lojaId,
-            ),
-          ),
-        );
-      }
-    });
   }
 }
