@@ -23,47 +23,63 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeAndNavigate() async {
-    // 1. Verificar autenticação
+    // 1. Verificar autenticação ativamente com o backend
     final authCubit = context.read<AuthCubit>();
     await authCubit.checkAuthStatus();
     
     // 2. Solicitar permissão de localização e obter posição
     final localizacaoCubit = context.read<LocalizacaoCubit>();
-    Position? posicao;
     
-    final status = await Permission.locationWhenInUse.request();
-    if (status.isGranted) {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        try {
-          posicao = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              timeLimit: Duration(seconds: 10),
-            ),
-          );
-          localizacaoCubit.atualizarPosicao(posicao);
-        } catch (_) {}
+    // Tenta carregar do endereço padrão primeiro (mais rápido)
+    await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
+    
+    // Se não tiver endereço padrão, tenta o GPS
+    if (localizacaoCubit.state is! LocalizacaoCarregada) {
+      final status = await Permission.locationWhenInUse.request();
+      if (status.isGranted) {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          try {
+            final posicao = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+                timeLimit: Duration(seconds: 5),
+              ),
+            );
+            localizacaoCubit.atualizarPosicao(posicao);
+          } catch (e) {
+            print('📍 [SplashScreen] Erro ao obter GPS: $e');
+          }
+        }
       }
     }
-    
-    if (posicao == null) {
-      await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
-    }
 
-    // 3. Determinar rota inicial e navegar
+    // Aguarda um pequeno delay para garantir que a Splash seja visível por um tempo mínimo
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // 3. Determinar rota inicial baseada na árvore de decisão
     if (mounted) {
-      final isAuthenticated = authCubit.state is AuthAuthenticated;
+      final authState = authCubit.state;
+      final isAuthenticated = authState is AuthAuthenticated;
       final hasLocation = localizacaoCubit.state is LocalizacaoCarregada;
 
+      print('🚀 [Navigation] Auth: $isAuthenticated, Location: $hasLocation');
+
       String initialRoute;
+      
       if (!isAuthenticated) {
+        // Usuário não autenticado -> Login
         initialRoute = Routes.login;
-      } else if (!hasLocation) {
-        // Se desejar ir para endereços quando não tiver localização, use Routes.enderecos (verifique se existe)
-        initialRoute = Routes.home; 
       } else {
-        initialRoute = Routes.home;
+        // Usuário autenticado
+        if (!hasLocation) {
+          // Usuário autenticado mas sem localização -> Home (que deve lidar com a falta de endereço ou abrir modal)
+          // Se houver uma tela específica de "Cadastrar Endereço", redirecionar para ela.
+          initialRoute = Routes.home; 
+        } else {
+          // Usuário autenticado e com localização -> Lista de Lojas (Home)
+          initialRoute = Routes.home;
+        }
       }
 
       Navigator.of(context).pushNamedAndRemoveUntil(initialRoute, (route) => false);
@@ -72,25 +88,28 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFFF57C00), // Laranja principal
+    return Scaffold(
+      backgroundColor: const Color(0xFFF57C00),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.storefront, size: 80, color: Colors.white),
-            SizedBox(height: 24),
-            Text(
+            const Icon(Icons.storefront, size: 100, color: Colors.white),
+            const SizedBox(height: 24),
+            const Text(
               'QuiPede',
               style: TextStyle(
-                fontSize: 32, 
+                fontSize: 40, 
                 fontWeight: FontWeight.bold, 
                 color: Colors.white,
-                fontFamily: 'Poppins',
+                letterSpacing: 1.2,
               ),
             ),
-            SizedBox(height: 32),
-            CircularProgressIndicator(color: Colors.white),
+            const SizedBox(height: 48),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              strokeWidth: 3,
+            ),
           ],
         ),
       ),

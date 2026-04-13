@@ -21,6 +21,10 @@ dependencies:
   json_annotation: ^4.9.0
   permission_handler: ^11.3.1
   geolocator: ^13.0.1
+  # Login Social
+  google_sign_in: ^6.2.1
+  flutter_facebook_auth: ^7.0.1
+  sign_in_with_apple: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -44,3 +48,4 @@ flutter:
   uses-material-design: true
   assets:
     - lib/app/assets/data/
+    - lib/app/assets/icon/

@@ -1,15 +1,23 @@
-
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../app_config.dart';
 import '../../../../shared/api/api_client.dart';
+import '../models/auth_response_model.dart';
+import '../models/usuario_model.dart';
+import '../services/social_auth_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final ApiClient _apiClient;
+  final SocialAuthService _socialAuthService;
   bool _isProcessing = false;
+  UsuarioModel? _usuario;
 
-  AuthCubit(this._apiClient) : super(AuthInitial());
+  AuthCubit(this._apiClient) 
+      : _socialAuthService = SocialAuthService(_apiClient),
+        super(AuthInitial());
+
+  UsuarioModel? get usuario => _usuario;
 
   Future<void> checkAuthStatus() async {
     if (_isProcessing) return;
@@ -26,27 +34,50 @@ class AuthCubit extends Cubit<AuthState> {
         return;
       }
       
+      // 1. Validar expiração local
       if (_apiClient.tokenService.isTokenExpired()) {
+        print('🔐 [AuthCubit] Token expirado localmente, tentando refresh...');
         final refreshSuccess = await _apiClient.tokenService.refreshToken(_apiClient.dio);
         
-        if (refreshSuccess) {
-          final newToken = _apiClient.tokenService.getAccessToken();
-          if (newToken != null) {
-            emit(AuthAuthenticated(accessToken: newToken));
-          } else {
-            // Caso bizarro onde refresh deu true mas token sumiu
-            await _apiClient.tokenService.clearTokens();
-            emit(AuthUnauthenticated());
-          }
+        if (!refreshSuccess) {
+          print('🔐 [AuthCubit] Falha no refresh token.');
+          await _apiClient.tokenService.clearTokens();
+          emit(AuthUnauthenticated());
+          return;
+        }
+      }
+
+      // 2. Validar token com o backend e obter dados do usuário
+      print('🔐 [AuthCubit] Validando token com o backend (/app/auth/me)...');
+      try {
+        final response = await _apiClient.get('app/auth/me', requiresAuth: true);
+        
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          final userData = response.data['data'];
+          _usuario = UsuarioModel.fromJson(userData);
+          final currentToken = _apiClient.tokenService.getAccessToken()!;
+          emit(AuthAuthenticated(accessToken: currentToken));
+          print('🔐 [AuthCubit] Usuário autenticado: ${_usuario?.nome}');
         } else {
+          print('🔐 [AuthCubit] Backend rejeitou o token.');
           await _apiClient.tokenService.clearTokens();
           emit(AuthUnauthenticated());
         }
-      } else {
-        emit(AuthAuthenticated(accessToken: token));
+      } catch (e) {
+        print('🔐 [AuthCubit] Erro ao validar token no backend: $e');
+        // Se for erro de rede, podemos manter o estado ou tentar novamente. 
+        // Se for 401, deslogar.
+        if (e is DioException && e.response?.statusCode == 401) {
+          await _apiClient.tokenService.clearTokens();
+          emit(AuthUnauthenticated());
+        } else {
+          // Erro de conexão, assume autenticado se tiver token (modo offline básico ou retry posterior)
+          final currentToken = _apiClient.tokenService.getAccessToken()!;
+          emit(AuthAuthenticated(accessToken: currentToken));
+        }
       }
     } catch (e) {
-      print('🔐 [AuthCubit] Erro no checkAuthStatus: $e');
+      print('🔐 [AuthCubit] Erro crítico no checkAuthStatus: $e');
       emit(AuthUnauthenticated());
     } finally {
       _isProcessing = false;
@@ -68,12 +99,9 @@ class AuthCubit extends Cubit<AuthState> {
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
-        final String accessToken = data['access_token']?.toString() ?? '';
-        final String? refreshToken = data['refresh_token']?.toString();
-        final int expiresIn = data['expires_in'] ?? 7200;
-        
-        await _apiClient.tokenService.saveTokens(accessToken, refreshToken, expiresIn: expiresIn);
-        emit(AuthAuthenticated(accessToken: accessToken));
+        final authResponse = AuthResponse.fromJson(data);
+        _usuario = authResponse.user;
+        await _saveAuthResponse(authResponse);
       } else {
         emit(AuthError(response.data['message'] ?? 'Erro no login'));
       }
@@ -87,6 +115,48 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> socialLogin(String provider) async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+
+    emit(AuthLoading());
+    try {
+      AuthResponse response;
+      switch (provider) {
+        case 'google':
+          response = await _socialAuthService.signInWithGoogle();
+          break;
+        case 'facebook':
+          response = await _socialAuthService.signInWithFacebook();
+          break;
+        case 'apple':
+          response = await _socialAuthService.signInWithApple();
+          break;
+        default:
+          throw Exception('Provedor não suportado');
+      }
+
+      _usuario = response.user;
+      await _saveAuthResponse(response);
+    } on SocialAuthCanceledException {
+      emit(AuthUnauthenticated()); 
+    } catch (e) {
+      print('🔐 [AuthCubit] Erro no socialLogin ($provider): $e');
+      emit(AuthError(e.toString().replaceAll('Exception: ', '')));
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
+  Future<void> _saveAuthResponse(AuthResponse response) async {
+    await _apiClient.tokenService.saveTokens(
+      response.accessToken, 
+      response.refreshToken, 
+      expiresIn: response.expiresIn
+    );
+    emit(AuthAuthenticated(accessToken: response.accessToken));
+  }
+
   Future<void> logout() async {
     if (_isProcessing) return;
     _isProcessing = true;
@@ -97,6 +167,7 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       print('📱 [LOGOUT] Erro no request de logout (ignorado): $e');
     } finally {
+      _usuario = null;
       await _apiClient.tokenService.clearTokens();
       emit(AuthUnauthenticated());
       _isProcessing = false;

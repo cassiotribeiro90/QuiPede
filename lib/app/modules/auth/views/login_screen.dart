@@ -4,6 +4,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../routes/app_routes.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
+import 'widgets/social_login_buttons.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -104,8 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
         },
         child: SingleChildScrollView(
           child: Container(
-            height: MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top,
-            padding: const EdgeInsets.symmetric(horizontal: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,11 +113,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Center(
                   child: Icon(
                     Icons.storefront_rounded,
-                    size: 100,
+                    size: 80,
                     color: Color(0xFF3949AB),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 Text(
                   'Bem-vindo de volta!',
                   style: theme.textTheme.headlineMedium?.copyWith(
@@ -129,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Acesse sua conta para continuar',
                   style: TextStyle(color: Colors.grey, fontSize: 16),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
                 TextField(
                   controller: _emailController,
@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Esqueceu a senha?'),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
 
                 BlocBuilder<AuthCubit, AuthState>(
                   builder: (context, state) {
@@ -206,7 +206,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
+                
+                const SocialLoginButtons(),
+                
+                const SizedBox(height: 24),
 
                 Center(
                   child: Row(
