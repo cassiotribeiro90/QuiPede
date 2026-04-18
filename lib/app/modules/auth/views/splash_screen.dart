@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../bloc/auth_cubit.dart';
-import '../bloc/auth_state.dart';
 import '../../../routes/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -23,66 +20,35 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeAndNavigate() async {
-    // 1. Verificar autenticação ativamente com o backend
+    print('🎬 [SplashScreen] Iniciando inicialização...');
+    
+    // 1. Verificar autenticação silenciosamente
     final authCubit = context.read<AuthCubit>();
     await authCubit.checkAuthStatus();
     
-    // 2. Solicitar permissão de localização e obter posição
+    // 2. Verificar se já existe um endereço definido (salvo localmente)
     final localizacaoCubit = context.read<LocalizacaoCubit>();
-    
-    // Tenta carregar do endereço padrão primeiro (mais rápido)
     await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
     
-    // Se não tiver endereço padrão, tenta o GPS
-    if (localizacaoCubit.state is! LocalizacaoCarregada) {
-      final status = await Permission.locationWhenInUse.request();
-      if (status.isGranted) {
-        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (serviceEnabled) {
-          try {
-            final posicao = await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(
-                accuracy: LocationAccuracy.high,
-                timeLimit: Duration(seconds: 5),
-              ),
-            );
-            localizacaoCubit.atualizarPosicao(posicao);
-          } catch (e) {
-            print('📍 [SplashScreen] Erro ao obter GPS: $e');
-          }
-        }
-      }
-    }
+    // Tempo mínimo para a splash ser visível e passar sensação de carregamento
+    await Future.delayed(const Duration(seconds: 1));
 
-    // Aguarda um pequeno delay para garantir que a Splash seja visível por um tempo mínimo
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // 3. Determinar rota inicial baseada na árvore de decisão
     if (mounted) {
-      final authState = authCubit.state;
-      final isAuthenticated = authState is AuthAuthenticated;
       final hasLocation = localizacaoCubit.state is LocalizacaoCarregada;
-
-      print('🚀 [Navigation] Auth: $isAuthenticated, Location: $hasLocation');
-
-      String initialRoute;
       
-      if (!isAuthenticated) {
-        // Usuário não autenticado -> Login
-        initialRoute = Routes.login;
+      print('🚀 [Navigation] Endereço definido: $hasLocation');
+
+      String targetRoute;
+      
+      // Regra: Se não tem localização definida, SEMPRE vai para Onboarding
+      if (!hasLocation) {
+        targetRoute = Routes.onboarding;
       } else {
-        // Usuário autenticado
-        if (!hasLocation) {
-          // Usuário autenticado mas sem localização -> Home (que deve lidar com a falta de endereço ou abrir modal)
-          // Se houver uma tela específica de "Cadastrar Endereço", redirecionar para ela.
-          initialRoute = Routes.home; 
-        } else {
-          // Usuário autenticado e com localização -> Lista de Lojas (Home)
-          initialRoute = Routes.home;
-        }
+        // Se tem localização, vai para a Home (Lojas)
+        targetRoute = Routes.home;
       }
 
-      Navigator.of(context).pushNamedAndRemoveUntil(initialRoute, (route) => false);
+      Navigator.of(context).pushNamedAndRemoveUntil(targetRoute, (route) => false);
     }
   }
 

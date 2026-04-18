@@ -2,6 +2,11 @@ import 'package:flutter/foundation.dart';
 
 class AppConfig {
   static const String LOGIN = 'app/auth/login';
+  static const String VALIDAR_ETAPA1 = 'app/cadastro/validar-etapa1';
+  static const String CADASTRAR = 'app/cadastro/cadastrar';
+  static const String BUSCAR_CEP = 'app/cadastro/buscar-cep';
+  static const String GEOCODIFICAR = 'app/localizacao/geocodificar';
+  static const String BUSCAR_ENDERECO = 'app/localizacao/buscar-endereco';
   static const String REFRESH_TOKEN = 'app/auth/refresh-token';
 
   static String get baseUrl {

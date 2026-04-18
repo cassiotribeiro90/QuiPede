@@ -115,6 +115,69 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<bool> validarEtapa1(Map<String, dynamic> dados) async {
+    if (_isProcessing) return false;
+    _isProcessing = true;
+
+    emit(AuthLoading());
+
+    try {
+      final response = await _apiClient.post(
+        AppConfig.VALIDAR_ETAPA1,
+        data: dados,
+        requiresAuth: false,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        emit(AuthInitial()); // Reset loading state
+        return true;
+      } else {
+        emit(AuthError(response.data['message'] ?? 'Erro na validação'));
+        return false;
+      }
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Erro de conexão';
+      emit(AuthError(message));
+      return false;
+    } catch (e) {
+      emit(const AuthError('Erro inesperado na validação'));
+      return false;
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
+  Future<void> cadastrar(Map<String, dynamic> dados) async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+
+    emit(AuthLoading());
+
+    try {
+      final response = await _apiClient.post(
+        AppConfig.CADASTRAR,
+        data: dados,
+        requiresAuth: false,
+      );
+
+      if (response.statusCode == 201 && response.data['success'] == true) {
+        final data = response.data['data'];
+        final authResponse = AuthResponse.fromJson(data);
+        _usuario = authResponse.user;
+        await _saveAuthResponse(authResponse);
+      } else {
+        emit(AuthError(response.data['message'] ?? 'Erro no cadastro'));
+      }
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Erro de conexão';
+      emit(AuthError(message));
+    } catch (e) {
+      emit(const AuthError('Erro inesperado no cadastro'));
+    } finally {
+      _isProcessing = false;
+    }
+  }
+
   Future<void> socialLogin(String provider) async {
     if (_isProcessing) return;
     _isProcessing = true;

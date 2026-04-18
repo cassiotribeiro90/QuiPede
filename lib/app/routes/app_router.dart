@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../di/dependencies.dart';
+import '../modules/auth/models/cadastro_models.dart';
+import '../modules/auth/views/cadastro_endereco_page.dart';
+import '../modules/auth/views/cadastro_info_page.dart';
 import '../modules/auth/views/login_screen.dart';
 import '../modules/auth/views/splash_screen.dart';
 import '../modules/carrinho/views/carrinho_page.dart';
 import '../modules/home/bloc/home_cubit.dart';
 import '../modules/home/views/home_screen.dart';
+import '../modules/home/views/onboarding_page.dart';
 import '../modules/loja_home/views/loja_detalhe_page.dart';
 import '../modules/lojas_list/bloc/lojas_cubit.dart';
 import '../modules/perfil/views/pedidos_view.dart';
@@ -18,8 +22,21 @@ class AppRouter {
       case Routes.splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       
+      case Routes.onboarding:
+        return MaterialPageRoute(builder: (_) => const OnboardingPage());
+      
       case Routes.login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
+
+      case Routes.cadastroInfo:
+        return MaterialPageRoute(builder: (_) => const CadastroInfoPage());
+
+      case Routes.cadastroEndereco:
+        final info = settings.arguments as CadastroInfoModel;
+        return MaterialPageRoute(
+          builder: (_) => const CadastroEnderecoPage(),
+          settings: settings,
+        );
 
       case Routes.home:
         return MaterialPageRoute(

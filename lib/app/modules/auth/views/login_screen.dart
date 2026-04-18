@@ -219,11 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text('Não tem uma conta?'),
                       TextButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Cadastro em desenvolvimento'),
-                            ),
-                          );
+                          Navigator.pushNamed(context, Routes.cadastroInfo);
                         },
                         child: const Text(
                           'Cadastre-se',

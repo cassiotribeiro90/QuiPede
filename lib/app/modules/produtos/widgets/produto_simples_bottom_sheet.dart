@@ -5,7 +5,6 @@ import '../../../di/dependencies.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
-import '../../../routes/app_routes.dart';
 
 class ProdutoSimplesBottomSheet extends StatefulWidget {
   final dynamic produto;
