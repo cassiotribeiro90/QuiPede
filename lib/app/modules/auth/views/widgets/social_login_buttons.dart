@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/auth_cubit.dart';
@@ -42,9 +43,9 @@ class SocialLoginButtons extends StatelessWidget {
           backgroundColor: const Color(0xFF1877F2),
           foregroundColor: Colors.white,
         ),
-        if (Platform.isIOS) ...[
+        if (!kIsWeb && Platform.isIOS) ...[
           const SizedBox(height: 12),
-          // Apple (apenas iOS)
+          // Apple (apenas iOS nativo)
           _SocialButton(
             onPressed: () => context.read<AuthCubit>().socialLogin('apple'),
             icon: const Icon(Icons.apple, color: Colors.white, size: 24),

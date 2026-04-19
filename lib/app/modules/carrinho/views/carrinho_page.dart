@@ -19,9 +19,10 @@ class CarrinhoPage extends StatelessWidget {
           BlocBuilder<CarrinhoCubit, CarrinhoState>(
             builder: (context, state) {
               if (state is CarrinhoLoaded && state.itens.isNotEmpty) {
+                final bool isBlocked = state.isDebouncing || state.isRequesting;
                 return IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmarLimparCarrinho(context),
+                  onPressed: isBlocked ? null : () => _confirmarLimparCarrinho(context),
                   tooltip: 'Limpar sacola',
                 );
               }
@@ -65,6 +66,8 @@ class CarrinhoPage extends StatelessWidget {
                 ),
               );
             }
+
+            final bool isOperationPending = state.isDebouncing || state.isRequesting;
 
             return Column(
               children: [
@@ -144,14 +147,13 @@ class CarrinhoPage extends StatelessWidget {
                                       Text(
                                         'R\$ ${item.precoTotal.toStringAsFixed(2).replaceAll('.', ',')}',
                                         style: context.bodyLarge.copyWith(
-                                          color: context.primaryColor,
                                           fontWeight: FontWeight.bold,
+                                          color: isOperationPending ? context.textHint : context.primaryColor,
                                         ),
                                       ),
                                       QuantitySelector(
                                         quantity: item.quantidade,
                                         itemName: item.nome,
-                                        isRequesting: isThisItemRequesting,
                                         onChanged: (novaQtd) {
                                           context.read<CarrinhoCubit>().atualizarQuantidade(item.id, novaQtd);
                                         },
@@ -179,6 +181,8 @@ class CarrinhoPage extends StatelessWidget {
   }
 
   Widget _buildResumo(BuildContext context, CarrinhoLoaded state) {
+    final bool isBlocked = state.isDebouncing || state.isRequesting;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -203,14 +207,14 @@ class CarrinhoPage extends StatelessWidget {
                   'R\$ ${state.subtotal.toStringAsFixed(2).replaceAll('.', ',')}',
                   style: context.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: context.primaryColor,
+                    color: isBlocked ? context.textHint : context.primaryColor,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: state.isRequesting ? null : () {
+              onPressed: isBlocked ? null : () {
                 // TODO: Navegar para checkout
               },
               style: ElevatedButton.styleFrom(
@@ -221,7 +225,7 @@ class CarrinhoPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: state.isRequesting
+              child: isBlocked
                 ? const SizedBox(
                     height: 20, 
                     width: 20, 

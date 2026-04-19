@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/carrinho_cubit.dart';
 import '../../../core/theme/app_theme_extension.dart';
-import '../../../../shared/widgets/shimmer_loading.dart';
+import '../../../../shared/widgets/loading_skeleton.dart';
 import '../../../routes/app_routes.dart';
 
 class CarrinhoBottomBar extends StatelessWidget {
@@ -29,14 +29,16 @@ class CarrinhoBottomBar extends StatelessWidget {
         int totalItens = 0;
         double subtotal = 0;
         String? nomeLojaDisplay = lojaNome;
+        bool isAnyOperationPending = false;
         
         if (state is CarrinhoLoaded) {
           totalItens = state.totalItens;
           subtotal = state.subtotal;
           nomeLojaDisplay ??= state.lojaNome;
+          isAnyOperationPending = state.isDebouncing || state.isRequesting;
         }
         
-        if (totalItens == 0) {
+        if (totalItens == 0 && !isAnyOperationPending) {
           return const SizedBox.shrink();
         }
 
@@ -44,8 +46,7 @@ class CarrinhoBottomBar extends StatelessWidget {
           Navigator.pushNamed(context, Routes.carrinho);
         };
         
-        // Corrigido: usando isRequesting em vez de isUpdating
-        final bool isBarLoading = isLoading || (state is CarrinhoLoaded && state.isRequesting);
+        final bool isBarLoading = isLoading || isAnyOperationPending;
         
         return Container(
           decoration: BoxDecoration(
@@ -63,111 +64,82 @@ class CarrinhoBottomBar extends StatelessWidget {
               onTap: isBarLoading ? null : onTapAction,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: context.primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: isBarLoading 
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Icon(
+                child: isBarLoading 
+                  ? Row(
+                      children: [
+                        const LoadingSkeleton(width: 40, height: 40, borderRadius: 12),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LoadingSkeleton(width: 120, height: 16, borderRadius: 4),
+                              const SizedBox(height: 6),
+                              LoadingSkeleton(width: 60, height: 12, borderRadius: 4),
+                            ],
+                          ),
+                        ),
+                        const LoadingSkeleton(width: 70, height: 20, borderRadius: 4),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: context.primaryColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
                             Icons.shopping_bag_outlined,
                             color: Colors.white,
                             size: 20,
                           ),
-                    ),
-                    const SizedBox(width: 12),
-                    
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (isBarLoading)
-                            ShimmerLoading(
-                              isLoading: true,
-                              child: Container(
-                                width: 150,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(4),
+                        ),
+                        const SizedBox(width: 12),
+                        
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Sacola - ${nomeLojaDisplay ?? "Loja"}',
+                                style: context.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            )
-                          else
+                              const SizedBox(height: 4),
+                              Text(
+                                '$totalItens ${totalItens == 1 ? 'item' : 'itens'}',
+                                style: context.bodySmall.copyWith(
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        Row(
+                          children: [
                             Text(
-                              'Sacola - ${nomeLojaDisplay ?? "Loja"}',
-                              style: context.bodyMedium.copyWith(
+                              'R\$ ${subtotal.toStringAsFixed(2).replaceAll('.', ',')}',
+                              style: context.titleSmall.copyWith(
+                                color: context.primaryColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          const SizedBox(height: 4),
-                          if (isBarLoading)
-                            ShimmerLoading(
-                              isLoading: true,
-                              child: Container(
-                                width: 80,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            )
-                          else
-                            Text(
-                              '$totalItens ${totalItens == 1 ? 'item' : 'itens'}',
-                              style: context.bodySmall.copyWith(
-                                color: context.textSecondary,
-                              ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_ios, 
+                              size: 14, 
+                              color: context.primaryColor
                             ),
-                        ],
-                      ),
-                    ),
-                    
-                    if (isBarLoading)
-                      ShimmerLoading(
-                        isLoading: true,
-                        child: Container(
-                          width: 80,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                          ],
                         ),
-                      )
-                    else
-                      Row(
-                        children: [
-                          Text(
-                            'R\$ ${subtotal.toStringAsFixed(2).replaceAll('.', ',')}',
-                            style: context.titleSmall.copyWith(
-                              color: context.primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.arrow_forward_ios, 
-                            size: 14, 
-                            color: context.primaryColor
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
               ),
             ),
           ),

@@ -6,8 +6,6 @@ class QuantitySelector extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final String? itemName;
   final int max;
-  final bool isLoading; 
-  final bool isRequesting; // ✅ Novo parâmetro para o semáforo real
 
   const QuantitySelector({
     super.key,
@@ -15,21 +13,16 @@ class QuantitySelector extends StatelessWidget {
     required this.onChanged,
     this.itemName,
     this.max = 99,
-    this.isLoading = false,
-    this.isRequesting = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Bloqueia apenas se estiver em REQUISIÇÃO real (isRequesting)
-    final bool bloqueado = isRequesting;
-
     return Container(
       decoration: BoxDecoration(
         color: context.surfaceColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: bloqueado ? context.borderColor.withOpacity(0.5) : context.borderColor,
+          color: context.borderColor,
         ),
       ),
       child: Row(
@@ -45,23 +38,18 @@ class QuantitySelector extends StatelessWidget {
                 onChanged(quantity - 1);
               }
             },
-            enabled: !bloqueado && quantity >= 1,
+            enabled: quantity >= 1,
           ),
           Container(
             width: 40,
             alignment: Alignment.center,
-            child: bloqueado
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(
-                    quantity.toString(),
-                    style: context.bodyMedium.copyWith(fontWeight: FontWeight.w500),
-                  ),
+            child: Text(
+              quantity.toString(),
+              style: context.bodyMedium.copyWith(
+                fontWeight: FontWeight.bold,
+                color: context.textPrimary,
+              ),
+            ),
           ),
           _buildButton(
             context: context,
@@ -71,7 +59,7 @@ class QuantitySelector extends StatelessWidget {
                 onChanged(quantity + 1);
               }
             },
-            enabled: !bloqueado && quantity < max,
+            enabled: quantity < max,
           ),
         ],
       ),

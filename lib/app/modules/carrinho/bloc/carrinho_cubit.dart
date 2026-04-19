@@ -23,6 +23,7 @@ class CarrinhoLoaded extends CarrinhoState {
   final String? lojaNome;
   final bool isRequesting;
   final int? requestingItemId;
+  final bool isDebouncing;
 
   const CarrinhoLoaded({
     required this.itens,
@@ -31,12 +32,13 @@ class CarrinhoLoaded extends CarrinhoState {
     this.lojaNome,
     this.isRequesting = false,
     this.requestingItemId,
+    this.isDebouncing = false,
   });
 
   @override
   List<Object?> get props => [
     itens, totalItens, subtotal, lojaNome, 
-    isRequesting, requestingItemId
+    isRequesting, requestingItemId, isDebouncing
   ];
 
   CarrinhoLoaded copyWith({
@@ -46,6 +48,7 @@ class CarrinhoLoaded extends CarrinhoState {
     String? lojaNome,
     bool? isRequesting,
     int? requestingItemId,
+    bool? isDebouncing,
   }) {
     return CarrinhoLoaded(
       itens: itens ?? this.itens,
@@ -54,6 +57,7 @@ class CarrinhoLoaded extends CarrinhoState {
       lojaNome: lojaNome ?? this.lojaNome,
       isRequesting: isRequesting ?? this.isRequesting,
       requestingItemId: requestingItemId ?? this.requestingItemId,
+      isDebouncing: isDebouncing ?? this.isDebouncing,
     );
   }
 }
@@ -145,9 +149,6 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
 
     _isFetching = true;
     
-    // ✅ CORREÇÃO PARA PARAR DE PISCAR:
-    // Só emite CarrinhoLoading se não houver dados carregados.
-    // Nunca emite CarrinhoLoading em forceRefresh se já tivermos CarrinhoLoaded.
     if (state is! CarrinhoLoaded) {
       emit(CarrinhoLoading());
     }
@@ -165,13 +166,13 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
         lojaNome: response.resumo.lojaNome,
         isRequesting: false,
         requestingItemId: null,
+        isDebouncing: false,
       ));
     } catch (e) {
       if (state is! CarrinhoLoaded) {
         _limparEstado();
       } else {
-        // Se já estava carregado, reseta os loaders
-        _emitirEstadoAtualizado();
+        _emitirEstadoAtualizado(isDebouncing: false);
       }
     } finally {
       _isFetching = false;
@@ -180,7 +181,6 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
 
   List<CarrinhoItem> _getSortedItens() {
     final list = _itensMap.values.toList();
-    // ✅ Mantém a ordem estável para evitar que os itens pulem de lugar na lista
     list.sort((a, b) => a.id.compareTo(b.id));
     return list;
   }
@@ -196,7 +196,12 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     if (_isAdding) return;
 
     _isAdding = true;
-    if (state is! CarrinhoLoaded) emit(CarrinhoLoading());
+    
+    if (state is CarrinhoLoaded) {
+      emit((state as CarrinhoLoaded).copyWith(isDebouncing: true));
+    } else {
+      emit(CarrinhoLoading());
+    }
 
     _pendingAdd = _PendingAdd(
       produtoId: produtoId,
@@ -235,6 +240,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
         totalItens: result.data!.resumo.totalItens,
         subtotal: result.data!.resumo.subtotal,
         lojaNome: result.data!.resumo.lojaNome,
+        isDebouncing: false,
       ));
     } else if (result.isConflito && result.conflito != null) {
       emit(CarrinhoConflitoLoja(
@@ -253,27 +259,21 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     final currentState = state;
     if (currentState is! CarrinhoLoaded) return;
 
-    // Atualização local (Otimista)
-    if (novaQuantidade == 0) {
-      _itensMap.remove(itemId);
-    } else if (_itensMap.containsKey(itemId)) {
-      final item = _itensMap[itemId]!;
-      _itensMap[itemId] = item.copyWith(
-        quantidade: novaQuantidade,
-        precoTotal: item.precoUnitario * novaQuantidade
-      );
+    // Garante que o estado isDebouncing seja ativado apenas no primeiro clique
+    if (!currentState.isDebouncing) {
+      emit(currentState.copyWith(isDebouncing: true));
     }
     
-    _emitirEstadoAtualizado();
-    
-    // ✅ Debounce de 1500ms
     _pendingUpdates[itemId] = novaQuantidade;
     _updateDebounce?.cancel();
     _updateDebounce = Timer(const Duration(milliseconds: 1500), () => _executarAtualizacoes());
   }
 
   Future<void> _executarAtualizacoes() async {
-    if (_pendingUpdates.isEmpty) return;
+    if (_pendingUpdates.isEmpty) {
+       _emitirEstadoAtualizado(isDebouncing: false);
+       return;
+    }
     
     final updates = Map<int, int>.from(_pendingUpdates);
     _pendingUpdates.clear();
@@ -282,7 +282,6 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       await _enviarAtualizacaoParaAPI(entry.key, entry.value);
     }
     
-    // Recarregar silenciosamente do servidor para consistência final
     await carregarCarrinho(forceRefresh: true);
   }
 
@@ -290,8 +289,8 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     final currentState = state;
     if (currentState is! CarrinhoLoaded) return;
 
-    // Ativa semáforo local (loader no item)
     emit(currentState.copyWith(
+      isDebouncing: false,
       isRequesting: true,
       requestingItemId: itemId,
     ));
@@ -303,7 +302,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     }
   }
 
-  void _emitirEstadoAtualizado({bool isRequesting = false, int? requestingItemId}) {
+  void _emitirEstadoAtualizado({bool isRequesting = false, int? requestingItemId, bool isDebouncing = false}) {
     final itens = _getSortedItens();
     final totalItens = itens.fold<int>(0, (sum, item) => sum + item.quantidade);
     final subtotal = itens.fold<double>(0, (sum, item) => sum + item.precoTotal);
@@ -316,6 +315,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       lojaNome: lojaNome,
       isRequesting: isRequesting,
       requestingItemId: requestingItemId,
+      isDebouncing: isDebouncing,
     ));
   }
 
@@ -360,6 +360,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
           totalItens: result.data!.resumo.totalItens,
           subtotal: result.data!.resumo.subtotal,
           lojaNome: result.data!.resumo.lojaNome,
+          isDebouncing: false,
         ));
       } else {
         emit(CarrinhoError(result.message ?? 'Erro ao adicionar item após limpar'));
