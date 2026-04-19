@@ -41,7 +41,7 @@ class SectionModel<T> {
   });
 }
 
-/// Widget genérico de lista com seções
+/// Widget genérico de lista br seções
 class SectionedListWidget<T> extends StatelessWidget {
   final List<SectionModel<T>> sections;
   final VoidCallback? onRefresh;

@@ -4,7 +4,7 @@ import '../../../models/loja_resumo_response_model.dart';
 
 /// Abstração do repositório de lojas
 abstract class LojaRepository {
-  /// Busca lojas com filtros e paginação
+  /// Busca lojas br filtros e paginação
   Future<LojaResumoResponseModel> getLojas({
     String? categoria,
     String? busca,

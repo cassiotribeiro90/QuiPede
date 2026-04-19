@@ -87,7 +87,7 @@ class _LojaViewState extends State<LojaView> {
 
   Widget _buildLoadedState(List<LojaResumo> lojas) {
     final listContent = lojas.isEmpty
-        ? const Center(child: Text('Nenhuma loja encontrada com os filtros selecionados.'))
+        ? const Center(child: Text('Nenhuma loja encontrada br os filtros selecionados.'))
         : ListView.separated(
             itemCount: lojas.length,
             padding: const EdgeInsets.all(16.0),

@@ -49,8 +49,8 @@ class AuthCubit extends Cubit<AuthState> {
         }
       }
 
-      // 2. Validar token com o backend e obter dados do usuário
-      print('🔐 [AuthCubit] Validando token com o backend (/app/auth/me)...');
+      // 2. Validar token br o backend e obter dados do usuário
+      print('🔐 [AuthCubit] Validando token br o backend (/app/auth/me)...');
       try {
         final response = await _apiClient.get('app/auth/me', requiresAuth: true);
         

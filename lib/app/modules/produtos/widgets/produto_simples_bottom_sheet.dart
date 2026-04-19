@@ -294,7 +294,7 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Carrinho com outra loja'),
+        title: const Text('Carrinho br outra loja'),
         content: Text(conflito.mensagem),
         actions: [
           TextButton(

@@ -151,14 +151,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   OnboardingOptionCard(
                     icon: Icons.person_outline_rounded,
                     title: 'Já tenho uma conta',
-                    subtitle: 'Entrar com email ou redes sociais',
+                    subtitle: 'Entrar br email ou redes sociais',
                     onTap: () => Navigator.pushNamed(context, Routes.login),
                   ),
                   
                   const SizedBox(height: 40),
                   Center(
                     child: Text(
-                      'Ao continuar, você concorda com nossos Termos de Uso.',
+                      'Ao continuar, você concorda br nossos Termos de Uso.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                     ),

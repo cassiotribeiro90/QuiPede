@@ -73,7 +73,7 @@ void main() {
     });
 
     blocTest<LojasCubit, LojasState>(
-      'deve emitir [LojasLoading, LojasLoaded] ao buscar lojas com sucesso',
+      'deve emitir [LojasLoading, LojasLoaded] ao buscar lojas br sucesso',
       build: () => cubit,
       act: (cubit) => cubit.fetchLojas(),
       expect: () => [

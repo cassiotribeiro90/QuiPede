@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../di/dependencies.dart';
-import '../modules/auth/models/cadastro_models.dart';
-import '../modules/auth/views/cadastro_confirmacao_page.dart';
-import '../modules/auth/views/cadastro_endereco_page.dart';
-import '../modules/auth/views/cadastro_info_page.dart';
 import '../modules/auth/views/cadastro_page.dart';
 import '../modules/auth/views/login_screen.dart';
 import '../modules/auth/views/splash_screen.dart';
@@ -32,22 +28,6 @@ class AppRouter {
 
       case Routes.cadastro:
         return MaterialPageRoute(builder: (_) => const CadastroPage());
-
-      case Routes.cadastroInfo:
-        return MaterialPageRoute(builder: (_) => const CadastroInfoPage());
-
-      case Routes.cadastroEndereco:
-        final info = settings.arguments as CadastroInfoModel;
-        return MaterialPageRoute(
-          builder: (_) => const CadastroEnderecoPage(),
-          settings: settings,
-        );
-        
-      case '/cadastro-confirmacao':
-        final info = settings.arguments as CadastroInfoModel;
-        return MaterialPageRoute(
-          builder: (_) => CadastroConfirmacaoPage(dadosPessoais: info),
-        );
 
       case Routes.home:
         return MaterialPageRoute(

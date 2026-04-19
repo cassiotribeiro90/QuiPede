@@ -69,7 +69,7 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
         
         final enderecoConfirmado = EnderecoModel.fromJson(data);
 
-        // ✅ Atualiza o Cubit com o endereço completo retornado pela API
+        // ✅ Atualiza o Cubit br o endereço completo retornado pela API
         context.read<LocalizacaoCubit>().definirEnderecoCompleto(enderecoConfirmado);
         
         Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);

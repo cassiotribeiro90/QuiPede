@@ -10,7 +10,7 @@ mixin AuthMixin<T extends StatefulWidget> on State<T> {
     // Neste caso, estamos usando um AuthCubit para gerenciar o estado.
     final authCubit = context.read<AuthCubit>();
     
-    // Se o token for atualizado com sucesso, executa a ação original.
+    // Se o token for atualizado br sucesso, executa a ação original.
     // Caso contrário, o AuthCubit irá redirecionar para o login.
     authCubit.stream.listen((state) {
       if (state is AuthAuthenticated) {

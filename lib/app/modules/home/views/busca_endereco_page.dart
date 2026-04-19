@@ -104,7 +104,7 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
           _gpsAtivo = true;
         });
         
-        // Se já há texto digitado, refaz a busca com as novas coordenadas
+        // Se já há texto digitado, refaz a busca br as novas coordenadas
         if (_searchController.text.trim().length >= 3) {
           _buscar(_searchController.text);
         }

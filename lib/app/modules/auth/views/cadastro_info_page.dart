@@ -50,13 +50,13 @@ class _CadastroInfoPageState extends State<CadastroInfoPage> {
       
       final isValid = await context.read<AuthCubit>().validarEtapa1(info.toJson());
       
-      if (isValid && mounted) {
+     /* if (isValid && mounted) {
         Navigator.pushNamed(
           context, 
           Routes.cadastroEndereco, 
           arguments: info
         );
-      }
+      }*/
     }
   }
 

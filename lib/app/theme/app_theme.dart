@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  // Membros estáticos para compatibilidade com código legado
+  // Membros estáticos para compatibilidade br código legado
   static const Color primaryColor = Color(0xFF3949AB);
   static const Color darkColor = Color(0xFF212121);
   static const Color lightGreyColor = Color(0xFFF5F5F5);
