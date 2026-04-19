@@ -10,6 +10,7 @@ import 'package:quipede/app/modules/home/bloc/localizacao_state.dart';
 import 'package:quipede/app/modules/auth/bloc/auth_cubit.dart';
 import 'package:quipede/app/modules/auth/bloc/auth_state.dart';
 import '../../../../shared/widgets/endereco_selecionado_widget.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class CadastroPage extends StatefulWidget {
   const CadastroPage({super.key});
@@ -80,7 +81,7 @@ class _CadastroPageState extends State<CadastroPage> {
           );
         }
       },
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
           title: const Text('Criar conta'),

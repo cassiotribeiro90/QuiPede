@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme_extension.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../../../../shared/widgets/endereco_selecionado_widget.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class CarrinhoPage extends StatelessWidget {
   const CarrinhoPage({super.key});
@@ -14,7 +15,7 @@ class CarrinhoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFFF57C00);
 
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: const Text('Minha Sacola'),
         backgroundColor: context.surfaceColor,
@@ -119,7 +120,7 @@ class CarrinhoPage extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final item = state.itens[index];
                       final isThisItemRequesting = state.isRequesting && state.requestingItemId == item.id;
-                      
+
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(

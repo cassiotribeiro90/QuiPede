@@ -10,6 +10,7 @@ import 'busca_endereco_page.dart';
 import 'cep_input_page.dart';
 import 'localizacao_confirmacao_page.dart';
 import 'widgets/onboarding_option_card.dart';
+import '../../../widgets/app_scaffold.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -82,7 +83,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFFF57C00);
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [

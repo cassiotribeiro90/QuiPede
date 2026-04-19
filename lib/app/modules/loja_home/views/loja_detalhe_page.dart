@@ -160,28 +160,44 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
           }
         },
         builder: (context, state) {
-          return Scaffold(
-            backgroundColor: context.backgroundColor,
-            appBar: AppBar(
-              leading: BackButton(color: context.textPrimary),
-              title: Text(
-                state.loja?.nome ?? 'Carregando...',
-                style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
-              ),
-              backgroundColor: context.surfaceColor,
-              elevation: 0,
-            ),
-            bottomNavigationBar: _buildBottomBar(state),
-            body: Stack(
-              children: [
-                _buildBody(context, state),
-                if (state is LojaHomeLoaded && state.isFiltering)
-                  Container(
-                    color: Colors.white.withOpacity(0.7),
-                    child: const Center(child: CircularProgressIndicator()),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isWeb = constraints.maxWidth > 600;
+
+              Widget content = Scaffold(
+                backgroundColor: context.backgroundColor,
+                appBar: AppBar(
+                  leading: BackButton(color: context.textPrimary),
+                  title: Text(
+                    state.loja?.nome ?? 'Carregando...',
+                    style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
-              ],
-            ),
+                  backgroundColor: context.surfaceColor,
+                  elevation: 0,
+                ),
+                bottomNavigationBar: _buildBottomBar(state),
+                body: Stack(
+                  children: [
+                    _buildBody(context, state),
+                    if (state is LojaHomeLoaded && state.isFiltering)
+                      Container(
+                        color: Colors.white.withOpacity(0.7),
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                  ],
+                ),
+              );
+
+              if (isWeb) {
+                return Center(
+                  child: SizedBox(
+                    width: 820,
+                    child: content,
+                  ),
+                );
+              }
+              return content;
+            },
           );
         },
       ),

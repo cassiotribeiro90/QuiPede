@@ -6,6 +6,7 @@ import '../../../routes/app_routes.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
+import '../../../widgets/app_scaffold.dart';
 import 'widgets/social_login_buttons.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -63,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     const primaryColor = Color(0xFFF57C00);
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(

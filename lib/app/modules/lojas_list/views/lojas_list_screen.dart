@@ -32,7 +32,9 @@ class _LojasListScreenState extends State<LojasListScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    context.read<LojasCubit>().fetchLojas(perPage: 10);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LojasCubit>().fetchLojas(perPage: 10);
+    });
   }
 
   @override
@@ -99,7 +101,6 @@ class _LojasListScreenState extends State<LojasListScreen> {
         
         if (state is LocalizacaoCarregada) {
           titulo = state.enderecoFormatado;
-          debugPrint('📍 [LojasListScreen] AppBar título: $titulo');
         }
 
         return GestureDetector(
@@ -145,36 +146,59 @@ class _LojasListScreenState extends State<LojasListScreen> {
         },
         child: BlocBuilder<LojasCubit, LojasState>(
           builder: (context, state) {
-            return Scaffold(
-              backgroundColor: context.backgroundColor,
-              drawer: const AppDrawer(),
-              appBar: AppBar(
-                title: _buildAppBarTitle(context),
-                centerTitle: true,
-                titleSpacing: 0,
-                elevation: 0,
-                backgroundColor: context.backgroundColor,
-                foregroundColor: context.textPrimary,
-                leading: Builder(
-                  builder: (context) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final isWeb = constraints.maxWidth > 600;
+                
+                Widget content = Scaffold(
+                  backgroundColor: context.backgroundColor,
+                  drawer: const AppDrawer(),
+                  appBar: AppBar(
+                    title: _buildAppBarTitle(context),
+                    centerTitle: true,
+                    titleSpacing: 0,
+                    elevation: 0,
+                    backgroundColor: context.backgroundColor,
+                    foregroundColor: context.textPrimary,
+                    leading: Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu_rounded),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+                    actions: [
+                       IconButton(
+                        icon: const Icon(Icons.notifications_none_rounded),
+                        onPressed: () {},
+                      ),
+                    ],
                   ),
-                ),
-                actions: [
-                   IconButton(
-                    icon: const Icon(Icons.notifications_none_rounded),
-                    onPressed: () {},
+                  body: RefreshIndicator(
+                    onRefresh: () => context.read<LojasCubit>().refreshList(),
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: _buildSearchTrigger(state),
+                        ),
+                        _buildSliverBody(state),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-              body: Column(
-                children: [
-                  _buildSearchTrigger(state),
-                  Expanded(child: _buildBody(state)),
-                ],
-              ),
-              bottomNavigationBar: const CarrinhoBottomBar(),
+                  bottomNavigationBar: const CarrinhoBottomBar(),
+                );
+
+                if (isWeb) {
+                  return Center(
+                    child: SizedBox(
+                      width: 820,
+                      child: content,
+                    ),
+                  );
+                }
+                return content;
+              },
             );
           },
         ),
@@ -274,50 +298,55 @@ class _LojasListScreenState extends State<LojasListScreen> {
     }
   }
 
-  Widget _buildBody(LojasState state) {
-    if (state is LojasLoading) {
-      return _buildLoadingState();
+  Widget _buildSliverBody(LojasState state) {
+    if (state is LojasLoading || state is LojasInitial) {
+      return SliverToBoxAdapter(child: _buildLoadingState());
     }
 
     if (state is LojasLoaded) {
       final lojas = state.lojasFiltradas;
-      if (lojas.isEmpty) return _buildEmptyState(state.lojas.isEmpty);
+      if (lojas.isEmpty) return SliverFillRemaining(hasScrollBody: false, child: _buildEmptyState(state.lojas.isEmpty));
 
-      return RefreshIndicator(
-        onRefresh: () => context.read<LojasCubit>().refreshList(),
-        child: ListView.separated(
-          controller: _scrollController,
-          itemCount: lojas.length + (state.isLoadingMore ? 1 : 0),
-          separatorBuilder: (_, __) => Divider(
-            height: 1, 
-            thickness: 0.5, 
-            indent: 16, 
-            endIndent: 16,
-            color: context.borderColor.withOpacity(0.5),
-          ),
-          itemBuilder: (context, index) {
-            if (index == lojas.length) {
+      return SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            if (index >= lojas.length) {
               return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
             }
             final loja = lojas[index];
-            return LojaItem(
-              loja: loja,
-              onTap: () => Navigator.pushNamed(context, Routes.lojaHome, arguments: loja.id),
+            return Column(
+              children: [
+                LojaItem(
+                  loja: loja,
+                  onTap: () => Navigator.pushNamed(context, Routes.lojaHome, arguments: loja.id),
+                ),
+                if (index < lojas.length - 1)
+                  Divider(
+                    height: 1, 
+                    thickness: 0.5, 
+                    indent: 16, 
+                    endIndent: 16,
+                    color: context.borderColor.withOpacity(0.5),
+                  ),
+              ],
             );
           },
+          childCount: lojas.length + (state.isLoadingMore ? 1 : 0),
         ),
       );
     }
     
     if (state is LojasError) {
-      return Center(child: Text(state.message));
+      return SliverFillRemaining(hasScrollBody: false, child: Center(child: Text(state.message)));
     }
 
-    return const SizedBox();
+    return const SliverToBoxAdapter(child: SizedBox());
   }
 
   Widget _buildLoadingState() {
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: 8,
       itemBuilder: (_, __) => Padding(
