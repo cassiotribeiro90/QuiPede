@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/carrinho_cubit.dart';
+import '../../pedido/bloc/pedido_cubit.dart';
 import '../widgets/quantity_selector.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../../../../shared/widgets/endereco_selecionado_widget.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../models/carrinho_response.dart';
+import '../../../routes/app_routes.dart';
 
 class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
@@ -19,10 +20,12 @@ class CarrinhoPage extends StatefulWidget {
 
 class _CarrinhoPageState extends State<CarrinhoPage> {
   final _trocoController = TextEditingController();
+  final _observacaoController = TextEditingController();
 
   @override
   void dispose() {
     _trocoController.dispose();
+    _observacaoController.dispose();
     super.dispose();
   }
 
@@ -57,175 +60,226 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         ],
       ),
       backgroundColor: context.backgroundColor,
-      body: BlocConsumer<CarrinhoCubit, CarrinhoState>(
-        listener: (context, state) {
-          if (state is CarrinhoError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is CarrinhoLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<CarrinhoCubit, CarrinhoState>(
+            listener: (context, state) {
+              if (state is CarrinhoError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                );
+              }
+            },
+          ),
+          BlocListener<PedidoCubit, PedidoState>(
+            listener: (context, state) {
+              if (state is PedidoCriado) {
+                context.read<CarrinhoCubit>().limparCarrinho();
+                Navigator.pushReplacementNamed(
+                  context,
+                  Routes.pedidoDetalhe,
+                  arguments: state.pedidoId,
+                );
+              } else if (state is PedidoError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                );
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<CarrinhoCubit, CarrinhoState>(
+          builder: (context, state) {
+            if (state is CarrinhoLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (state is CarrinhoLoaded) {
-            if (state.itens.isEmpty) {
-              return Center(
+            if (state is CarrinhoLoaded) {
+              if (state.itens.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.shopping_bag_outlined, size: 80, color: context.textHint),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Sua sacola está vazia',
+                        style: context.titleMedium.copyWith(color: context.textSecondary),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Continuar Comprando'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final bool isOperationPending = state.isDebouncing || state.isRequesting;
+
+              return SingleChildScrollView(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.shopping_bag_outlined, size: 80, color: context.textHint),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Sua sacola está vazia',
-                      style: context.titleMedium.copyWith(color: context.textSecondary),
+                    if (state.lojaNome != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            color: primaryColor,
+                            child: Text(
+                              state.lojaNome!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            color: context.surfaceColor,
+                            child: BlocBuilder<LocalizacaoCubit, LocalizacaoState>(
+                              builder: (context, locState) {
+                                return EnderecoSelecionadoWidget(
+                                  endereco: locState is LocalizacaoCarregada ? locState.endereco : null,
+                                  onTap: () {
+                                    // Pode abrir modal de troca de endereço ou onboarding
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    const Divider(height: 1),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: state.itens.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final item = state.itens[index];
+
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: context.surfaceColor,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (item.imagem != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    item.imagem!,
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.fastfood),
+                                  ),
+                                ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.nome,
+                                      style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                    if (item.observacao != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          item.observacao!,
+                                          style: context.bodySmall.copyWith(color: context.textSecondary),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          _formatarMoeda(item.precoTotal),
+                                          style: context.bodyLarge.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: isOperationPending ? context.textHint : context.primaryColor,
+                                          ),
+                                        ),
+                                        QuantitySelector(
+                                          quantity: item.quantidade,
+                                          itemName: item.nome,
+                                          onChanged: (novaQtd) {
+                                            context.read<CarrinhoCubit>().atualizarQuantidade(item.id, novaQtd);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Continuar Comprando'),
-                    ),
+                    _buildObservacoes(context),
+                    _buildFormaPagamentoSection(context, state),
+                    _buildResumo(context, state),
                   ],
                 ),
               );
             }
 
-            final bool isOperationPending = state.isDebouncing || state.isRequesting;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+  }
 
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (state.lojaNome != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          color: primaryColor,
-                          child: Text(
-                            state.lojaNome!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          color: context.surfaceColor,
-                          child: BlocBuilder<LocalizacaoCubit, LocalizacaoState>(
-                            builder: (context, locState) {
-                              return EnderecoSelecionadoWidget(
-                                endereco: locState is LocalizacaoCarregada ? locState.endereco : null,
-                                onTap: () {
-                                  // Pode abrir modal de troca de endereço ou onboarding
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  const Divider(height: 1),
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    itemCount: state.itens.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final item = state.itens[index];
-                      final isThisItemRequesting = state.isRequesting && state.requestingItemId == item.id;
-
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: context.surfaceColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (item.imagem != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  item.imagem!,
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.fastfood),
-                                ),
-                              ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.nome,
-                                    style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  if (item.observacao != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        item.observacao!,
-                                        style: context.bodySmall.copyWith(color: context.textSecondary),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        _formatarMoeda(item.precoTotal),
-                                        style: context.bodyLarge.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: isOperationPending ? context.textHint : context.primaryColor,
-                                        ),
-                                      ),
-                                      QuantitySelector(
-                                        quantity: item.quantidade,
-                                        itemName: item.nome,
-                                        onChanged: (novaQtd) {
-                                          context.read<CarrinhoCubit>().atualizarQuantidade(item.id, novaQtd);
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  _buildFormaPagamentoSection(context, state),
-                  _buildResumo(context, state),
-                ],
+  Widget _buildObservacoes(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Observações do pedido',
+            style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _observacaoController,
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Alguma preferência? Ex: Tirar cebola, campainha estragada...',
+              hintStyle: context.bodySmall.copyWith(color: context.textHint),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: context.primaryColor),
               ),
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -235,7 +289,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     if (formasDisponiveis.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -472,28 +526,33 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 ),
               ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: (isBlocked || state.formaPagamentoSelecionada == null) ? null : () {
-                _finalizarPedido(context, state);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 54),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: isBlocked
-                ? const SizedBox(
-                    height: 20, 
-                    width: 20, 
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                  )
-                : const Text(
-                    'Finalizar Pedido',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            BlocBuilder<PedidoCubit, PedidoState>(
+              builder: (context, pedidoState) {
+                final isCriando = pedidoState is PedidoCriando;
+                return ElevatedButton(
+                  onPressed: (isBlocked || isCriando || state.formaPagamentoSelecionada == null) ? null : () {
+                    _finalizarPedido(context, state);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.primaryColor,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
+                  child: (isBlocked || isCriando)
+                    ? const SizedBox(
+                        height: 20, 
+                        width: 20, 
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                      )
+                    : const Text(
+                        'Finalizar Pedido',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                );
+              },
             ),
           ],
         ),
@@ -502,9 +561,21 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Future<void> _finalizarPedido(BuildContext context, CarrinhoLoaded state) async {
-    // TODO: Implementar chamada ao endpoint de criação de pedido
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Finalizando pedido com ${state.formaPagamentoSelecionada}')),
+    final locCubit = context.read<LocalizacaoCubit>();
+    final locState = locCubit.state;
+    
+    if (locState is! LocalizacaoCarregada || locState.endereco.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione um endereço de entrega salvo'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    context.read<PedidoCubit>().criarPedido(
+      enderecoId: locState.endereco.id!,
+      formaPagamento: state.formaPagamentoSelecionada!,
+      trocoPara: state.formaPagamentoSelecionada == 'dinheiro' ? state.trocoPara : null,
+      observacao: _observacaoController.text.isNotEmpty ? _observacaoController.text : null,
     );
   }
 

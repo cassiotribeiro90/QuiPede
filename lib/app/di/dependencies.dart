@@ -17,6 +17,8 @@ import '../../shared/services/token_service.dart';
 import '../modules/loja_home/bloc/loja_home_cubit.dart';
 import '../modules/carrinho/bloc/carrinho_cubit.dart';
 import '../modules/carrinho/services/carrinho_service.dart';
+import '../modules/pedido/services/pedido_service.dart';
+import '../modules/pedido/bloc/pedido_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -36,6 +38,7 @@ Future<void> setupDependencies() async {
 
   // ✅ 4. Services
   getIt.registerLazySingleton<CarrinhoService>(() => CarrinhoService(getIt<ApiClient>()));
+  getIt.registerLazySingleton<PedidoService>(() => PedidoService(getIt<ApiClient>()));
 
   // ✅ 5. Repositories
   getIt.registerLazySingleton<LojaRepository>(() => LojaRepositoryImpl(getIt<ApiClient>()));
@@ -64,7 +67,10 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // ✅ 10. Outros Cubits
+  // ✅ 10. PedidoCubit
+  getIt.registerFactory(() => PedidoCubit(getIt<PedidoService>()));
+
+  // ✅ 11. Outros Cubits
   getIt.registerFactory(() => AddressCubit());
   getIt.registerFactory(() => HomeCubit());
 

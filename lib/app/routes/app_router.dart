@@ -12,6 +12,8 @@ import '../modules/loja_home/views/loja_detalhe_page.dart';
 import '../modules/lojas_list/bloc/lojas_cubit.dart';
 import '../modules/perfil/views/pedidos_view.dart';
 import '../modules/perfil/views/perfil_view.dart';
+import '../modules/pedido/views/pedido_detalhe_page.dart';
+import '../modules/pedido/bloc/pedido_cubit.dart';
 import 'app_routes.dart';
 
 class AppRouter {
@@ -50,7 +52,21 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const CarrinhoPage());
 
       case Routes.pedidos:
-        return MaterialPageRoute(builder: (_) => const PedidosView());
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => getIt<PedidoCubit>(),
+            child: const PedidosView(),
+          ),
+        );
+
+      case Routes.pedidoDetalhe:
+        final id = settings.arguments as int;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => getIt<PedidoCubit>()..carregarDetalhes(id),
+            child: PedidoDetalhePage(pedidoId: id),
+          ),
+        );
 
       case Routes.perfil:
         return MaterialPageRoute(builder: (_) => const PerfilView());

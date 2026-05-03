@@ -7,6 +7,7 @@ import 'app/modules/home/bloc/address_cubit.dart';
 import 'app/modules/home/bloc/localizacao_cubit.dart';
 import 'app/modules/lojas_list/bloc/lojas_cubit.dart';
 import 'app/modules/carrinho/bloc/carrinho_cubit.dart';
+import 'app/modules/pedido/bloc/pedido_cubit.dart';
 import 'app/routes/app_router.dart';
 import 'app/routes/app_routes.dart';
 import 'app/theme/theme_cubit.dart';
@@ -31,6 +32,7 @@ class QuiPedeApp extends StatelessWidget {
         BlocProvider<LojasCubit>(create: (_) => getIt<LojasCubit>()),
         BlocProvider<CarrinhoCubit>(create: (_) => getIt<CarrinhoCubit>()),
         BlocProvider<LocalizacaoCubit>(create: (_) => getIt<LocalizacaoCubit>()),
+        BlocProvider<PedidoCubit>(create: (_) => getIt<PedidoCubit>()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {

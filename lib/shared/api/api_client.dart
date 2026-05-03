@@ -56,8 +56,17 @@ class ApiClient {
     }
   }
   
-  Future<Response> post(String path, {dynamic data, bool requiresAuth = true}) => 
-      _dio.post(path, data: data, options: Options(extra: {'requiresAuth': requiresAuth}));
+  Future<Response> post(
+    String path, {
+    dynamic data, 
+    Map<String, dynamic>? queryParameters,
+    bool requiresAuth = true
+  }) => _dio.post(
+    path, 
+    data: data, 
+    queryParameters: queryParameters,
+    options: Options(extra: {'requiresAuth': requiresAuth})
+  );
       
   Future<Response> get(
     String path, {
