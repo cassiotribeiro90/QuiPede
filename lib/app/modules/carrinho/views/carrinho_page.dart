@@ -96,6 +96,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
             return SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (state.lojaNome != null)
                     Column(
@@ -233,71 +234,126 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     final formasDisponiveis = state.formasPagamento.keys.toList();
     if (formasDisponiveis.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.borderColor.withOpacity(0.5)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.payments_outlined, color: context.primaryColor, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Forma de Pagamento',
-                style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ],
+          Text(
+            'Como deseja pagar?',
+            style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 12),
-          ...formasDisponiveis.map((key) {
-            final forma = state.formasPagamento[key];
-            final label = forma['label'] ?? key;
-            final icone = _getIconePagamento(key);
+          const SizedBox(height: 4),
+          Text(
+            'Selecione uma opção abaixo',
+            style: context.bodySmall.copyWith(color: context.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: formasDisponiveis.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final key = formasDisponiveis[index];
+              final forma = state.formasPagamento[key];
+              final label = forma['label'] ?? key;
+              final selecionado = state.formaPagamentoSelecionada == key;
+              final icone = _getIconePagamento(key);
+              final descricao = _getDescricaoPagamento(key);
 
-            return RadioListTile<String>(
-              value: key,
-              groupValue: state.formaPagamentoSelecionada,
-              title: Row(
-                children: [
-                  Icon(icone, size: 20, color: context.textSecondary),
-                  const SizedBox(width: 12),
-                  Text(label, style: context.bodyMedium),
-                ],
-              ),
-              contentPadding: EdgeInsets.zero,
-              activeColor: context.primaryColor,
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<CarrinhoCubit>().selecionarFormaPagamento(value);
-                }
-              },
-            );
-          }),
+              return Card(
+                margin: EdgeInsets.zero,
+                elevation: selecionado ? 4 : 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: selecionado ? context.primaryColor : Colors.grey.shade300,
+                    width: selecionado ? 1.5 : 1,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    context.read<CarrinhoCubit>().selecionarFormaPagamento(key);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(icone, size: 32, color: context.primaryColor),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                label,
+                                style: context.bodyLarge.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                descricao,
+                                style: context.bodySmall.copyWith(
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          selecionado ? Icons.check_circle : Icons.circle_outlined,
+                          color: selecionado ? context.primaryColor : Colors.grey.shade400,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
           if (state.formaPagamentoSelecionada == 'dinheiro' && 
               state.formasPagamento['dinheiro']?['troco'] == true)
             Padding(
-              padding: const EdgeInsets.only(top: 8, left: 12, right: 12),
-              child: TextField(
-                controller: _trocoController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
-                decoration: InputDecoration(
-                  labelText: 'Troco para quanto?',
-                  hintText: 'Ex: 50,00',
-                  prefixText: 'R\$ ',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.only(top: 16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: context.surfaceColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.borderColor.withOpacity(0.5)),
                 ),
-                onChanged: (val) {
-                  final valor = double.tryParse(val.replaceAll(',', '.'));
-                  context.read<CarrinhoCubit>().atualizarTrocoPara(valor);
-                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Precisa de troco?',
+                      style: context.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _trocoController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
+                      decoration: InputDecoration(
+                        labelText: 'Troco para quanto?',
+                        hintText: 'Ex: 50,00',
+                        prefixText: 'R\$ ',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: context.primaryColor),
+                        ),
+                      ),
+                      onChanged: (val) {
+                        final valor = double.tryParse(val.replaceAll(',', '.'));
+                        context.read<CarrinhoCubit>().atualizarTrocoPara(valor);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -307,11 +363,33 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
   IconData _getIconePagamento(String key) {
     switch (key.toLowerCase()) {
-      case 'dinheiro': return Icons.money;
+      case 'dinheiro':
+        return Icons.attach_money;
       case 'cartao_entrega':
-      case 'cartao': return Icons.credit_card;
-      case 'pix': return Icons.pix;
-      default: return Icons.account_balance_wallet_outlined;
+      case 'cartao':
+        return Icons.credit_card;
+      case 'pix':
+        return Icons.pix;
+      case 'cartao_online':
+        return Icons.credit_card_outlined;
+      default:
+        return Icons.payments_outlined;
+    }
+  }
+
+  String _getDescricaoPagamento(String key) {
+    switch (key.toLowerCase()) {
+      case 'dinheiro':
+        return 'Pague diretamente ao entregador';
+      case 'cartao_entrega':
+      case 'cartao':
+        return 'Cartão de débito/crédito na entrega';
+      case 'pix':
+        return 'Pagamento instantâneo via PIX';
+      case 'cartao_online':
+        return 'Cartão de crédito online';
+      default:
+        return 'Selecione sua forma de pagamento';
     }
   }
 
