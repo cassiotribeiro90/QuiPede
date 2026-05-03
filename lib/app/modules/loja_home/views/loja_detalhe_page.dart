@@ -1,5 +1,3 @@
-// lib/modules/loja_home/views/loja_detalhe_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../di/dependencies.dart';
@@ -15,7 +13,7 @@ import '../../produtos/widgets/produto_simples_bottom_sheet.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../../routes/app_routes.dart';
-import '../../../widgets/responsive_body.dart';
+import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
 class LojaDetalhePage extends StatefulWidget {
   final int lojaId;
@@ -160,7 +158,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
           }
         },
         builder: (context, state) {
-          return Scaffold(
+          return ResponsivePageScaffold(
             backgroundColor: context.backgroundColor,
             appBar: AppBar(
               leading: BackButton(color: context.textPrimary),
@@ -172,18 +170,15 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
               elevation: 0,
             ),
             bottomNavigationBar: _buildBottomBar(state),
-            body: ResponsiveBody(
-              backgroundColor: context.backgroundColor,
-              child: Stack(
-                children: [
-                  _buildBody(context, state),
-                  if (state is LojaHomeLoaded && state.isFiltering)
-                    Container(
-                      color: Colors.white.withOpacity(0.7),
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                ],
-              ),
+            body: Stack(
+              children: [
+                _buildBody(context, state),
+                if (state is LojaHomeLoaded && state.isFiltering)
+                  Container(
+                    color: Colors.white.withOpacity(0.7),
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
+              ],
             ),
           );
         },
@@ -205,7 +200,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
             onTap: () => Navigator.pushNamed(context, Routes.carrinho),
           );
         }
-        return const SizedBox(height: 0,width: 0);
+        return const SizedBox(height: 0, width: 0);
       },
     );
   }

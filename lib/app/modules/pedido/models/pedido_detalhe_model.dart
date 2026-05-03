@@ -1,8 +1,10 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import '../../../models/endereco_model.dart';
 
 class PedidoDetalheModel extends Equatable {
   final int id;
+  final int itemCount;
   final String status;
   final String statusLabel;
   final double subtotal;
@@ -24,6 +26,7 @@ class PedidoDetalheModel extends Equatable {
 
   const PedidoDetalheModel({
     required this.id,
+    required this.itemCount,
     required this.status,
     required this.statusLabel,
     required this.subtotal,
@@ -43,6 +46,45 @@ class PedidoDetalheModel extends Equatable {
     required this.itens,
     this.lojaNome,
   });
+
+  Color get statusColor {
+    switch (status.toLowerCase()) {
+      case 'entregue':
+        return Colors.green;
+      case 'cancelado':
+        return Colors.red;
+      case 'saiu_entrega':
+      case 'saiu':
+      case 'em_preparo':
+      case 'preparando':
+      case 'pronto':
+        return Colors.orange;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  IconData get statusIcon {
+    switch (status.toLowerCase()) {
+      case 'novo':
+      case 'pendente':
+        return Icons.receipt_long;
+      case 'confirmado':
+        return Icons.check_circle_outline;
+      case 'em_preparo':
+      case 'preparando':
+        return Icons.restaurant;
+      case 'saiu_entrega':
+      case 'saiu':
+        return Icons.delivery_dining;
+      case 'entregue':
+        return Icons.verified;
+      case 'cancelado':
+        return Icons.cancel;
+      default:
+        return Icons.receipt;
+    }
+  }
 
   factory PedidoDetalheModel.fromJson(Map<String, dynamic> json) {
     DateTime? parseDate(dynamic v) {
@@ -71,6 +113,7 @@ class PedidoDetalheModel extends Equatable {
       saiuEntregaEm: parseDate(json['saiu_entrega_at']),
       entregueEm: parseDate(json['entregue_at']),
       canceladoEm: parseDate(json['cancelado_at']),
+      itemCount: json['item_count'] ?? 0,
       endereco: json['endereco'] is Map 
           ? EnderecoModel.fromJson(json['endereco']) 
           : const EnderecoModel(cep: '', logradouro: '', numero: '', bairro: '', cidade: '', uf: ''),
