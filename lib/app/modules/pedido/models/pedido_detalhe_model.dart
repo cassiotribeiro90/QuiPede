@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // ← necessário para parsear formato com espaço
+import 'package:intl/intl.dart';
 import '../../../models/endereco_model.dart';
 
 class PedidoDetalheModel extends Equatable {
@@ -24,6 +24,7 @@ class PedidoDetalheModel extends Equatable {
   final EnderecoModel endereco;
   final List<PedidoItemModel> itens;
   final String? lojaNome;
+  final String? lojaLogo; // 🔥 NOVO
 
   const PedidoDetalheModel({
     required this.id,
@@ -46,6 +47,7 @@ class PedidoDetalheModel extends Equatable {
     required this.endereco,
     required this.itens,
     this.lojaNome,
+    this.lojaLogo, // 🔥 NOVO
   });
 
   // Mapa de status para labels
@@ -103,17 +105,24 @@ class PedidoDetalheModel extends Equatable {
     }
   }
 
+  // 🔥 HELPER DATA FORMATADA
+  String get dataFormatada {
+    final now = DateTime.now();
+    final diff = now.difference(criadoEm);
+    if (diff.inDays == 0) return 'Hoje ${DateFormat('HH:mm').format(criadoEm)}';
+    if (diff.inDays == 1) return 'Ontem ${DateFormat('HH:mm').format(criadoEm)}';
+    return DateFormat('dd/MM/yyyy HH:mm').format(criadoEm);
+  }
+
   factory PedidoDetalheModel.fromJson(Map<String, dynamic> json) {
     // 🔧 FUNÇÃO DE PARSE CORRIGIDA
     DateTime? parseDate(dynamic value) {
       if (value == null || value.toString().isEmpty) return null;
       final str = value.toString().trim();
       try {
-        // Tenta formato "YYYY-MM-DD HH:mm:ss"
         return DateFormat("yyyy-MM-dd HH:mm:ss").parse(str);
       } catch (_) {
         try {
-          // Fallback para ISO (com 'T')
           return DateTime.parse(str);
         } catch (_) {
           return null;
@@ -121,7 +130,6 @@ class PedidoDetalheModel extends Equatable {
       }
     }
 
-    // Mapeia status para label
     String getStatusLabel(String status) {
       return statusLabels[status.toLowerCase()] ?? status;
     }
@@ -130,7 +138,7 @@ class PedidoDetalheModel extends Equatable {
       return pagamentoLabels[forma.toLowerCase()] ?? forma;
     }
 
-    // Obtém o endereço (pode vir como Map ou null)
+    // Endereço
     EnderecoModel endereco;
     if (json['endereco'] is Map) {
       endereco = EnderecoModel.fromJson(json['endereco']);
@@ -155,12 +163,17 @@ class PedidoDetalheModel extends Equatable {
           .toList();
     }
 
-    // Loja
+    // 🔥 LOJA – NOME E LOGO
     String? lojaNome;
+    String? lojaLogo;
     if (json['loja'] is Map) {
       lojaNome = json['loja']['nome']?.toString();
+      lojaLogo = json['loja']['logo']?.toString();
     } else if (json['loja_nome'] != null) {
       lojaNome = json['loja_nome'].toString();
+    }
+    if (json['loja_logo'] != null) {
+      lojaLogo = json['loja_logo'].toString();
     }
 
     final statusStr = json['status']?.toString() ?? 'desconhecido';
@@ -180,7 +193,6 @@ class PedidoDetalheModel extends Equatable {
           ? (json['troco_para'] as num?)?.toDouble()
           : null,
       observacao: json['observacoes']?.toString() ?? json['observacao']?.toString(),
-      // 🔧 CHAVES CORRETAS
       criadoEm: parseDate(json['criado_em']) ?? DateTime.now(),
       confirmadoEm: parseDate(json['data_confirmacao']),
       emPreparoEm: parseDate(json['data_preparo']),
@@ -190,6 +202,7 @@ class PedidoDetalheModel extends Equatable {
       endereco: endereco,
       itens: itens,
       lojaNome: lojaNome,
+      lojaLogo: lojaLogo, // 🔥 NOVO
     );
   }
 
@@ -205,6 +218,7 @@ class PedidoDetalheModel extends Equatable {
     endereco,
     itens,
     lojaNome,
+    lojaLogo, // 🔥 NOVO
   ];
 }
 

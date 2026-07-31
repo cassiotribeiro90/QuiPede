@@ -137,6 +137,7 @@ class _PedidosViewState extends State<PedidosView> {
     return const SizedBox.shrink();
   }
 
+  // 🔥 ITEM DA LISTA COM LOGO E PREÇO CENTRALIZADOS
   Widget _buildPedidoItem(BuildContext context, dynamic pedido) {
     return InkWell(
       onTap: () => Navigator.pushNamed(
@@ -146,79 +147,119 @@ class _PedidosViewState extends State<PedidosView> {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center, // 🔥 CENTRALIZA VERTICALMENTE
           children: [
-            // Linha superior: loja + ícone
-            Row(
-              children: [
-                Icon(Icons.store, size: 16, color: context.primaryColor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
+            // 🔥 LOGO DA LOJA
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                image: pedido.lojaLogo != null && pedido.lojaLogo!.isNotEmpty
+                    ? DecorationImage(
+                  image: NetworkImage(pedido.lojaLogo!),
+                  fit: BoxFit.cover,
+                )
+                    : null,
+              ),
+              child: pedido.lojaLogo == null || pedido.lojaLogo!.isEmpty
+                  ? Icon(Icons.store, size: 28, color: Colors.grey[400])
+                  : null,
+            ),
+            const SizedBox(width: 14),
+
+            // 🔥 INFORMAÇÕES DO PEDIDO
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
                     pedido.lojaNome ?? 'Loja Desconhecida',
-                    style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                    style: context.bodyLarge.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Icon(Icons.chevron_right, color: context.textHint),
-              ],
-            ),
-            const SizedBox(height: 6),
-            // ID e data
-            Row(
-              children: [
-                Text('Pedido #${pedido.id}', style: context.bodySmall),
-                const SizedBox(width: 12),
-                Icon(Icons.access_time, size: 14, color: context.textHint),
-                const SizedBox(width: 4),
-                Text(
-                  _formatarData(pedido.criadoEm),
-                  style: context.bodySmall.copyWith(color: context.textHint),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            // Ícone + contagem de itens (simplificado)
-            Row(
-              children: [
-                Icon(Icons.shopping_bag_outlined, size: 16, color: context.textSecondary),
-                const SizedBox(width: 8),
-                Text(
-                  '${pedido.itemCount} ${pedido.itemCount == 1 ? 'item' : 'itens'}',
-                  style: context.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            // Status e total
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(pedido.statusIcon, size: 16, color: pedido.statusColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      pedido.statusLabel,
-                      style: TextStyle(
-                        color: pedido.statusColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                  const SizedBox(height: 4),
+                  // ID e data
+                  Row(
+                    children: [
+                      Text('Pedido #${pedido.id}', style: context.bodySmall),
+                      const SizedBox(width: 12),
+                      Icon(Icons.access_time, size: 14, color: context.textHint),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatarData(pedido.criadoEm),
+                        style: context.bodySmall.copyWith(color: context.textHint),
                       ),
-                    ),
-                  ],
-                ),
-                Text(
-                  _formatarMoeda(pedido.total),
-                  style: context.titleMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: context.textPrimary,
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  // Status e itens
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: pedido.statusColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: pedido.statusColor.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              pedido.statusIcon,
+                              size: 14,
+                              color: pedido.statusColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              pedido.statusLabel,
+                              style: TextStyle(
+                                color: pedido.statusColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Row(
+                        children: [
+                          Icon(Icons.shopping_bag_outlined, size: 14, color: context.textHint),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${pedido.itemCount} ${pedido.itemCount == 1 ? 'item' : 'itens'}',
+                            style: context.bodySmall.copyWith(color: context.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
+
+            const SizedBox(width: 8),
+
+            // 🔥 TOTAL (CENTRALIZADO VERTICALMENTE)
+            Text(
+              _formatarMoeda(pedido.total),
+              style: context.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+                color: context.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 20, color: context.textHint),
           ],
         ),
       ),

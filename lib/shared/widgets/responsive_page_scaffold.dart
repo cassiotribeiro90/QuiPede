@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 class ResponsivePageScaffold extends StatelessWidget {
@@ -19,7 +20,7 @@ class ResponsivePageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
-    
+
     return Scaffold(
       appBar: appBar,
       drawer: drawer,
@@ -27,17 +28,26 @@ class ResponsivePageScaffold extends StatelessWidget {
       bottomNavigationBar: bottomNavigationBar,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth > 600) {
+          // 🔥 DETECTA SE É WEB E AJUSTA A LARGURA
+          final bool isWeb = kIsWeb;
+          final bool isLargeScreen = constraints.maxWidth > 600;
+
+          if (isLargeScreen) {
+            // 🔥 WEB: 1200px | TABLET/DESKTOP: 820px
+            final double maxWidth = isWeb ? 1200.0 : 820.0;
+
             return Container(
               color: bgColor,
               child: Center(
                 child: SizedBox(
-                  width: 820,
+                  width: maxWidth,
                   child: body,
                 ),
               ),
             );
           }
+
+          // Mobile: largura total
           return body;
         },
       ),
