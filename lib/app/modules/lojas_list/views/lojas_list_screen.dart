@@ -91,7 +91,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
     if (authState is! AuthAuthenticated) {
       Navigator.pushNamed(context, Routes.login);
     } else {
-      Navigator.pushNamed(context, Routes.enderecos);
+      Navigator.pushNamed(context, Routes.meusEnderecos);
     }
   }
 

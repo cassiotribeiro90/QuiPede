@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'app/core/theme/app_theme.dart';
@@ -10,6 +11,7 @@ import 'app/modules/carrinho/bloc/carrinho_cubit.dart';
 import 'app/modules/pedido/bloc/pedido_cubit.dart';
 import 'app/routes/app_router.dart';
 import 'app/routes/app_routes.dart';
+import 'app/routes/web_navigation_observer.dart';
 import 'app/theme/theme_cubit.dart';
 import 'shared/auth/auth_observer.dart';
 
@@ -44,7 +46,10 @@ class QuiPedeApp extends StatelessWidget {
             themeMode: themeState.themeMode,
             initialRoute: Routes.splash,
             onGenerateRoute: AppRouter.onGenerateRoute,
-            navigatorObservers: [AuthObserver()],
+            navigatorObservers: [
+              AuthObserver(),
+              if (kIsWeb) WebNavigationObserver(),
+            ],
             builder: (context, child) {
               return child!;
             },

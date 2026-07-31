@@ -12,7 +12,7 @@ class AppDrawer extends StatelessWidget {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         final isLogged = state is AuthAuthenticated;
-        
+
         return Drawer(
           child: Column(
             children: [
@@ -20,7 +20,7 @@ class AppDrawer extends StatelessWidget {
                 decoration: BoxDecoration(color: Theme.of(context).primaryColor),
                 child: const Center(
                   child: Text(
-                    'QuiPede', 
+                    'QuiPede',
                     style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -44,6 +44,11 @@ class AppDrawer extends StatelessWidget {
                         leading: const Icon(Icons.shopping_bag),
                         title: const Text('Meus Pedidos'),
                         onTap: () => _goTo(context, Routes.pedidos),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.location_on),
+                        title: const Text('Meus Endereços de Entrega'),
+                        onTap: () => _goTo(context, Routes.meusEnderecos),
                       ),
                     ],
                     ListTile(
@@ -102,7 +107,7 @@ class AppDrawer extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancelar')),
           TextButton(
-            onPressed: () => Navigator.pop(_, true), 
+            onPressed: () => Navigator.pop(_, true),
             child: const Text('Sair', style: TextStyle(color: Colors.red)),
           ),
         ],

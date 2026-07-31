@@ -4,10 +4,11 @@ class Routes {
   static const String login = '/login';
   static const String cadastro = '/cadastro';
   static const String home = '/home';
-  static const String lojaHome = '/loja-home'; // O id será passado via arguments
+  static const String lojaHome = '/loja-home';
   static const String carrinho = '/carrinho';
   static const String pedidos = '/pedidos';
-  static const String pedidoDetalhe = '/pedido-detalhe'; // O id será passado via arguments
+  static const String meusEnderecos = '/meus-enderecos';
+  static const String enderecoForm = '/endereco-form';
+  static const String pedidoDetalhe = '/pedido-detalhe';
   static const String perfil = '/perfil';
-  static const String enderecos = '/enderecos'; // CRUD de endereços
 }

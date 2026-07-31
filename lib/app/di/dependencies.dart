@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 import '../modules/loja_home/repository/loja_repository.dart';
 import '../modules/lojas_list/repository/loja_repository.dart';
 import '../modules/lojas_list/repository/loja_repository_impl.dart';
@@ -19,6 +20,9 @@ import '../modules/carrinho/bloc/carrinho_cubit.dart';
 import '../modules/carrinho/services/carrinho_service.dart';
 import '../modules/pedido/services/pedido_service.dart';
 import '../modules/pedido/bloc/pedido_cubit.dart';
+import '../modules/enderecos/bloc/endereco_cubit.dart';
+import '../modules/enderecos/repositories/endereco_repository.dart';
+import '../modules/enderecos/services/endereco_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -35,14 +39,17 @@ Future<void> setupDependencies() async {
 
   // ✅ 3. ApiClient (baixo nível)
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
+  getIt.registerLazySingleton<Dio>(() => getIt<ApiClient>().dio);
 
   // ✅ 4. Services
   getIt.registerLazySingleton<CarrinhoService>(() => CarrinhoService(getIt<ApiClient>()));
   getIt.registerLazySingleton<PedidoService>(() => PedidoService(getIt<ApiClient>()));
+  getIt.registerLazySingleton<EnderecoService>(() => EnderecoService(getIt<ApiClient>()));
 
   // ✅ 5. Repositories
   getIt.registerLazySingleton<LojaRepository>(() => LojaRepositoryImpl(getIt<ApiClient>()));
   getIt.registerLazySingleton<LojaHomeRepository>(() => LojaHomeRepository(getIt<ApiClient>()));
+  getIt.registerLazySingleton<EnderecoRepository>(() => EnderecoRepository(getIt<EnderecoService>()));
 
   // ✅ 6. ThemeCubit (independente)
   getIt.registerSingleton<ThemeCubit>(ThemeCubit(getIt<SharedPreferences>()));
@@ -70,7 +77,10 @@ Future<void> setupDependencies() async {
   // ✅ 10. PedidoCubit
   getIt.registerFactory(() => PedidoCubit(getIt<PedidoService>()));
 
-  // ✅ 11. Outros Cubits
+  // ✅ 11. EnderecoCubit
+  getIt.registerLazySingleton<EnderecoCubit>(() => EnderecoCubit(getIt<EnderecoRepository>()));
+
+  // ✅ 12. Outros Cubits
   getIt.registerFactory(() => AddressCubit());
   getIt.registerFactory(() => HomeCubit());
 
