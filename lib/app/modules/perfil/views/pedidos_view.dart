@@ -107,128 +107,12 @@ class _PedidosViewState extends State<PedidosView> {
             child: RefreshIndicator(
               onRefresh: () => context.read<PedidoCubit>().carregarPedidos(),
               child: ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 itemCount: state.pedidos.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final pedido = state.pedidos[index];
-                  return Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: InkWell(
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        Routes.pedidoDetalhe,
-                        arguments: pedido.id,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: context.primaryColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Icon(Icons.store, size: 16, color: context.primaryColor),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    pedido.lojaNome ?? 'Loja Desconhecida',
-                                    style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Icon(Icons.chevron_right, color: context.textHint),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text('Pedido #${pedido.id}', style: context.bodySmall),
-                                const SizedBox(width: 12),
-                                Icon(Icons.access_time, size: 14, color: context.textHint),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _formatarData(pedido.criadoEm),
-                                  style: context.bodySmall.copyWith(color: context.textHint),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: context.surfaceColor,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.shopping_bag_outlined, size: 16, color: context.textSecondary),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      pedido.itens.map((i) => i.nome).join(', '),
-                                      style: context.bodySmall.copyWith(color: context.textSecondary),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${pedido.itemCount} ${pedido.itemCount == 1 ? 'item' : 'itens'}',
-                                    style: context.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: pedido.statusColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: pedido.statusColor.withOpacity(0.3)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(pedido.statusIcon, size: 14, color: pedido.statusColor),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        pedido.statusLabel,
-                                        style: TextStyle(
-                                          color: pedido.statusColor,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  _formatarMoeda(pedido.total),
-                                  style: context.titleMedium.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: context.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildPedidoItem(context, pedido);
                 },
               ),
             ),
@@ -251,5 +135,93 @@ class _PedidosViewState extends State<PedidosView> {
     }
 
     return const SizedBox.shrink();
+  }
+
+  Widget _buildPedidoItem(BuildContext context, dynamic pedido) {
+    return InkWell(
+      onTap: () => Navigator.pushNamed(
+        context,
+        Routes.pedidoDetalhe,
+        arguments: pedido.id,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Linha superior: loja + ícone
+            Row(
+              children: [
+                Icon(Icons.store, size: 16, color: context.primaryColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    pedido.lojaNome ?? 'Loja Desconhecida',
+                    style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: context.textHint),
+              ],
+            ),
+            const SizedBox(height: 6),
+            // ID e data
+            Row(
+              children: [
+                Text('Pedido #${pedido.id}', style: context.bodySmall),
+                const SizedBox(width: 12),
+                Icon(Icons.access_time, size: 14, color: context.textHint),
+                const SizedBox(width: 4),
+                Text(
+                  _formatarData(pedido.criadoEm),
+                  style: context.bodySmall.copyWith(color: context.textHint),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Ícone + contagem de itens (simplificado)
+            Row(
+              children: [
+                Icon(Icons.shopping_bag_outlined, size: 16, color: context.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  '${pedido.itemCount} ${pedido.itemCount == 1 ? 'item' : 'itens'}',
+                  style: context.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Status e total
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(pedido.statusIcon, size: 16, color: pedido.statusColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      pedido.statusLabel,
+                      style: TextStyle(
+                        color: pedido.statusColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  _formatarMoeda(pedido.total),
+                  style: context.titleMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: context.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

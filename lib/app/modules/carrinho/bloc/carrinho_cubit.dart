@@ -3,10 +3,13 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/carrinho_item.dart';
+import '../../../models/carrinho_response.dart';
+import '../../../models/carrinho_result.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../services/carrinho_service.dart';
 
+// ============ ESTADOS ============
 abstract class CarrinhoState extends Equatable {
   const CarrinhoState();
   @override
@@ -50,7 +53,7 @@ class CarrinhoLoaded extends CarrinhoState {
 
   @override
   List<Object?> get props => [
-    itens, totalItens, subtotal, lojaNome, 
+    itens, totalItens, subtotal, lojaNome,
     taxaEntrega, total, distanciaKm, formasPagamento,
     formaPagamentoSelecionada, trocoPara, isRequesting, requestingItemId, isDebouncing
   ];
@@ -95,24 +98,35 @@ class CarrinhoError extends CarrinhoState {
   List<Object> get props => [message];
 }
 
-class CarrinhoConflitoLoja extends CarrinhoState {
+class CarrinhoConflitoLojaDetectado extends CarrinhoState {
   final int lojaAtualId;
   final String? lojaAtualNome;
   final int novaLojaId;
   final String mensagem;
-  
-  const CarrinhoConflitoLoja({
+  final int produtoId;
+  final int quantidade;
+  final List<int> opcoes;
+  final String? observacao;
+
+  const CarrinhoConflitoLojaDetectado({
     required this.lojaAtualId,
     this.lojaAtualNome,
     required this.novaLojaId,
     required this.mensagem,
+    required this.produtoId,
+    required this.quantidade,
+    this.opcoes = const [],
+    this.observacao,
   });
-  
+
   @override
   List<Object?> get props => [
-    lojaAtualId, lojaAtualNome, novaLojaId, mensagem
+    lojaAtualId, lojaAtualNome, novaLojaId, mensagem,
+    produtoId, quantidade, opcoes, observacao
   ];
 }
+
+// ============ CUBIT ============
 
 class _PendingAdd {
   final int produtoId;
@@ -170,12 +184,13 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     emit(const CarrinhoLoaded(itens: [], totalItens: 0, subtotal: 0));
   }
 
+  // ===== CARREGAR CARRINHO =====
   Future<void> carregarCarrinho({bool forceRefresh = false}) async {
     if (_isFetching && !forceRefresh) return;
     if (_authCubit.state is! AuthAuthenticated) return;
 
     _isFetching = true;
-    
+
     if (state is! CarrinhoLoaded) {
       emit(CarrinhoLoading());
     }
@@ -186,7 +201,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       _itensMap = {for (var item in response.itens) item.id: item};
       _pendingUpdates.clear();
       _pendingAdd = null;
-      
+
       String? formaSelecionada;
       if (response.resumo.formasDisponiveis.isNotEmpty) {
         formaSelecionada = response.resumo.formasDisponiveis.first;
@@ -217,6 +232,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     }
   }
 
+  // ===== MÉTODOS DE PAGAMENTO (UI) =====
   void selecionarFormaPagamento(String forma) {
     if (state is CarrinhoLoaded) {
       emit((state as CarrinhoLoaded).copyWith(formaPagamentoSelecionada: forma));
@@ -229,12 +245,14 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     }
   }
 
+  // ===== AUXILIARES =====
   List<CarrinhoItem> _getSortedItens() {
     final list = _itensMap.values.toList();
     list.sort((a, b) => a.id.compareTo(b.id));
     return list;
   }
 
+  // ===== ADICIONAR ITEM (COM DEBOUNCE) =====
   Future<void> adicionarItem({
     required int produtoId,
     int quantidade = 1,
@@ -243,13 +261,11 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     bool applyDebounce = true,
   }) async {
     if (_authCubit.state is! AuthAuthenticated) throw Exception('Usuário não autenticado');
-    
-    // Permitir múltiplos cliques
+
     _isAdding = true;
 
-    if (state is CarrinhoLoaded) {
-      emit((state as CarrinhoLoaded).copyWith(isDebouncing: true));
-    } else {
+    // NÃO EMITE NADA AINDA – só mostra loading se não tiver estado
+    if (state is! CarrinhoLoaded) {
       emit(CarrinhoLoading());
     }
 
@@ -261,10 +277,9 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     );
 
     _addDebounce?.cancel();
-    if(applyDebounce) {
-      _addDebounce =
-          Timer(const Duration(milliseconds: 1200), () => _executarAdicao());
-    }else{
+    if (applyDebounce) {
+      _addDebounce = Timer(const Duration(milliseconds: 1200), () => _executarAdicao());
+    } else {
       _executarAdicao();
     }
   }
@@ -274,66 +289,75 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     final add = _pendingAdd!;
     _pendingAdd = null;
 
-    final result = await _service.atualizarItem(
-      produtoId: add.produtoId,
-      quantidade: add.quantidade,
-      opcoes: add.opcoes,
-      observacao: add.observacao,
-    );
+    try {
+      final result = await _service.atualizarItem(
+        produtoId: add.produtoId,
+        quantidade: add.quantidade,
+        opcoes: add.opcoes,
+        observacao: add.observacao,
+      );
 
-    _isAdding = false;
+      _isAdding = false;
 
-    if (result.success && result.data != null) {
-      _itensMap = {for (var item in result.data!.itens) item.id: item};
-      
-      String? formaSelecionada;
-      if (result.data!.resumo.formasDisponiveis.isNotEmpty) {
-        formaSelecionada = result.data!.resumo.formasDisponiveis.first;
+      if (result.success && result.data != null) {
+        _itensMap = {for (var item in result.data!.itens) item.id: item};
+        String? formaSelecionada;
+        if (result.data!.resumo.formasDisponiveis.isNotEmpty) {
+          formaSelecionada = result.data!.resumo.formasDisponiveis.first;
+        }
+
+        emit(CarrinhoLoaded(
+          itens: _getSortedItens(),
+          totalItens: result.data!.resumo.totalItens,
+          subtotal: result.data!.resumo.subtotal,
+          lojaNome: result.data!.resumo.lojaNome,
+          taxaEntrega: result.data!.resumo.taxaEntrega,
+          total: result.data!.resumo.total,
+          distanciaKm: result.data!.resumo.distanciaKm,
+          formasPagamento: result.data!.resumo.formasPagamento,
+          formaPagamentoSelecionada: formaSelecionada,
+          isDebouncing: false,
+        ));
+      } else if (result.isConflito && result.conflito != null) {
+        final conflito = result.conflito!;
+        emit(CarrinhoConflitoLojaDetectado(
+          lojaAtualId: conflito.lojaAtual,
+          lojaAtualNome: conflito.lojaAtualNome,
+          novaLojaId: conflito.novaLoja,
+          mensagem: conflito.message,
+          produtoId: add.produtoId,
+          quantidade: add.quantidade,
+          opcoes: add.opcoes,
+          observacao: add.observacao,
+        ));
+      } else {
+        emit(CarrinhoError(result.message ?? 'Erro ao adicionar item'));
+        await carregarCarrinho();
       }
-
-      emit(CarrinhoLoaded(
-        itens: _getSortedItens(),
-        totalItens: result.data!.resumo.totalItens,
-        subtotal: result.data!.resumo.subtotal,
-        lojaNome: result.data!.resumo.lojaNome,
-        taxaEntrega: result.data!.resumo.taxaEntrega,
-        total: result.data!.resumo.total,
-        distanciaKm: result.data!.resumo.distanciaKm,
-        formasPagamento: result.data!.resumo.formasPagamento,
-        formaPagamentoSelecionada: formaSelecionada,
-        isDebouncing: false,
-      ));
-    } else if (result.isConflito && result.conflito != null) {
-      emit(CarrinhoConflitoLoja(
-        lojaAtualId: result.conflito!.lojaAtual,
-        lojaAtualNome: result.conflito!.lojaAtualNome,
-        novaLojaId: result.conflito!.novaLoja,
-        mensagem: result.conflito!.message,
-      ));
-    } else {
-      emit(CarrinhoError(result.message ?? 'Erro ao adicionar item'));
+    } catch (e) {
+      _isAdding = false;
+      emit(CarrinhoError('Erro inesperado ao adicionar item'));
       await carregarCarrinho();
     }
   }
 
+  // ===== ATUALIZAR QUANTIDADE (COM DEBOUNCE) =====
   void atualizarQuantidade(int itemId, int novaQuantidade) {
     final currentState = state;
     if (currentState is! CarrinhoLoaded) return;
 
-    // ✅ CORREÇÃO: Atualização otimista necessária para o seletor não "travar" visualmente
     if (novaQuantidade == 0) {
       _itensMap.remove(itemId);
     } else if (_itensMap.containsKey(itemId)) {
       final item = _itensMap[itemId]!;
       _itensMap[itemId] = item.copyWith(
-        quantidade: novaQuantidade,
-        precoTotal: item.precoUnitario * novaQuantidade
+          quantidade: novaQuantidade,
+          precoTotal: item.precoUnitario * novaQuantidade
       );
     }
-    
-    // Emite o novo valor IMEDIATAMENTE para a UI refletir o clique
+
     _emitirEstadoAtualizado(isDebouncing: true);
-    
+
     _pendingUpdates[itemId] = novaQuantidade;
     _updateDebounce?.cancel();
     _updateDebounce = Timer(const Duration(milliseconds: 1500), () => _executarAtualizacoes());
@@ -341,17 +365,17 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
 
   Future<void> _executarAtualizacoes() async {
     if (_pendingUpdates.isEmpty) {
-       _emitirEstadoAtualizado(isDebouncing: false);
-       return;
+      _emitirEstadoAtualizado(isDebouncing: false);
+      return;
     }
-    
+
     final updates = Map<int, int>.from(_pendingUpdates);
     _pendingUpdates.clear();
 
     for (var entry in updates.entries) {
       await _enviarAtualizacaoParaAPI(entry.key, entry.value);
     }
-    
+
     await carregarCarrinho(forceRefresh: true);
   }
 
@@ -376,7 +400,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     final itens = _getSortedItens();
     final totalItens = itens.fold<int>(0, (sum, item) => sum + item.quantidade);
     final subtotal = itens.fold<double>(0, (sum, item) => sum + item.precoTotal);
-    
+
     double? taxaEntrega;
     double? total;
     double? distanciaKm;
@@ -413,6 +437,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     ));
   }
 
+  // ===== LIMPAR CARRINHO =====
   Future<void> limparCarrinho() async {
     emit(CarrinhoLoading());
     try {
@@ -428,28 +453,24 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     atualizarQuantidade(itemId, 0);
   }
 
-  Future<void> limparEAdicionar({
-    required int produtoId,
-    required int quantidade,
-    List<int> opcoes = const [],
-    String? observacao,
-  }) async {
+  // ===== LIMPAR E ADICIONAR (APÓS CONFLITO) =====
+  Future<void> limparEAdicionar(CarrinhoConflitoLojaDetectado conflito) async {
     _isAdding = true;
     emit(CarrinhoLoading());
     try {
       await _service.limparCarrinho();
+
       final result = await _service.atualizarItem(
-        produtoId: produtoId,
-        quantidade: quantidade,
-        opcoes: opcoes,
-        observacao: observacao,
+        produtoId: conflito.produtoId,
+        quantidade: conflito.quantidade,
+        opcoes: conflito.opcoes,
+        observacao: conflito.observacao,
       );
 
       _isAdding = false;
 
       if (result.success && result.data != null) {
         _itensMap = {for (var item in result.data!.itens) item.id: item};
-        
         String? formaSelecionada;
         if (result.data!.resumo.formasDisponiveis.isNotEmpty) {
           formaSelecionada = result.data!.resumo.formasDisponiveis.first;
@@ -469,13 +490,16 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
         ));
       } else {
         emit(CarrinhoError(result.message ?? 'Erro ao adicionar item após limpar'));
+        await carregarCarrinho();
       }
     } catch (e) {
       _isAdding = false;
-      emit(const CarrinhoError('Erro ao processar requisição'));
+      emit(CarrinhoError('Erro ao substituir carrinho'));
+      await carregarCarrinho();
     }
   }
 
+  // ===== MÉTODOS DE CONSULTA =====
   int getQuantidade(int produtoId) {
     return _itensMap.values
         .where((item) => item.produtoId == produtoId)

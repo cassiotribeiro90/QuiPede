@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // ← necessário para parsear formato com espaço
 import '../../../models/endereco_model.dart';
 
 class PedidoDetalheModel extends Equatable {
@@ -47,15 +48,33 @@ class PedidoDetalheModel extends Equatable {
     this.lojaNome,
   });
 
+  // Mapa de status para labels
+  static const Map<String, String> statusLabels = {
+    'novo': 'Novo',
+    'aguardando': 'Aguardando',
+    'confirmado': 'Confirmado',
+    'preparando': 'Preparando',
+    'pronto': 'Pronto',
+    'saiu': 'Saiu para Entrega',
+    'entregue': 'Entregue',
+    'cancelado': 'Cancelado',
+  };
+
+  static const Map<String, String> pagamentoLabels = {
+    'credito': 'Cartão de Crédito',
+    'debito': 'Cartão de Débito',
+    'dinheiro': 'Dinheiro',
+    'pix': 'PIX',
+    'vr': 'Vale Refeição',
+  };
+
   Color get statusColor {
     switch (status.toLowerCase()) {
       case 'entregue':
         return Colors.green;
       case 'cancelado':
         return Colors.red;
-      case 'saiu_entrega':
       case 'saiu':
-      case 'em_preparo':
       case 'preparando':
       case 'pronto':
         return Colors.orange;
@@ -71,10 +90,8 @@ class PedidoDetalheModel extends Equatable {
         return Icons.receipt_long;
       case 'confirmado':
         return Icons.check_circle_outline;
-      case 'em_preparo':
       case 'preparando':
         return Icons.restaurant;
-      case 'saiu_entrega':
       case 'saiu':
         return Icons.delivery_dining;
       case 'entregue':
@@ -87,49 +104,107 @@ class PedidoDetalheModel extends Equatable {
   }
 
   factory PedidoDetalheModel.fromJson(Map<String, dynamic> json) {
-    DateTime? parseDate(dynamic v) {
-      if (v == null || v.toString().isEmpty) return null;
+    // 🔧 FUNÇÃO DE PARSE CORRIGIDA
+    DateTime? parseDate(dynamic value) {
+      if (value == null || value.toString().isEmpty) return null;
+      final str = value.toString().trim();
       try {
-        return DateTime.parse(v.toString());
-      } catch (e) {
-        return null;
+        // Tenta formato "YYYY-MM-DD HH:mm:ss"
+        return DateFormat("yyyy-MM-dd HH:mm:ss").parse(str);
+      } catch (_) {
+        try {
+          // Fallback para ISO (com 'T')
+          return DateTime.parse(str);
+        } catch (_) {
+          return null;
+        }
       }
     }
 
+    // Mapeia status para label
+    String getStatusLabel(String status) {
+      return statusLabels[status.toLowerCase()] ?? status;
+    }
+
+    String getPagamentoLabel(String forma) {
+      return pagamentoLabels[forma.toLowerCase()] ?? forma;
+    }
+
+    // Obtém o endereço (pode vir como Map ou null)
+    EnderecoModel endereco;
+    if (json['endereco'] is Map) {
+      endereco = EnderecoModel.fromJson(json['endereco']);
+    } else if (json['endereco_entrega'] is Map) {
+      endereco = EnderecoModel.fromJson(json['endereco_entrega']);
+    } else {
+      endereco = const EnderecoModel(
+        cep: '',
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        cidade: '',
+        uf: '',
+      );
+    }
+
+    // Itens
+    List<PedidoItemModel> itens = [];
+    if (json['itens'] is List) {
+      itens = (json['itens'] as List)
+          .map((i) => PedidoItemModel.fromJson(i))
+          .toList();
+    }
+
+    // Loja
+    String? lojaNome;
+    if (json['loja'] is Map) {
+      lojaNome = json['loja']['nome']?.toString();
+    } else if (json['loja_nome'] != null) {
+      lojaNome = json['loja_nome'].toString();
+    }
+
+    final statusStr = json['status']?.toString() ?? 'desconhecido';
+
     return PedidoDetalheModel(
       id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
-      status: json['status']?.toString() ?? 'desconhecido',
-      statusLabel: json['status_label']?.toString() ?? json['status']?.toString() ?? 'Desconhecido',
-      subtotal: double.tryParse(json['subtotal']?.toString() ?? '0') ?? 0.0,
-      taxaEntrega: double.tryParse(json['taxa_entrega']?.toString() ?? '0') ?? 0.0,
-      total: double.tryParse(json['total']?.toString() ?? '0') ?? 0.0,
-      formaPagamento: json['forma_pagamento']?.toString() ?? '',
-      formaPagamentoLabel: json['forma_pagamento_label']?.toString() ?? json['forma_pagamento']?.toString() ?? '',
-      trocoPara: json['troco_para'] != null ? double.tryParse(json['troco_para'].toString()) : null,
-      observacao: json['observacao']?.toString(),
-      criadoEm: parseDate(json['created_at'] ?? json['criado_at']) ?? DateTime.now(),
-      confirmadoEm: parseDate(json['confirmado_at']),
-      emPreparoEm: parseDate(json['em_preparo_at']),
-      saiuEntregaEm: parseDate(json['saiu_entrega_at']),
-      entregueEm: parseDate(json['entregue_at']),
-      canceladoEm: parseDate(json['cancelado_at']),
       itemCount: json['item_count'] ?? 0,
-      endereco: json['endereco'] is Map 
-          ? EnderecoModel.fromJson(json['endereco']) 
-          : const EnderecoModel(cep: '', logradouro: '', numero: '', bairro: '', cidade: '', uf: ''),
-      itens: (json['itens'] is List) 
-          ? (json['itens'] as List).map((i) => PedidoItemModel.fromJson(i)).toList() 
-          : [],
-      lojaNome: json['loja'] is Map 
-          ? json['loja']['nome']?.toString() 
-          : (json['loja']?.toString() ?? json['loja_nome']?.toString()),
+      status: statusStr,
+      statusLabel: json['status_label']?.toString() ?? getStatusLabel(statusStr),
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      taxaEntrega: (json['taxa_entrega'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      formaPagamento: json['forma_pagamento']?.toString() ?? '',
+      formaPagamentoLabel: json['forma_pagamento_label']?.toString() ??
+          getPagamentoLabel(json['forma_pagamento']?.toString() ?? ''),
+      trocoPara: json['troco_para'] != null
+          ? (json['troco_para'] as num?)?.toDouble()
+          : null,
+      observacao: json['observacoes']?.toString() ?? json['observacao']?.toString(),
+      // 🔧 CHAVES CORRETAS
+      criadoEm: parseDate(json['criado_em']) ?? DateTime.now(),
+      confirmadoEm: parseDate(json['data_confirmacao']),
+      emPreparoEm: parseDate(json['data_preparo']),
+      saiuEntregaEm: parseDate(json['data_saida']),
+      entregueEm: parseDate(json['data_entrega']),
+      canceladoEm: parseDate(json['data_cancelamento']),
+      endereco: endereco,
+      itens: itens,
+      lojaNome: lojaNome,
     );
   }
 
   @override
   List<Object?> get props => [
-    id, status, subtotal, taxaEntrega, total, formaPagamento, 
-    criadoEm, endereco, itens, lojaNome
+    id,
+    status,
+    subtotal,
+    taxaEntrega,
+    total,
+    formaPagamento,
+    criadoEm,
+    endereco,
+    itens,
+    lojaNome,
   ];
 }
 
@@ -153,10 +228,12 @@ class PedidoItemModel extends Equatable {
   factory PedidoItemModel.fromJson(Map<String, dynamic> json) {
     return PedidoItemModel(
       id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
-      nome: json['nome']?.toString() ?? '',
-      quantidade: int.tryParse(json['quantidade']?.toString() ?? '0') ?? 0,
-      precoUnitario: double.tryParse(json['preco_unitario']?.toString() ?? '0') ?? 0.0,
-      precoTotal: double.tryParse(json['preco_total']?.toString() ?? '0') ?? 0.0,
+      nome: json['nome']?.toString() ?? json['produto_nome']?.toString() ?? '',
+      quantidade: json['quantidade'] is int
+          ? json['quantidade']
+          : (int.tryParse(json['quantidade']?.toString() ?? '0') ?? 0),
+      precoUnitario: (json['preco_unitario'] as num?)?.toDouble() ?? 0.0,
+      precoTotal: (json['preco_total'] as num?)?.toDouble() ?? 0.0,
       observacao: json['observacao']?.toString(),
     );
   }

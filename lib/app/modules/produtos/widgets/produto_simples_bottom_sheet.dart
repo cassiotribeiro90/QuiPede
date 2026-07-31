@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../di/dependencies.dart';
@@ -48,96 +47,105 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
   Widget build(BuildContext context) {
     final bool isEdicao = widget.itemId != null;
 
-    return BlocListener<CarrinhoCubit, CarrinhoState>(
+    return BlocConsumer<CarrinhoCubit, CarrinhoState>(
       listener: (context, state) {
-        if (kDebugMode) {
-          print('📥 [ProdutoModal] Novo estado recebido: ${state.runtimeType}');
-        }
+        print('📥 [ProdutoModal] LISTENER: ${state.runtimeType}');
 
-        if (state is CarrinhoConflitoLoja) {
+        if (state is CarrinhoConflitoLojaDetectado) {
+          print('🔥 CONFLITO!');
           setState(() => _isAdding = false);
           _mostrarDialogoConflito(state);
-        } else if (state is CarrinhoLoaded && _isAdding) {
+          return;
+        }
+
+        if (state is CarrinhoLoaded && _isAdding) {
+          print('✅ SUCESSO!');
           setState(() => _isAdding = false);
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isEdicao 
-                ? '${widget.produto.nome} atualizado!' 
-                : '${widget.produto.nome} adicionado ao carrinho!'),
+              content: Text(isEdicao
+                  ? '${widget.produto.nome} atualizado!'
+                  : '${widget.produto.nome} adicionado ao carrinho!'),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
             ),
           );
-        } else if (state is CarrinhoError && _isAdding) {
+          return;
+        }
+
+        if (state is CarrinhoError && _isAdding) {
+          print('❌ ERRO: ${state.message}');
           setState(() => _isAdding = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message), 
+              content: Text(state.message),
               backgroundColor: Colors.red,
             ),
           );
         }
       },
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+      builder: (context, state) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildProdutoHeader(),
-                    if (widget.produto.descricao != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        widget.produto.descricao,
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _observacaoController,
-                      enabled: !_isAdding,
-                      decoration: InputDecoration(
-                        hintText: 'Alguma observação?',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProdutoHeader(),
+                      if (widget.produto.descricao != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.produto.descricao,
+                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                         ),
+                      ],
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _observacaoController,
+                        enabled: !_isAdding,
+                        decoration: InputDecoration(
+                          hintText: 'Alguma observação?',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        maxLines: 2,
                       ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildQuantidadeSelector(),
-                    const SizedBox(height: 24),
-                    _buildBotaoAcao(isEdicao),
-                  ],
+                      const SizedBox(height: 20),
+                      _buildQuantidadeSelector(),
+                      const SizedBox(height: 24),
+                      _buildBotaoAcao(isEdicao),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -208,8 +216,8 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
               onPressed: _isAdding
                   ? null
                   : (_quantidade > 1
-                      ? () => setState(() => _quantidade--)
-                      : null),
+                  ? () => setState(() => _quantidade--)
+                  : null),
               icon: const Icon(Icons.remove_circle_outline),
             ),
             Container(
@@ -228,7 +236,7 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
 
   Widget _buildBotaoAcao(bool isEdicao) {
     final precoTotal = (widget.produto.preco ?? 0) * _quantidade;
-    
+
     return SizedBox(
       width: double.infinity,
       height: 50,
@@ -240,9 +248,18 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         ),
         child: _isAdding
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-            : Text('${isEdicao ? 'Atualizar' : 'Adicionar'} • R\$ ${precoTotal.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ? const SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+            : Text(
+          '${isEdicao ? 'Atualizar' : 'Adicionar'} • R\$ ${precoTotal.toStringAsFixed(2)}',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -260,56 +277,68 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
       return;
     }
 
+    print('🔄 [ProdutoModal] Adicionando...');
     setState(() => _isAdding = true);
 
     final observacao = _observacaoController.text.trim().isNotEmpty
         ? _observacaoController.text.trim()
         : null;
 
-    if (widget.itemId != null) {
-      // ✅ Edição de item existente
-      context.read<CarrinhoCubit>().adicionarItem(
-        produtoId: widget.produto.id,
-        quantidade: _quantidade,
-        observacao: observacao,
-        applyDebounce: false
-      );
-    } else {
-      // ✅ Novo item
-      context.read<CarrinhoCubit>().adicionarItem(
-        produtoId: widget.produto.id,
-        quantidade: _quantidade,
-        observacao: observacao,
-        applyDebounce: false
-      );
-    }
+    context.read<CarrinhoCubit>().adicionarItem(
+      produtoId: widget.produto.id,
+      quantidade: _quantidade,
+      observacao: observacao,
+      applyDebounce: false,
+    );
   }
 
-  void _mostrarDialogoConflito(CarrinhoConflitoLoja conflito) {
+  void _mostrarDialogoConflito(CarrinhoConflitoLojaDetectado conflito) {
+    print('🔥 [ProdutoModal] Exibindo diálogo');
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Carrinho br outra loja'),
-        content: Text(conflito.mensagem),
+        title: const Text(
+          'Atenção',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(conflito.mensagem),
+            const SizedBox(height: 12),
+            Text(
+              '🛒 Loja atual: ${conflito.lojaAtualNome ?? conflito.lojaAtualId}',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            Text(
+              '🆕 Nova loja: ${conflito.novaLojaId}',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
+            onPressed: () {
+              print('🔙 Manter carrinho');
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Manter carrinho'),
           ),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: () {
+              print('🔄 Limpar e adicionar');
               Navigator.pop(dialogContext);
               setState(() => _isAdding = true);
-              await context.read<CarrinhoCubit>().limparEAdicionar(
-                produtoId: widget.produto.id,
-                quantidade: _quantidade,
-                observacao: _observacaoController.text.trim().isNotEmpty 
-                    ? _observacaoController.text.trim() 
-                    : null,
-              );
+              context.read<CarrinhoCubit>().limparEAdicionar(conflito);
             },
-            child: const Text('Limpar e adicionar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sim, substituir'),
           ),
         ],
       ),

@@ -4,8 +4,8 @@ class CarrinhoResult {
   final bool success;
   final int? code;
   final String? message;
-  final CarrinhoResponse? data;      // quando sucesso (200)
-  final CarrinhoConflito? conflito;  // quando conflito (409)
+  final CarrinhoResponse? data;
+  final CarrinhoConflito? conflito;
 
   CarrinhoResult.success(this.data)
       : success = true,
@@ -42,14 +42,16 @@ class CarrinhoConflito {
     required this.message,
   });
 
-  factory CarrinhoConflito.fromJson(Map<String, dynamic> json) {
-    final status = json['status'] ?? json['data'] ?? {};
+  factory CarrinhoConflito.fromJson(dynamic json) {
+    final Map<String, dynamic> data = (json is Map) ? Map<String, dynamic>.from(json) : {};
+    final status = data['status'] ?? data['data'] ?? data;
+
     return CarrinhoConflito(
       acao: status['acao'] ?? 'limpar_carrinho',
-      lojaAtual: status['loja_atual'] ?? 0,
-      novaLoja: status['nova_loja'] ?? 0,
+      lojaAtual: int.tryParse(status['loja_atual']?.toString() ?? '0') ?? 0,
+      novaLoja: int.tryParse(status['nova_loja']?.toString() ?? '0') ?? 0,
       lojaAtualNome: status['loja_atual_nome'],
-      message: json['message'] ?? 'Conflito de loja detectado',
+      message: data['message'] ?? 'Seu carrinho já tem itens de outra loja. Deseja limpar o carrinho e adicionar este item?',
     );
   }
 }

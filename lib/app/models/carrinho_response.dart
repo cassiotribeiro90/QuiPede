@@ -13,17 +13,21 @@ class CarrinhoResponse extends Equatable {
     required this.resumo,
   });
 
-  factory CarrinhoResponse.fromJson(Map<String, dynamic> json) {
-    if (kDebugMode) print('🔍 Parsing CarrinhoResponse: \$json');
+  factory CarrinhoResponse.fromJson(dynamic json) {
+    if (kDebugMode) print('🔍 Parsing CarrinhoResponse: $json');
+    
+    // Se o json vier como uma lista (ex: carrinho vazio vindo do backend como []), 
+    // tratamos como um objeto vazio para evitar erro de cast.
+    final Map<String, dynamic> data = (json is Map) ? Map<String, dynamic>.from(json) : {};
     
     return CarrinhoResponse(
-      mensagem: json['mensagem']?.toString(),
-      itens: (json['itens'] as List? ?? [])
-          .map((e) => CarrinhoItem.fromJson(Map<String, dynamic>.from(e)))
-          .toList(),
-      resumo: json['resumo'] != null 
-          ? CarrinhoResumo.fromJson(Map<String, dynamic>.from(json['resumo']))
-          : const CarrinhoResumo(totalItens: 0, subtotal: 0, formasPagamento: {}),
+      mensagem: data['mensagem']?.toString(),
+      itens: (data['itens'] is List)
+          ? (data['itens'] as List)
+              .map((e) => CarrinhoItem.fromJson(e))
+              .toList()
+          : [],
+      resumo: CarrinhoResumo.fromJson(data['resumo']),
     );
   }
 
@@ -52,16 +56,20 @@ class CarrinhoResumo extends Equatable {
     this.formasPagamento = const {},
   });
 
-  factory CarrinhoResumo.fromJson(Map<String, dynamic> json) {
+  factory CarrinhoResumo.fromJson(dynamic json) {
+    final data = (json is Map) ? Map<String, dynamic>.from(json) : <String, dynamic>{};
+    
     return CarrinhoResumo(
-      totalItens: int.tryParse(json['total_itens']?.toString() ?? '0') ?? 0,
-      subtotal: double.tryParse(json['subtotal']?.toString() ?? '0') ?? 0.0,
-      lojaId: int.tryParse(json['loja_id']?.toString() ?? ''),
-      lojaNome: json['loja_nome']?.toString(),
-      taxaEntrega: double.tryParse(json['taxa_entrega']?.toString() ?? ''),
-      total: double.tryParse(json['total']?.toString() ?? ''),
-      distanciaKm: double.tryParse(json['distancia_km']?.toString() ?? ''),
-      formasPagamento: Map<String, dynamic>.from(json['formas_pagamento'] ?? {}),
+      totalItens: int.tryParse(data['total_itens']?.toString() ?? '0') ?? 0,
+      subtotal: double.tryParse(data['subtotal']?.toString() ?? '0') ?? 0.0,
+      lojaId: int.tryParse(data['loja_id']?.toString() ?? ''),
+      lojaNome: data['loja_nome']?.toString(),
+      taxaEntrega: double.tryParse(data['taxa_entrega']?.toString() ?? ''),
+      total: double.tryParse(data['total']?.toString() ?? ''),
+      distanciaKm: double.tryParse(data['distancia_km']?.toString() ?? ''),
+      formasPagamento: (data['formas_pagamento'] is Map) 
+          ? Map<String, dynamic>.from(data['formas_pagamento'])
+          : {},
     );
   }
 

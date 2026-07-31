@@ -52,7 +52,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
-        
+
         if (state is PedidoDetalheCarregado) {
           final status = state.pedido.status.toLowerCase();
           if (status == 'entregue' || status == 'cancelado') {
@@ -106,103 +106,102 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Status do Pedido
             _buildSectionTitle(context, 'Status do Pedido'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: context.surfaceColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: PedidoStatusTimeline(
-                status: pedido.status,
-                timestamps: timestamps,
-              ),
+            const SizedBox(height: 12),
+            PedidoStatusTimeline(
+              status: pedido.status,
+              timestamps: timestamps,
             ),
-            const SizedBox(height: 24),
+            const Divider(height: 32, thickness: 1),
+
+            // Itens
             _buildSectionTitle(context, 'Itens do Pedido'),
-            const SizedBox(height: 12),
-            _buildInfoCard(
-              context,
-              child: Column(
-                children: pedido.itens.map((item) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(item.nome, style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${item.quantidade}x ${_formatarMoeda(item.precoUnitario)}'),
-                    trailing: Text(_formatarMoeda(item.precoTotal), style: context.bodyLarge),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionTitle(context, 'Endereço de Entrega'),
-            const SizedBox(height: 12),
-            _buildInfoCard(
-              context,
+            const SizedBox(height: 8),
+            ...pedido.itens.map((item) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Icon(Icons.location_on_outlined, color: context.primaryColor),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      '${pedido.endereco.logradouro}, ${pedido.endereco.numero}${pedido.endereco.complemento != null ? " - ${pedido.endereco.complemento}" : ""}\n${pedido.endereco.bairro}, ${pedido.endereco.cidade} - ${pedido.endereco.uf}',
-                      style: context.bodyMedium,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionTitle(context, 'Pagamento'),
-            const SizedBox(height: 12),
-            _buildInfoCard(
-              context,
-              child: Row(
-                children: [
-                  Icon(Icons.payments_outlined, color: context.primaryColor),
-                  const SizedBox(width: 12),
-                  Expanded(
+                    flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(pedido.formaPagamentoLabel, style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
-                        if (pedido.trocoPara != null)
-                          Text('Troco para ${_formatarMoeda(pedido.trocoPara!)}', style: context.bodySmall),
+                        Text(item.nome, style: context.bodyLarge),
+                        Text(
+                          '${item.quantidade}x ${_formatarMoeda(item.precoUnitario)}',
+                          style: context.bodySmall?.copyWith(color: context.textSecondary),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionTitle(context, 'Resumo'),
-            const SizedBox(height: 12),
-            _buildInfoCard(
-              context,
-              child: Column(
-                children: [
-                  _buildResumoRow(context, 'Subtotal', _formatarMoeda(pedido.subtotal)),
-                  const SizedBox(height: 8),
-                  _buildResumoRow(context, 'Taxa de entrega', _formatarMoeda(pedido.taxaEntrega)),
-                  const Divider(height: 24),
-                  _buildResumoRow(
-                    context, 
-                    'Total', 
-                    _formatarMoeda(pedido.total),
-                    isTotal: true,
+                  Text(
+                    _formatarMoeda(item.precoTotal),
+                    style: context.bodyLarge,
                   ),
                 ],
               ),
+            )).toList(),
+            const Divider(height: 32, thickness: 1),
+
+            // Endereço
+            _buildSectionTitle(context, 'Endereço de Entrega'),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.location_on_outlined, color: context.primaryColor, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${pedido.endereco.logradouro}, ${pedido.endereco.numero}${pedido.endereco.complemento != null && pedido.endereco.complemento!.isNotEmpty ? " - ${pedido.endereco.complemento}" : ""}\n${pedido.endereco.bairro}, ${pedido.endereco.cidade} - ${pedido.endereco.uf}',
+                    style: context.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 32, thickness: 1),
+
+            // Pagamento
+            _buildSectionTitle(context, 'Pagamento'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.payments_outlined, color: context.primaryColor, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(pedido.formaPagamentoLabel, style: context.bodyLarge),
+                      if (pedido.trocoPara != null)
+                        Text(
+                          'Troco para ${_formatarMoeda(pedido.trocoPara!)}',
+                          style: context.bodySmall?.copyWith(color: context.textSecondary),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 32, thickness: 1),
+
+            // Resumo
+            _buildSectionTitle(context, 'Resumo'),
+            const SizedBox(height: 8),
+            _buildResumoRow(context, 'Subtotal', _formatarMoeda(pedido.subtotal)),
+            const SizedBox(height: 6),
+            _buildResumoRow(context, 'Taxa de entrega', _formatarMoeda(pedido.taxaEntrega)),
+            const Divider(height: 16, thickness: 1),
+            _buildResumoRow(
+              context,
+              'Total',
+              _formatarMoeda(pedido.total),
+              isTotal: true,
             ),
             const SizedBox(height: 32),
+
+            // Botões
             if (pedido.status == 'pendente' || pedido.status == 'confirmado' || pedido.status == 'novo')
               OutlinedButton(
                 onPressed: () => _confirmarCancelamento(context, pedido.id),
@@ -254,20 +253,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
-    );
-  }
-
-  Widget _buildInfoCard(BuildContext context, {required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.borderColor.withOpacity(0.5)),
-      ),
-      child: child,
+      style: context.titleMedium?.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -277,14 +263,14 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
       children: [
         Text(
           label,
-          style: isTotal 
-              ? context.titleLarge.copyWith(fontWeight: FontWeight.bold)
-              : context.bodyMedium.copyWith(color: context.textSecondary),
+          style: isTotal
+              ? context.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+              : context.bodyMedium?.copyWith(color: context.textSecondary),
         ),
         Text(
           value,
-          style: isTotal 
-              ? context.titleLarge.copyWith(fontWeight: FontWeight.bold, color: context.primaryColor)
+          style: isTotal
+              ? context.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: context.primaryColor)
               : context.bodyLarge,
         ),
       ],
