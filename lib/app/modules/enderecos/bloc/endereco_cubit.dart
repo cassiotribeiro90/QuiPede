@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
 import '../models/endereco_model.dart';
 import '../repositories/endereco_repository.dart';
 import 'endereco_state.dart';
@@ -14,8 +14,7 @@ class EnderecoCubit extends Cubit<EnderecoState> {
     try {
       emit(EnderecoLoading());
       final enderecos = await _repository.getEnderecos();
-      
-      // 🔥 GARANTE QUE SÓ EMITE SE O WIDGET AINDA ESTIVER MONTADO
+
       if (!isClosed) {
         EnderecoModel? principal;
         try {
@@ -23,33 +22,58 @@ class EnderecoCubit extends Cubit<EnderecoState> {
         } catch (_) {
           principal = enderecos.isNotEmpty ? enderecos.first : null;
         }
+        
+        print('🔍 [EnderecoCubit] Endereços carregados: ${enderecos.length}');
+        print('🔍 [EnderecoCubit] Endereço principal encontrado: ${principal?.id} - ${principal?.enderecoResumido}');
+
+        if (principal == null) {
+          print('⚠️ [EnderecoCubit] Nenhum endereço principal encontrado na lista.');
+        }
+
         emit(EnderecoLoaded(enderecos, enderecoPrincipal: principal));
       }
     } catch (e) {
       if (!isClosed) {
+        print('❌ [EnderecoCubit] Erro ao carregar endereços: $e');
         emit(EnderecoError(e.toString()));
       }
     }
   }
 
+  /// Cria um novo endereço
   Future<void> criarEndereco(EnderecoModel endereco) async {
     try {
+      print('🚀 [EnderecoCubit] Criando endereço: ${endereco.enderecoResumido}');
       emit(EnderecoLoading());
-      final novo = await _repository.criarEndereco(endereco);
-      
+      final result = await _repository.criarEndereco(endereco);
+
       if (!isClosed) {
-        final currentState = state;
-        if (currentState is EnderecoLoaded) {
-          final novosEnderecos = [...currentState.enderecos, novo];
-          EnderecoModel? principal;
-          try {
-            principal = novosEnderecos.firstWhere((e) => e.principal == true);
-          } catch (_) {
-            principal = novosEnderecos.isNotEmpty ? novosEnderecos.first : null;
+        // 🔥 VERIFICA SE O RESULTADO TEM O CAMPO 'endereco'
+        final enderecoData = result['endereco'];
+
+        if (enderecoData != null && enderecoData is Map<String, dynamic>) {
+          final novo = EnderecoModel.fromJson(enderecoData);
+          print('✅ [EnderecoCubit] Endereço criado com sucesso: ID ${novo.id}');
+
+          final currentState = state;
+          if (currentState is EnderecoLoaded) {
+            final novosEnderecos = [...currentState.enderecos, novo];
+            EnderecoModel? principal;
+            try {
+              principal = novosEnderecos.firstWhere((e) => e.principal == true);
+            } catch (_) {
+              principal = novosEnderecos.isNotEmpty ? novosEnderecos.first : null;
+            }
+            emit(EnderecoLoaded(novosEnderecos, enderecoPrincipal: principal));
+            emit(const EnderecoOperacaoSucesso('Endereço adicionado com sucesso!'));
+          } else {
+            await carregarEnderecos();
+            if (!isClosed) {
+              emit(const EnderecoOperacaoSucesso('Endereço adicionado com sucesso!'));
+            }
           }
-          emit(EnderecoLoaded(novosEnderecos, enderecoPrincipal: principal));
-          emit(const EnderecoOperacaoSucesso('Endereço adicionado com sucesso!'));
         } else {
+          print('⚠️ [EnderecoCubit] Endereço criado, mas dados não retornados no formato esperado. Recarregando...');
           await carregarEnderecos();
           if (!isClosed) {
             emit(const EnderecoOperacaoSucesso('Endereço adicionado com sucesso!'));
@@ -58,6 +82,7 @@ class EnderecoCubit extends Cubit<EnderecoState> {
       }
     } catch (e) {
       if (!isClosed) {
+        print('❌ [EnderecoCubit] Erro ao criar endereço: $e');
         emit(EnderecoError(e.toString()));
       }
     }
@@ -84,7 +109,7 @@ class EnderecoCubit extends Cubit<EnderecoState> {
     try {
       emit(EnderecoLoading());
       await _repository.deletarEndereco(id);
-      
+
       if (!isClosed) {
         final currentState = state;
         if (currentState is EnderecoLoaded) {

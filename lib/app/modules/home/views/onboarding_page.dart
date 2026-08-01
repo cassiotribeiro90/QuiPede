@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quipede/shared/api/api_client.dart';
@@ -11,6 +12,8 @@ import 'cep_input_page.dart';
 import 'localizacao_confirmacao_page.dart';
 import 'widgets/onboarding_option_card.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../enderecos/bloc/endereco_cubit.dart';
+import '../../auth/bloc/auth_cubit.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -22,12 +25,85 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final _localizacaoService = LocalizacaoService(getIt<ApiClient>());
   bool _isLoading = false;
+  bool _isNavigating = false;
 
   void _setLoading(bool value) {
     if (mounted) setState(() => _isLoading = value);
   }
 
-  Future<void> _usarLocalizacaoAtual() async {
+  void _navegarParaHome() {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    print('🚀 [OnboardingPage] _navegarParaHome() INICIADO');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        print('🚀 [OnboardingPage] Chamando pushNamedAndRemoveUntil(/home)');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          Routes.home,
+          (route) => false,
+        );
+        print('✅ [OnboardingPage] pushNamedAndRemoveUntil executado sem exceção');
+      } catch (e, stack) {
+        _isNavigating = false;
+        print('❌ [OnboardingPage] ERRO NA NAVEGAÇÃO: $e');
+        print(stack);
+      }
+    });
+  }
+
+  void _irParaCepPage() {
+    print('📂 [OnboardingPage] Navegando para CepInputPage');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: getIt<EnderecoCubit>(),
+          child: const CepInputPage(),
+        ),
+      ),
+    ).then((result) {
+      print('🔙 [OnboardingPage] result = $result');
+      if (result == true && mounted) {
+        print('✅ [OnboardingPage] Sucesso no CEP! Sincronizando endereço...');
+        // 🔥 CARREGA O ENDEREÇO ANTES DE NAVEGAR
+        context.read<AuthCubit>().carregarEnderecoUsuario();
+        // Aguarda um pouco para garantir que o estado foi atualizado
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _navegarParaHome();
+        });
+      }
+    }).catchError((e) {
+      print('❌ [OnboardingPage] Erro ao retornar do CepInputPage: $e');
+    });
+  }
+
+  void _irParaBuscaEndereco() {
+    print('📂 [OnboardingPage] Navegando para BuscaEnderecoPage');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: getIt<EnderecoCubit>(),
+          child: const BuscaEnderecoPage(),
+        ),
+      ),
+    ).then((result) {
+      print('🔙 [OnboardingPage] result = $result');
+      if (result == true && mounted) {
+        print('✅ [OnboardingPage] Sucesso na busca! Sincronizando endereço...');
+        // 🔥 CARREGA O ENDEREÇO ANTES DE NAVEGAR
+        context.read<AuthCubit>().carregarEnderecoUsuario();
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _navegarParaHome();
+        });
+      }
+    });
+  }
+
+  void _usarLocalizacaoAtual() async {
     if (!PlatformUtils.isMobile) return;
 
     _setLoading(true);
@@ -44,13 +120,26 @@ class _OnboardingPageState extends State<OnboardingPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => LocalizacaoConfirmacaoPage(
-                endereco: response['data'],
-                latitude: position.latitude,
-                longitude: position.longitude,
+              builder: (_) => BlocProvider.value(
+                value: getIt<EnderecoCubit>(),
+                child: LocalizacaoConfirmacaoPage(
+                  endereco: response['data'],
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                ),
               ),
             ),
-          );
+          ).then((result) {
+            print('🔙 [OnboardingPage] result = $result');
+            if (result == true && mounted) {
+              print('✅ [OnboardingPage] Sucesso no GPS! Sincronizando endereço...');
+              // 🔥 CARREGA O ENDEREÇO ANTES DE NAVEGAR
+              context.read<AuthCubit>().carregarEnderecoUsuario();
+              Future.delayed(const Duration(milliseconds: 300), () {
+                _navegarParaHome();
+              });
+            }
+          });
         } else {
           _showError(response['message'] ?? 'Não foi possível identificar seu endereço.');
         }
@@ -64,16 +153,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
-  void _irParaBuscaEndereco() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const BuscaEnderecoPage(),
-      ),
-    );
-  }
-
   void _showError(String message) {
+    print('⚠️ [OnboardingPage] Erro: $message');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.orange),
     );
@@ -81,8 +162,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ [OnboardingPage] build() chamado');
     final primaryColor = const Color(0xFFF57C00);
 
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: getIt<EnderecoCubit>()),
+      ],
+      child: _buildContent(context, primaryColor),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, Color primaryColor) {
     return AppScaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -124,17 +215,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  
+
                   OnboardingOptionCard(
                     icon: Icons.markunread_mailbox_rounded,
                     title: 'Informar CEP',
                     subtitle: 'Rápido e preciso',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const CepInputPage()),
-                    ),
+                    onTap: _irParaCepPage,
                   ),
-                  
+
                   if (PlatformUtils.isMobile)
                     OnboardingOptionCard(
                       icon: Icons.my_location_rounded,
@@ -142,7 +230,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       subtitle: 'Encontre lojas próximas',
                       onTap: _usarLocalizacaoAtual,
                     ),
-                    
+
                   OnboardingOptionCard(
                     icon: Icons.search_rounded,
                     title: 'Buscar endereço',
@@ -155,11 +243,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     subtitle: 'Entrar com email ou redes sociais',
                     onTap: () => Navigator.pushNamed(context, Routes.login),
                   ),
-                  
+
                   const SizedBox(height: 40),
                   Center(
                     child: Text(
-                      'Ao continuar, você concorda br nossos Termos de Uso.',
+                      'Ao continuar, você concorda com nossos Termos de Uso.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                     ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../app/models/endereco_model.dart';
+
+import '../../app/modules/enderecos/models/endereco_model.dart';
+
 
 class EnderecoSelecionadoWidget extends StatelessWidget {
   final EnderecoModel? endereco;

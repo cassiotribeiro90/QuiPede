@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../models/endereco_model.dart';
+import '../../enderecos/models/endereco_model.dart';
+
 
 
 abstract class LocalizacaoState extends Equatable {

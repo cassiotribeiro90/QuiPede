@@ -5,7 +5,6 @@ import '../bloc/lojas_state.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import '../widgets/loja_item.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
-import '../../../core/theme/app_theme_extension.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
@@ -32,8 +31,10 @@ class _LojasListScreenState extends State<LojasListScreen> {
   @override
   void initState() {
     super.initState();
+    print('🟢 [LojasListScreen] initState()');
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🟢 [LojasListScreen] PostFrameCallback - carregando lojas');
       context.read<LojasCubit>().fetchLojas(perPage: 10);
     });
   }
@@ -46,11 +47,12 @@ class _LojasListScreenState extends State<LojasListScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= 
+    if (_scrollController.hasClients && _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       final cubit = context.read<LojasCubit>();
       final state = cubit.state;
       if (cubit.hasMorePages && state is LojasLoaded && !state.isLoadingMore) {
+        print('🔄 [LojasListScreen] Carregando mais lojas');
         cubit.fetchLojas(
           page: cubit.currentPage + 1,
           perPage: 10,
@@ -98,10 +100,12 @@ class _LojasListScreenState extends State<LojasListScreen> {
   Widget _buildAppBarTitle(BuildContext context) {
     return BlocBuilder<LocalizacaoCubit, LocalizacaoState>(
       builder: (context, state) {
+        print('🔍 [LojasListScreen] LocalizacaoState: ${state.runtimeType}');
         String titulo = 'Selecionar endereço';
-        
+
         if (state is LocalizacaoCarregada) {
           titulo = state.enderecoFormatado;
+          print('🔍 [LojasListScreen] Exibindo endereço: $titulo');
         }
 
         return GestureDetector(
@@ -111,21 +115,21 @@ class _LojasListScreenState extends State<LojasListScreen> {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.location_on_rounded, size: 18, color: context.primaryColor),
+              Icon(Icons.location_on_rounded, size: 18, color: Theme.of(context).primaryColor),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   titulo,
-                  style: context.bodyLarge.copyWith(
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: context.textPrimary,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: context.textSecondary),
+              Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
             ],
           ),
         );
@@ -135,59 +139,81 @@ class _LojasListScreenState extends State<LojasListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: getIt<CarrinhoCubit>()),
-      ],
-      child: BlocListener<LocalizacaoCubit, LocalizacaoState>(
-        listener: (context, state) {
-          if (state is LocalizacaoNaoEncontrada) {
-            _navegarParaEnderecos(context);
-          }
-        },
-        child: BlocBuilder<LojasCubit, LojasState>(
-          builder: (context, state) {
-            return ResponsivePageScaffold(
-              backgroundColor: context.backgroundColor,
-              drawer: const AppDrawer(),
-              appBar: AppBar(
-                title: _buildAppBarTitle(context),
-                centerTitle: true,
-                elevation: 0,
-                backgroundColor: context.backgroundColor,
-                foregroundColor: context.textPrimary,
-                leading: Builder(
-                  builder: (context) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                  ),
-                ),
-                actions: [
-                   IconButton(
-                    icon: const Icon(Icons.notifications_none_rounded),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-              bottomNavigationBar: const CarrinhoBottomBar(),
-              body: RefreshIndicator(
-                onRefresh: () => context.read<LojasCubit>().refreshList(),
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: _buildSearchTrigger(state),
-                    ),
-                    _buildSliverBody(state),
-                  ],
-                ),
-              ),
-            );
+    print('🏗️ [LojasListScreen] build() iniciado');
+    try {
+      return MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: getIt<CarrinhoCubit>()),
+        ],
+        child: BlocListener<LocalizacaoCubit, LocalizacaoState>(
+          listener: (context, state) {
+            print('📢 [LojasListScreen] Listener LocalizacaoState: ${state.runtimeType}');
+            if (state is LocalizacaoNaoEncontrada) {
+              print('⚠️ [LojasListScreen] Localização não encontrada no listener');
+              _navegarParaEnderecos(context);
+            }
           },
+          child: BlocBuilder<LojasCubit, LojasState>(
+            builder: (context, state) {
+              print('📢 [LojasListScreen] BlocBuilder LojasState: ${state.runtimeType}');
+              try {
+                return ResponsivePageScaffold(
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  drawer: const AppDrawer(),
+                  appBar: AppBar(
+                    title: _buildAppBarTitle(context),
+                    centerTitle: true,
+                    elevation: 0,
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                    leading: Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu_rounded),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_none_rounded),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                  bottomNavigationBar: const CarrinhoBottomBar(),
+                  body: RefreshIndicator(
+                    onRefresh: () => context.read<LojasCubit>().refreshList(),
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: _buildSearchTrigger(state),
+                        ),
+                        _buildSliverBody(state),
+                      ],
+                    ),
+                  ),
+                );
+              } catch (e, stack) {
+                print('❌ [LojasListScreen] ERRO NO BUILDER: $e');
+                print(stack);
+                return Scaffold(
+                  appBar: AppBar(title: const Text('Erro')),
+                  body: Center(child: Text('Erro: $e')),
+                );
+              }
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e, stack) {
+      print('❌ [LojasListScreen] ERRO NO BUILD PRINCIPAL: $e');
+      print(stack);
+      return Scaffold(
+        appBar: AppBar(title: const Text('Erro')),
+        body: Center(child: Text('Erro: $e')),
+      );
+    }
   }
 
   Widget _buildSearchTrigger(LojasState state) {
@@ -212,6 +238,9 @@ class _LojasListScreenState extends State<LojasListScreen> {
       }
     }
 
+    final primaryColor = Theme.of(context).primaryColor;
+    final hintColor = Theme.of(context).hintColor;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: GestureDetector(
@@ -221,25 +250,25 @@ class _LojasListScreenState extends State<LojasListScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: context.surfaceColor,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: hasFilters ? context.primaryColor : context.borderColor,
+              color: hasFilters ? primaryColor : Colors.grey.shade300,
               width: hasFilters ? 1.5 : 1.0,
             ),
           ),
           child: Row(
             children: [
               Icon(
-                Icons.search, 
-                color: hasFilters ? context.primaryColor : context.textHint,
+                Icons.search,
+                color: hasFilters ? primaryColor : hintColor,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   summary,
-                  style: context.bodyMedium.copyWith(
-                    color: hasFilters ? context.textPrimary : context.textHint,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: hasFilters ? Theme.of(context).textTheme.bodyLarge?.color : hintColor,
                     fontWeight: hasFilters ? FontWeight.w500 : FontWeight.normal,
                   ),
                   maxLines: 1,
@@ -254,7 +283,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Icon(Icons.close, size: 20, color: context.primaryColor),
+                    child: Icon(Icons.close, size: 20, color: primaryColor),
                   ),
                 ),
             ],
@@ -293,7 +322,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
 
       return SliverList(
         delegate: SliverChildBuilderDelegate(
-          (context, index) {
+              (context, index) {
             if (index >= lojas.length) {
               return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
             }
@@ -306,11 +335,11 @@ class _LojasListScreenState extends State<LojasListScreen> {
                 ),
                 if (index < lojas.length - 1)
                   Divider(
-                    height: 1, 
-                    thickness: 0.5, 
-                    indent: 16, 
+                    height: 1,
+                    thickness: 0.5,
+                    indent: 16,
                     endIndent: 16,
-                    color: context.borderColor.withOpacity(0.5),
+                    color: Colors.grey.shade300.withOpacity(0.5),
                   ),
               ],
             );
@@ -319,7 +348,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
         ),
       );
     }
-    
+
     if (state is LojasError) {
       return SliverFillRemaining(hasScrollBody: false, child: Center(child: Text(state.message)));
     }
@@ -360,13 +389,13 @@ class _LojasListScreenState extends State<LojasListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.storefront_outlined, size: 80, color: context.textHint.withOpacity(0.5)),
+          Icon(Icons.storefront_outlined, size: 80, color: Theme.of(context).hintColor.withOpacity(0.5)),
           const SizedBox(height: 16),
-          Text('Nenhuma loja encontrada', style: context.titleMedium),
+          Text('Nenhuma loja encontrada', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
-            isOverallEmpty ? 'Volte mais tarde!' : 'Tente outros filtros', 
-            style: context.bodyMedium.copyWith(color: context.textSecondary),
+            isOverallEmpty ? 'Volte mais tarde!' : 'Tente outros filtros',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
           ),
           if (!isOverallEmpty)
             TextButton(

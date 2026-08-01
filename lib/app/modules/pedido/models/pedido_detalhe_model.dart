@@ -1,7 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../models/endereco_model.dart';
+
+import '../../enderecos/models/endereco_model.dart';
 
 class PedidoDetalheModel extends Equatable {
   final int id;

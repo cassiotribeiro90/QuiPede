@@ -17,29 +17,50 @@ import '../modules/pedido/bloc/pedido_cubit.dart';
 import '../modules/enderecos/views/enderecos_list_view.dart';
 import '../modules/enderecos/views/endereco_form_view.dart';
 import '../modules/enderecos/bloc/endereco_cubit.dart';
+import '../modules/home/bloc/localizacao_cubit.dart';
+import '../modules/auth/bloc/auth_cubit.dart';
+import '../modules/carrinho/bloc/carrinho_cubit.dart';
 import 'app_routes.dart';
 
 class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case Routes.splash:
-        return MaterialPageRoute(builder: (_) => const SplashScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SplashScreen(),
+        );
       
       case Routes.onboarding:
-        return MaterialPageRoute(builder: (_) => const OnboardingPage());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const OnboardingPage(),
+        );
       
       case Routes.login:
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const LoginScreen(),
+        );
 
       case Routes.cadastro:
-        return MaterialPageRoute(builder: (_) => const CadastroPage());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const CadastroPage(),
+        );
 
       case Routes.home:
+        print('🏠 [AppRouter] Montando MultiBlocProvider para HomeScreen');
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => MultiBlocProvider(
             providers: [
               BlocProvider.value(value: getIt<HomeCubit>()),
               BlocProvider.value(value: getIt<LojasCubit>()),
+              BlocProvider.value(value: getIt<EnderecoCubit>()),
+              BlocProvider.value(value: getIt<LocalizacaoCubit>()),
+              BlocProvider.value(value: getIt<AuthCubit>()),
+              BlocProvider.value(value: getIt<CarrinhoCubit>()),
             ],
             child: const HomeScreen(),
           ),
@@ -48,14 +69,19 @@ class AppRouter {
       case Routes.lojaHome:
         final id = settings.arguments as int?;
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => LojaDetalhePage(lojaId: id ?? 0),
         );
 
       case Routes.carrinho:
-        return MaterialPageRoute(builder: (_) => const CarrinhoPage());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const CarrinhoPage(),
+        );
 
       case Routes.pedidos:
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => BlocProvider(
             create: (_) => getIt<PedidoCubit>(),
             child: const PedidosView(),
@@ -65,6 +91,7 @@ class AppRouter {
       case Routes.pedidoDetalhe:
         final id = settings.arguments as int;
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => BlocProvider(
             create: (_) => getIt<PedidoCubit>()..carregarDetalhes(id),
             child: PedidoDetalhePage(pedidoId: id),
@@ -72,10 +99,14 @@ class AppRouter {
         );
 
       case Routes.perfil:
-        return MaterialPageRoute(builder: (_) => const PerfilView());
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const PerfilView(),
+        );
 
       case Routes.meusEnderecos:
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => BlocProvider.value(
             value: getIt<EnderecoCubit>(),
             child: const EnderecosListView(),
@@ -85,17 +116,20 @@ class AppRouter {
       case Routes.enderecoForm:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => BlocProvider.value(
             value: getIt<EnderecoCubit>(),
             child: EnderecoFormView(
               endereco: args?['endereco'],
               isEditing: args?['isEditing'] ?? false,
+              modo: args?['modo'],
             ),
           ),
         );
 
       default:
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => const Scaffold(
             body: Center(child: Text('Rota não encontrada')),
           ),

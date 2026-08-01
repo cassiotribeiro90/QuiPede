@@ -1,37 +1,101 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme_extension.dart';
 import '../models/endereco_model.dart';
 
 class EnderecoCard extends StatelessWidget {
-  final EnderecoModel endereco;
+  // 🔥 ENDERECO MODEL (para a lista)
+  final EnderecoModel? endereco;
+
+  // 🔥 CAMPOS SIMPLES (para confirmação)
+  final String? logradouro;
+  final String? bairro;
+  final String? cidade;
+  final String? uf;
+  final String? cep;
+
+  // 🔥 AÇÕES (apenas para a lista)
   final bool isPrincipal;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onSetPrincipal;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onSetPrincipal;
 
   const EnderecoCard({
     super.key,
-    required this.endereco,
-    required this.isPrincipal,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onSetPrincipal,
+    this.endereco,
+    this.logradouro,
+    this.bairro,
+    this.cidade,
+    this.uf,
+    this.cep,
+    this.isPrincipal = false,
+    this.onEdit,
+    this.onDelete,
+    this.onSetPrincipal,
   });
+
+  // 🔥 CONSTRUTOR PARA LISTA (recebe EnderecoModel)
+  factory EnderecoCard.fromModel({
+    required EnderecoModel endereco,
+    required bool isPrincipal,
+    required VoidCallback onEdit,
+    required VoidCallback onDelete,
+    required VoidCallback onSetPrincipal,
+  }) {
+    return EnderecoCard(
+      endereco: endereco,
+      isPrincipal: isPrincipal,
+      onEdit: onEdit,
+      onDelete: onDelete,
+      onSetPrincipal: onSetPrincipal,
+    );
+  }
+
+  // 🔥 CONSTRUTOR PARA CONFIRMAÇÃO (recebe campos simples)
+  factory EnderecoCard.simples({
+    required String logradouro,
+    required String bairro,
+    required String cidade,
+    required String uf,
+    required String cep,
+  }) {
+    return EnderecoCard(
+      logradouro: logradouro,
+      bairro: bairro,
+      cidade: cidade,
+      uf: uf,
+      cep: cep,
+      isPrincipal: false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 DETERMINA SE É MODO LISTA OU CONFIRMAÇÃO
+    final isListMode = endereco != null;
+
+    // 🔥 DADOS DO ENDEREÇO
+    final displayLogradouro = isListMode ? endereco!.logradouro : (logradouro ?? '');
+    final displayBairro = isListMode ? endereco!.bairro : (bairro ?? '');
+    final displayCidade = isListMode ? endereco!.cidade : (cidade ?? '');
+    final displayUf = isListMode ? endereco!.uf : (uf ?? '');
+    final displayCep = isListMode ? endereco!.cep : (cep ?? '');
+    final displayLabel = isListMode ? endereco!.label : null;
+    final displayPrincipal = isListMode ? isPrincipal : false;
+    final displayCompleto = isListMode
+        ? endereco!.enderecoCompleto
+        : '$displayLogradouro, $displayBairro, $displayCidade - $displayUf';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isPrincipal 
-            ? context.primaryColor.withOpacity(0.05) 
-            : context.surfaceColor,
+        color: displayPrincipal
+            ? Theme.of(context).primaryColor.withOpacity(0.05)
+            : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isPrincipal 
-              ? context.primaryColor 
-              : context.borderColor,
-          width: isPrincipal ? 2 : 1,
+          color: displayPrincipal
+              ? Theme.of(context).primaryColor
+              : Colors.grey.shade300,
+          width: displayPrincipal ? 2 : 1,
         ),
       ),
       child: Column(
@@ -43,23 +107,24 @@ class EnderecoCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      isPrincipal ? Icons.check_circle : Icons.location_on,
-                      color: isPrincipal ? context.primaryColor : context.textHint,
+                      displayPrincipal ? Icons.check_circle : Icons.location_on,
+                      color: displayPrincipal ? Theme.of(context).primaryColor : Colors.grey,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      endereco.label ?? 'Endereço',
-                      style: context.titleSmall.copyWith(
+                      displayLabel ?? 'Endereço',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
-                    if (isPrincipal) ...[
+                    if (displayPrincipal) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: context.primaryColor,
+                          color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Text(
@@ -75,43 +140,45 @@ class EnderecoCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  if (!isPrincipal)
-                    TextButton(
-                      onPressed: onSetPrincipal,
-                      child: Text(
-                        'Selecionar',
-                        style: TextStyle(
-                          color: context.primaryColor,
-                          fontSize: 12,
-                        ),
+              // 🔥 AÇÕES (APENAS NO MODO LISTA)
+              if (isListMode && onEdit != null && onDelete != null) ...[
+                if (!displayPrincipal && onSetPrincipal != null)
+                  TextButton(
+                    onPressed: onSetPrincipal,
+                    child: Text(
+                      'Selecionar',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 12,
                       ),
                     ),
-                  IconButton(
-                    onPressed: onEdit,
-                    icon: Icon(
-                      Icons.edit_outlined,
-                      size: 20,
-                      color: context.textSecondary,
-                    ),
                   ),
-                  IconButton(
-                    onPressed: onDelete,
-                    icon: Icon(
-                      Icons.delete_outline,
-                      size: 20,
-                      color: Colors.red,
-                    ),
+                IconButton(
+                  onPressed: onEdit,
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    size: 20,
+                    color: Colors.grey.shade600,
                   ),
-                ],
-              ),
+                ),
+                IconButton(
+                  onPressed: onDelete,
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            endereco.enderecoCompleto,
-            style: context.bodyMedium,
+            displayCompleto,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+            ),
           ),
         ],
       ),

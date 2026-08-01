@@ -3,18 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/endereco_cubit.dart';
 import '../bloc/endereco_state.dart';
 import '../models/endereco_model.dart';
-import '../../../core/theme/app_theme_extension.dart';
-import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../../../shared/widgets/web_back_button_handler.dart';
+import '../../../core/utils/estados_brasil.dart';
 
 class EnderecoFormView extends StatefulWidget {
   final EnderecoModel? endereco;
   final bool isEditing;
+  final String? modo;
 
   const EnderecoFormView({
     super.key,
     this.endereco,
     this.isEditing = false,
+    this.modo,
   });
 
   @override
@@ -31,6 +31,7 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
   late final TextEditingController _bairroController;
   late final TextEditingController _cidadeController;
   late final TextEditingController _ufController;
+  late final FocusNode _cepFocusNode;
   bool _isLoading = false;
 
   @override
@@ -45,6 +46,13 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
     _bairroController = TextEditingController(text: e?.bairro ?? '');
     _cidadeController = TextEditingController(text: e?.cidade ?? '');
     _ufController = TextEditingController(text: e?.uf ?? '');
+    _cepFocusNode = FocusNode();
+
+    if (widget.modo == 'cep' && !widget.isEditing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _cepFocusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -57,258 +65,230 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
     _bairroController.dispose();
     _cidadeController.dispose();
     _ufController.dispose();
+    _cepFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return WebBackButtonHandler(
-      child: BlocConsumer<EnderecoCubit, EnderecoState>(
-        listenWhen: (previous, current) {
-          return current is EnderecoOperacaoSucesso ||
-              current is EnderecoError ||
-              current is EnderecoCepCarregado ||
-              current is EnderecoCepBuscando;
-        },
-        listener: (context, state) {
-          if (state is EnderecoOperacaoSucesso) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.mensagem),
-                backgroundColor: Colors.green,
-              ),
-            );
-            if (mounted) {
-              Navigator.pop(context, true);
-            }
-          }
-          if (state is EnderecoError) {
-            setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          if (state is EnderecoCepCarregado) {
-            setState(() => _isLoading = false);
-            _logradouroController.text = state.dados['logradouro'] ?? '';
-            _bairroController.text = state.dados['bairro'] ?? '';
-            _cidadeController.text = state.dados['cidade'] ?? '';
-            _ufController.text = state.dados['uf'] ?? '';
-          }
-          if (state is EnderecoCepBuscando) {
-            setState(() => _isLoading = true);
-          }
-        },
-        builder: (context, state) {
-          final isLoading = state is EnderecoLoading || _isLoading;
-
-          return ResponsivePageScaffold(
-            appBar: AppBar(
-              title: Text(widget.isEditing ? 'Editar Endereço' : 'Novo Endereço'),
-              backgroundColor: context.surfaceColor,
-              foregroundColor: context.textPrimary,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading ? null : _salvar,
-                  child: Text(
-                    'Salvar',
-                    style: TextStyle(
-                      color: context.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: context.backgroundColor,
-            body: Stack(
-              children: [
-                SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _labelController,
-                          enabled: !isLoading,
-                          decoration: const InputDecoration(
-                            labelText: 'Apelido (opcional)',
-                            hintText: 'Ex: Casa, Trabalho, etc.',
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _cepController,
-                          enabled: !isLoading,
-                          decoration: InputDecoration(
-                            labelText: 'CEP *',
-                            hintText: '12345-678',
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.search),
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
-                                      if (cep.length == 8) {
-                                        context.read<EnderecoCubit>().buscarCep(cep);
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Digite um CEP válido (8 dígitos)')),
-                                        );
-                                      }
-                                    },
-                            ),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Digite o CEP';
-                            final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
-                            if (cleaned.length != 8) return 'CEP inválido (8 dígitos)';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _logradouroController,
-                          enabled: !isLoading,
-                          decoration: const InputDecoration(
-                            labelText: 'Logradouro *',
-                            hintText: 'Rua, Avenida, etc.',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Digite o logradouro';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _numeroController,
-                                enabled: !isLoading,
-                                decoration: const InputDecoration(
-                                  labelText: 'Número *',
-                                  hintText: '123',
-                                ),
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) return 'Digite o número';
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _complementoController,
-                                enabled: !isLoading,
-                                decoration: const InputDecoration(
-                                  labelText: 'Complemento',
-                                  hintText: 'Apto, Bloco, etc.',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _bairroController,
-                          enabled: !isLoading,
-                          decoration: const InputDecoration(
-                            labelText: 'Bairro *',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Digite o bairro';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: _cidadeController,
-                                enabled: !isLoading,
-                                decoration: const InputDecoration(
-                                  labelText: 'Cidade *',
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) return 'Digite a cidade';
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _ufController,
-                                enabled: !isLoading,
-                                decoration: const InputDecoration(
-                                  labelText: 'UF *',
-                                ),
-                                maxLength: 2,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) return 'Digite a UF';
-                                  if (value.length != 2) return 'UF inválida';
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : _salvar,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.primaryColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : Text(widget.isEditing ? 'Atualizar' : 'Cadastrar'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (isLoading)
-                  Container(
-                    color: Colors.black.withOpacity(0.1),
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-              ],
+    return BlocListener<EnderecoCubit, EnderecoState>(
+      listener: (context, state) {
+        if (state is EnderecoCepCarregado) {
+          setState(() => _isLoading = false);
+          _logradouroController.text = state.dados['logradouro'] ?? '';
+          _bairroController.text = state.dados['bairro'] ?? '';
+          _cidadeController.text = state.dados['cidade'] ?? '';
+          _ufController.text = converterEstadoParaSigla(state.dados['uf'] ?? '');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('CEP encontrado! Preencha o número.'),
+              backgroundColor: Colors.green,
             ),
           );
-        },
+        }
+        if (state is EnderecoCepBuscando) {
+          setState(() => _isLoading = true);
+        }
+        if (state is EnderecoError) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        if (state is EnderecoOperacaoSucesso) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.mensagem),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      },
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _labelController,
+                enabled: !_isLoading,
+                decoration: const InputDecoration(
+                  labelText: 'Apelido (opcional)',
+                  hintText: 'Ex: Casa, Trabalho, etc.',
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // CEP com busca
+              TextFormField(
+                controller: _cepController,
+                focusNode: _cepFocusNode,
+                enabled: !_isLoading,
+                decoration: InputDecoration(
+                  labelText: 'CEP *',
+                  hintText: '12345-678',
+                  suffixIcon: IconButton(
+                    icon: _isLoading
+                        ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                        : const Icon(Icons.search),
+                    onPressed: _isLoading ? null : _buscarCep,
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Digite o CEP';
+                  final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+                  if (cleaned.length != 8) return 'CEP inválido (8 dígitos)';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _logradouroController,
+                enabled: !_isLoading,
+                decoration: const InputDecoration(
+                  labelText: 'Logradouro *',
+                  hintText: 'Rua, Avenida, etc.',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Digite o logradouro';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _numeroController,
+                      enabled: !_isLoading,
+                      decoration: const InputDecoration(
+                        labelText: 'Número *',
+                        hintText: '123',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Digite o número';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _complementoController,
+                      enabled: !_isLoading,
+                      decoration: const InputDecoration(
+                        labelText: 'Complemento',
+                        hintText: 'Apto, Bloco, etc.',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _bairroController,
+                enabled: !_isLoading,
+                decoration: const InputDecoration(
+                  labelText: 'Bairro *',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Digite o bairro';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _cidadeController,
+                      enabled: !_isLoading,
+                      decoration: const InputDecoration(
+                        labelText: 'Cidade *',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Digite a cidade';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _ufController,
+                      enabled: !_isLoading,
+                      decoration: const InputDecoration(
+                        labelText: 'UF *',
+                      ),
+                      maxLength: 2,
+                      textCapitalization: TextCapitalization.characters,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Digite a UF';
+                        if (value.length != 2) return 'UF inválida';
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _salvar,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : Text(widget.isEditing ? 'Atualizar' : 'Cadastrar'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  void _buscarCep() {
+    final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cep.length == 8) {
+      context.read<EnderecoCubit>().buscarCep(cep);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Digite um CEP válido (8 dígitos)')),
+      );
+    }
   }
 
   Future<void> _salvar() async {
@@ -324,7 +304,7 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
       complemento: _complementoController.text.isNotEmpty ? _complementoController.text : null,
       bairro: _bairroController.text,
       cidade: _cidadeController.text,
-      uf: _ufController.text,
+      uf: _ufController.text.toUpperCase(),
       label: _labelController.text.isNotEmpty ? _labelController.text : null,
       principal: widget.endereco?.principal ?? false,
     );
@@ -341,7 +321,7 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text('Erro: $e'),
             backgroundColor: Colors.red,
           ),
         );

@@ -1,13 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quipede/app/routes/app_routes.dart';
-import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/models/endereco_model.dart';
-import '../bloc/localizacao_cubit.dart';
-import '../services/localizacao_service.dart';
+import '../../enderecos/bloc/endereco_cubit.dart';
+import '../../enderecos/bloc/endereco_state.dart';
+import '../../enderecos/models/endereco_model.dart';
 import 'widgets/endereco_card.dart';
+import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../../routes/app_routes.dart';
+import '../../../core/utils/estados_brasil.dart';
 
 class EnderecoConfirmacaoPage extends StatefulWidget {
   final Map<String, dynamic> endereco;
@@ -30,7 +30,6 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
   final _numeroController = TextEditingController();
   final _complementoController = TextEditingController();
   final _referenciaController = TextEditingController();
-  final _localizacaoService = LocalizacaoService(getIt<ApiClient>());
   bool _isLoading = false;
 
   @override
@@ -44,126 +43,176 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
   Future<void> _confirmar() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final ufSigla = converterEstadoParaSigla(widget.endereco['uf'] ?? '');
+
+    final enderecoModel = EnderecoModel(
+      logradouro: widget.endereco['logradouro'] ?? widget.endereco['descricao'] ?? '',
+      numero: _numeroController.text.trim(),
+      bairro: widget.endereco['bairro'] ?? '',
+      cidade: widget.endereco['cidade'] ?? '',
+      uf: ufSigla,
+      cep: widget.endereco['cep'] ?? '',
+      complemento: _complementoController.text.trim().isEmpty ? null : _complementoController.text.trim(),
+      latitude: widget.latitude,
+      longitude: widget.longitude,
+    );
+
     setState(() => _isLoading = true);
 
     try {
-      final payload = {
-        'logradouro': widget.endereco['logradouro'] ?? widget.endereco['descricao'],
-        'numero': _numeroController.text.trim(),
-        'bairro': widget.endereco['bairro'],
-        'cidade': widget.endereco['cidade'],
-        'uf': widget.endereco['uf'],
-        'cep': widget.endereco['cep'],
-        'complemento': _complementoController.text.trim().isEmpty ? null : _complementoController.text.trim(),
-        'referencia': _referenciaController.text.trim().isEmpty ? null : _referenciaController.text.trim(),
-        'latitude': widget.latitude,
-        'longitude': widget.longitude,
-      };
-
-      debugPrint('📡 [EnderecoConfirmacaoPage] Enviando payload: $payload');
-      final response = await _localizacaoService.confirmarEndereco(payload);
-
-      if (response['success'] == true && mounted) {
-        final data = response['data'];
-        debugPrint('✅ [EnderecoConfirmacaoPage] API confirmou: $data');
-        
-        final enderecoConfirmado = EnderecoModel.fromJson(data);
-
-        // ✅ Atualiza o Cubit br o endereço completo retornado pela API
-        context.read<LocalizacaoCubit>().definirEnderecoCompleto(enderecoConfirmado);
-        
-        Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
-      } else if (mounted) {
-        _showError(response['message'] ?? 'Erro ao confirmar endereço.');
-      }
+      await getIt<EnderecoCubit>().criarEndereco(enderecoModel);
     } catch (e) {
-      debugPrint('❌ [EnderecoConfirmacaoPage] Erro: $e');
-      _showError('Erro ao processar confirmação: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Confirmar Endereço')),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Center(
-                    child: Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
-                  ),
-                  const SizedBox(height: 24),
-                  EnderecoCard(
-                    logradouro: widget.endereco['logradouro'] ?? widget.endereco['descricao'] ?? '',
-                    bairro: widget.endereco['bairro'] ?? '',
-                    cidade: widget.endereco['cidade'] ?? '',
-                    uf: widget.endereco['uf'] ?? '',
-                    cep: widget.endereco['cep'] ?? '',
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: TextFormField(
-                          controller: _numeroController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Número', border: OutlineInputBorder()),
-                          validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
+    return BlocListener<EnderecoCubit, EnderecoState>(
+      listener: (context, state) {
+        if (state is EnderecoOperacaoSucesso) {
+          print('✅ [EnderecoConfirmacaoPage] Sucesso! Chamando Navigator.pop(true)');
+          setState(() => _isLoading = false);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.mensagem), backgroundColor: Colors.green),
+          );
+
+          // 🔥 RETORNA SUCESSO PARA QUEM CHAMOU (CEP Page ou Busca Page)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.pop(context, true);
+            }
+          });
+        } else if (state is EnderecoError) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        } else if (state is EnderecoLoading) {
+          setState(() => _isLoading = true);
+        }
+      },
+      child: ResponsivePageScaffold(
+        appBar: AppBar(
+          title: const Text('Confirmar Endereço'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Center(
+                  child: Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+                ),
+                const SizedBox(height: 24),
+                EnderecoCard(
+                  logradouro: widget.endereco['logradouro'] ?? widget.endereco['descricao'] ?? '',
+                  bairro: widget.endereco['bairro'] ?? '',
+                  cidade: widget.endereco['cidade'] ?? '',
+                  uf: converterEstadoParaSigla(widget.endereco['uf'] ?? ''),
+                  cep: widget.endereco['cep'] ?? '',
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: _numeroController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Número *',
+                          hintText: '123',
+                          border: OutlineInputBorder(),
                         ),
+                        validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: _complementoController,
-                          decoration: const InputDecoration(labelText: 'Complemento (opcional)', border: OutlineInputBorder()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _referenciaController,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Ponto de referência (opcional)',
-                      hintText: 'Ex: portão verde, próximo ao mercado',
-                      border: OutlineInputBorder(),
-                      alignLabelWithHint: true,
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: _complementoController,
+                        decoration: const InputDecoration(
+                          labelText: 'Complemento (opcional)',
+                          hintText: 'Apto, Bloco, etc.',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _referenciaController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Ponto de referência (opcional)',
+                    hintText: 'Ex: portão verde, próximo ao mercado',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
                   ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
                     onPressed: _isLoading ? null : _confirmar,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.orange,
+                      backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
                     ),
-                    child: _isLoading 
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('CONFIRMAR E CONTINUAR', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: _isLoading
+                        ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                        : const Text(
+                      'Confirmar Endereço',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Voltar'),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

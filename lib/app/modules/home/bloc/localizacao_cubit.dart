@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../models/endereco_model.dart';
+import '../../enderecos/models/endereco_model.dart';
 import 'localizacao_state.dart';
 
 class LocalizacaoCubit extends Cubit<LocalizacaoState> {
@@ -83,6 +83,8 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
       longitude: longitude,
     );
 
+    print('🔍 [LocalizacaoCubit] definirLocalizacaoManual: ${endereco.resumido}');
+
     final estado = LocalizacaoCarregada(
       endereco: endereco,
       origem: 'manual',
@@ -95,6 +97,7 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
 
   /// Define a localização a partir de um modelo completo (após confirmação da API)
   void definirEnderecoCompleto(EnderecoModel endereco, {String origem = 'manual'}) {
+    print('🔍 [LocalizacaoCubit] definirEnderecoCompleto: ${endereco.resumido}');
     final estado = LocalizacaoCarregada(
       endereco: endereco,
       origem: origem,

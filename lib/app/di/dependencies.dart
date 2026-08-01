@@ -54,18 +54,24 @@ Future<void> setupDependencies() async {
   // ✅ 6. ThemeCubit (independente)
   getIt.registerSingleton<ThemeCubit>(ThemeCubit(getIt<SharedPreferences>()));
 
-  // ✅ 7. LocalizacaoCubit (Necessário para o AuthCubit)
+  // ✅ 7. LocalizacaoCubit
   getIt.registerSingleton<LocalizacaoCubit>(LocalizacaoCubit(getIt<SharedPreferences>()));
 
-  // ✅ 8. AuthCubit (Depende do ApiClient e do LocalizacaoCubit)
+  // 🔥 8. ENDERECOCUBIT (MOVER PARA ANTES DO AUTH)
+  getIt.registerLazySingleton<EnderecoCubit>(
+        () => EnderecoCubit(getIt<EnderecoRepository>()),
+  );
+
+  // ✅ 9. AuthCubit (AGORA O EnderecoCubit JÁ EXISTE)
   getIt.registerSingleton<AuthCubit>(
     AuthCubit(
       getIt<ApiClient>(),
       getIt<LocalizacaoCubit>(),
+      getIt<EnderecoCubit>(), // 🔥 AGORA FUNCIONA
     ),
   );
 
-  // ✅ 9. CarrinhoCubit (depende do AuthCubit)
+  // ✅ 10. CarrinhoCubit
   getIt.registerSingleton<CarrinhoCubit>(
     CarrinhoCubit(
       getIt<CarrinhoService>(),
@@ -74,11 +80,8 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // ✅ 10. PedidoCubit
+  // ✅ 11. PedidoCubit
   getIt.registerFactory(() => PedidoCubit(getIt<PedidoService>()));
-
-  // ✅ 11. EnderecoCubit
-  getIt.registerLazySingleton<EnderecoCubit>(() => EnderecoCubit(getIt<EnderecoRepository>()));
 
   // ✅ 12. Outros Cubits
   getIt.registerFactory(() => AddressCubit());

@@ -6,7 +6,16 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Retornamos diretamente a LojasListScreen, que já possui seu próprio Scaffold e AppBar customizada
-    return const LojasListScreen();
+    print('🏠 [HomeScreen] build() chamado');
+    try {
+      return const LojasListScreen();
+    } catch (e, stack) {
+      print('❌ [HomeScreen] ERRO: $e');
+      print(stack);
+      return Scaffold(
+        appBar: AppBar(title: const Text('Erro')),
+        body: Center(child: Text('Erro ao carregar lojas: $e')),
+      );
+    }
   }
 }
