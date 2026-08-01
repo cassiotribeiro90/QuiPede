@@ -16,6 +16,7 @@ class CepInputPage extends StatefulWidget {
 
 class _CepInputPageState extends State<CepInputPage> {
   final _cepController = TextEditingController();
+  final _focusNode = FocusNode();
   bool _isLoading = false;
 
   final _cepMaskFormatter = MaskTextInputFormatter(
@@ -24,8 +25,20 @@ class _CepInputPageState extends State<CepInputPage> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    // Inicia o foco automaticamente
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _cepController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -37,6 +50,10 @@ class _CepInputPageState extends State<CepInputPage> {
       );
       return;
     }
+
+    // 🔥 Fecha o teclado ao buscar
+    FocusScope.of(context).unfocus();
+
     setState(() => _isLoading = true);
     context.read<EnderecoCubit>().buscarCep(cep);
   }
@@ -69,15 +86,23 @@ class _CepInputPageState extends State<CepInputPage> {
                 ),
               ),
             ).then((result) {
+              print('🔙 [CepInputPage] Retorno da EnderecoConfirmacaoPage: $result');
+              // 🔥 NAVEGAÇÃO SEGURA
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
-                  Navigator.pop(context, result == true);
+                  if (result == true) {
+                    Navigator.pop(context, true);
+                  } else {
+                    Navigator.pop(context, false);
+                  }
                 }
               });
             });
           }
           if (state is EnderecoOperacaoSucesso) {
+            print('✅ [CepInputPage] EnderecoOperacaoSucesso recebido!');
             setState(() => _isLoading = false);
+            // 🔥 NAVEGAÇÃO SEGURA
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 Navigator.pop(context, true);
@@ -136,9 +161,13 @@ class _CepInputPageState extends State<CepInputPage> {
                       const SizedBox(height: 32),
                       TextFormField(
                         controller: _cepController,
+                        focusNode: _focusNode,
+                        autofocus: true, // 🔥 Foca automaticamente ao abrir
                         keyboardType: TextInputType.number,
                         inputFormatters: [_cepMaskFormatter],
                         maxLength: 10,
+                        textInputAction: TextInputAction.search, // 🔥 Ícone de busca no teclado
+                        onFieldSubmitted: (_) => _isLoading ? null : _buscarCep(), // 🔥 Busca ao apertar Enter
                         decoration: InputDecoration(
                           labelText: 'CEP',
                           hintText: 'Ex: 12345-678',
@@ -168,8 +197,7 @@ class _CepInputPageState extends State<CepInputPage> {
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                               : const Text(

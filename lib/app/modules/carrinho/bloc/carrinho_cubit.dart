@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'package:bloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/carrinho_item.dart';
-import '../../../models/carrinho_response.dart';
-import '../../../models/carrinho_result.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../services/carrinho_service.dart';
@@ -150,7 +148,6 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
 
   Map<int, CarrinhoItem> _itensMap = {};
   bool _isFetching = false;
-  bool _isAdding = false;
 
   Timer? _addDebounce;
   Timer? _updateDebounce;
@@ -158,6 +155,11 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
   final Map<int, int> _pendingUpdates = {};
 
   CarrinhoCubit(this._service, this._authCubit, this._prefs) : super(CarrinhoInitial()) {
+    // Carregar se já estiver autenticado na criação do Cubit
+    if (_authCubit.state is AuthAuthenticated) {
+      carregarCarrinho();
+    }
+
     _authSubscription = _authCubit.stream.listen((authState) {
       if (authState is AuthAuthenticated) {
         carregarCarrinho();
@@ -181,7 +183,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     _pendingAdd = null;
     _addDebounce?.cancel();
     _updateDebounce?.cancel();
-    emit(const CarrinhoLoaded(itens: [], totalItens: 0, subtotal: 0));
+    emit(CarrinhoInitial());
   }
 
   // ===== CARREGAR CARRINHO =====
@@ -190,6 +192,15 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     if (_authCubit.state is! AuthAuthenticated) return;
 
     _isFetching = true;
+
+    // 🔥 PRESERVAR DADOS SELECIONADOS PELO USUÁRIO
+    String? formaAnterior;
+    double? trocoAnterior;
+    if (state is CarrinhoLoaded) {
+      final s = state as CarrinhoLoaded;
+      formaAnterior = s.formaPagamentoSelecionada;
+      trocoAnterior = s.trocoPara;
+    }
 
     if (state is! CarrinhoLoaded) {
       emit(CarrinhoLoading());
@@ -202,9 +213,12 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       _pendingUpdates.clear();
       _pendingAdd = null;
 
-      String? formaSelecionada;
-      if (response.resumo.formasDisponiveis.isNotEmpty) {
-        formaSelecionada = response.resumo.formasDisponiveis.first;
+      // Manter forma de pagamento selecionada se ainda for válida nas novas opções
+      String? formaSelecionada = formaAnterior;
+      if (formaSelecionada == null || !response.resumo.formasDisponiveis.contains(formaSelecionada)) {
+        if (response.resumo.formasDisponiveis.isNotEmpty) {
+          formaSelecionada = response.resumo.formasDisponiveis.first;
+        }
       }
 
       emit(CarrinhoLoaded(
@@ -217,6 +231,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
         distanciaKm: response.resumo.distanciaKm,
         formasPagamento: response.resumo.formasPagamento,
         formaPagamentoSelecionada: formaSelecionada,
+        trocoPara: trocoAnterior,
         isRequesting: false,
         requestingItemId: null,
         isDebouncing: false,
@@ -231,6 +246,9 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       _isFetching = false;
     }
   }
+
+  /// Alias para garantir o carregamento das opções de pagamento
+  void carregarOpcoesPagamento() => carregarCarrinho(forceRefresh: true);
 
   // ===== MÉTODOS DE PAGAMENTO (UI) =====
   void selecionarFormaPagamento(String forma) {
@@ -262,9 +280,6 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
   }) async {
     if (_authCubit.state is! AuthAuthenticated) throw Exception('Usuário não autenticado');
 
-    _isAdding = true;
-
-    // NÃO EMITE NADA AINDA – só mostra loading se não tiver estado
     if (state is! CarrinhoLoaded) {
       emit(CarrinhoLoading());
     }
@@ -297,13 +312,23 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
         observacao: add.observacao,
       );
 
-      _isAdding = false;
-
       if (result.success && result.data != null) {
         _itensMap = {for (var item in result.data!.itens) item.id: item};
-        String? formaSelecionada;
-        if (result.data!.resumo.formasDisponiveis.isNotEmpty) {
-          formaSelecionada = result.data!.resumo.formasDisponiveis.first;
+        
+        // 🔥 PRESERVAR DADOS
+        String? formaAnterior;
+        double? trocoAnterior;
+        if (state is CarrinhoLoaded) {
+          final s = state as CarrinhoLoaded;
+          formaAnterior = s.formaPagamentoSelecionada;
+          trocoAnterior = s.trocoPara;
+        }
+
+        String? formaSelecionada = formaAnterior;
+        if (formaSelecionada == null || !result.data!.resumo.formasDisponiveis.contains(formaSelecionada)) {
+          if (result.data!.resumo.formasDisponiveis.isNotEmpty) {
+            formaSelecionada = result.data!.resumo.formasDisponiveis.first;
+          }
         }
 
         emit(CarrinhoLoaded(
@@ -316,6 +341,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
           distanciaKm: result.data!.resumo.distanciaKm,
           formasPagamento: result.data!.resumo.formasPagamento,
           formaPagamentoSelecionada: formaSelecionada,
+          trocoPara: trocoAnterior,
           isDebouncing: false,
         ));
       } else if (result.isConflito && result.conflito != null) {
@@ -335,17 +361,17 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
         await carregarCarrinho();
       }
     } catch (e) {
-      _isAdding = false;
-      emit(CarrinhoError('Erro inesperado ao adicionar item'));
+      emit(const CarrinhoError('Erro inesperado ao adicionar item'));
       await carregarCarrinho();
     }
   }
 
-  // ===== ATUALIZAR QUANTIDADE (COM DEBOUNCE) =====
+  // ===== ATUALIZAR QUANTIDADE (COM DEBOUNCE CENTRALIZADO E OPTIMISTIC UI) =====
   void atualizarQuantidade(int itemId, int novaQuantidade) {
     final currentState = state;
     if (currentState is! CarrinhoLoaded) return;
 
+    // 🔥 Optimistic UI: Atualização local imediata
     if (novaQuantidade == 0) {
       _itensMap.remove(itemId);
     } else if (_itensMap.containsKey(itemId)) {
@@ -358,9 +384,10 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
 
     _emitirEstadoAtualizado(isDebouncing: true);
 
+    // Agrupar atualizações rápidas (Debounce)
     _pendingUpdates[itemId] = novaQuantidade;
     _updateDebounce?.cancel();
-    _updateDebounce = Timer(const Duration(milliseconds: 1500), () => _executarAtualizacoes());
+    _updateDebounce = Timer(const Duration(milliseconds: 800), () => _executarAtualizacoes());
   }
 
   Future<void> _executarAtualizacoes() async {
@@ -376,6 +403,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       await _enviarAtualizacaoParaAPI(entry.key, entry.value);
     }
 
+    // Refresh final para sincronizar taxas e totais do backend (cupom, frete grátis, etc.)
     await carregarCarrinho(forceRefresh: true);
   }
 
@@ -392,7 +420,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     try {
       await _service.atualizarItem(itemId: itemId, quantidade: quantidade);
     } catch (e) {
-      // carregarCarrinho resolverá
+      // Refresh final resolverá
     }
   }
 
@@ -413,11 +441,13 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       final s = state as CarrinhoLoaded;
       lojaNome = s.lojaNome;
       taxaEntrega = s.taxaEntrega;
-      total = s.total;
       distanciaKm = s.distanciaKm;
       formasPagamento = s.formasPagamento;
       formaSelecionada = s.formaPagamentoSelecionada;
       trocoPara = s.trocoPara;
+      
+      // Cálculo aproximado do total para Optimistic UI
+      total = subtotal + (taxaEntrega ?? 0);
     }
 
     emit(CarrinhoLoaded(
@@ -444,7 +474,7 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
       await _service.limparCarrinho();
       _limparEstado();
     } catch (e) {
-      emit(CarrinhoError('Erro ao limpar carrinho'));
+      emit(const CarrinhoError('Erro ao limpar carrinho'));
       await carregarCarrinho();
     }
   }
@@ -455,7 +485,6 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
 
   // ===== LIMPAR E ADICIONAR (APÓS CONFLITO) =====
   Future<void> limparEAdicionar(CarrinhoConflitoLojaDetectado conflito) async {
-    _isAdding = true;
     emit(CarrinhoLoading());
     try {
       await _service.limparCarrinho();
@@ -467,13 +496,17 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
         observacao: conflito.observacao,
       );
 
-      _isAdding = false;
-
       if (result.success && result.data != null) {
         _itensMap = {for (var item in result.data!.itens) item.id: item};
+        
         String? formaSelecionada;
-        if (result.data!.resumo.formasDisponiveis.isNotEmpty) {
-          formaSelecionada = result.data!.resumo.formasDisponiveis.first;
+        if (state is CarrinhoLoaded) {
+          formaSelecionada = (state as CarrinhoLoaded).formaPagamentoSelecionada;
+        }
+        if (formaSelecionada == null || !result.data!.resumo.formasDisponiveis.contains(formaSelecionada)) {
+          if (result.data!.resumo.formasDisponiveis.isNotEmpty) {
+            formaSelecionada = result.data!.resumo.formasDisponiveis.first;
+          }
         }
 
         emit(CarrinhoLoaded(
@@ -489,12 +522,11 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
           isDebouncing: false,
         ));
       } else {
-        emit(CarrinhoError(result.message ?? 'Erro ao adicionar item após limpar'));
+        emit(const CarrinhoError('Erro ao adicionar item após limpar'));
         await carregarCarrinho();
       }
     } catch (e) {
-      _isAdding = false;
-      emit(CarrinhoError('Erro ao substituir carrinho'));
+      emit(const CarrinhoError('Erro ao substituir carrinho'));
       await carregarCarrinho();
     }
   }

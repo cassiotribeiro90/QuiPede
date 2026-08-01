@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,11 +22,32 @@ class CarrinhoPage extends StatefulWidget {
 class _CarrinhoPageState extends State<CarrinhoPage> {
   final _trocoController = TextEditingController();
   final _observacaoController = TextEditingController();
+  final Map<int, Timer> _debounceTimers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // 🔥 Carregar opções de pagamento ao abrir a tela
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final cubit = context.read<CarrinhoCubit>();
+        if (cubit.state is CarrinhoLoaded) {
+          final state = cubit.state as CarrinhoLoaded;
+          if (state.itens.isNotEmpty) {
+            cubit.carregarOpcoesPagamento();
+          }
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
     _trocoController.dispose();
     _observacaoController.dispose();
+    for (var timer in _debounceTimers.values) {
+      timer.cancel();
+    }
     super.dispose();
   }
 
@@ -227,7 +249,15 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                           quantity: item.quantidade,
                                           itemName: item.nome,
                                           onChanged: (novaQtd) {
-                                            context.read<CarrinhoCubit>().atualizarQuantidade(item.id, novaQtd);
+                                            // 🔥 Debounce inteligente na UI
+                                            if (_debounceTimers[item.id]?.isActive ?? false) {
+                                              _debounceTimers[item.id]!.cancel();
+                                            }
+                                            _debounceTimers[item.id] = Timer(const Duration(milliseconds: 600), () {
+                                              if (mounted) {
+                                                context.read<CarrinhoCubit>().atualizarQuantidade(item.id, novaQtd);
+                                              }
+                                            });
                                           },
                                         ),
                                       ],
