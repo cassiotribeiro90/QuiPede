@@ -22,6 +22,7 @@ dependencies:
   permission_handler: ^11.3.1
   geolocator: ^13.0.1
   mask_text_input_formatter: ^2.8.0
+  device_info_plus: ^10.1.0
   # Login Social
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^7.0.1

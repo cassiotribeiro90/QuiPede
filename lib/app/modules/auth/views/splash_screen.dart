@@ -21,34 +21,30 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeAndNavigate() async {
-    print('🎬 [SplashScreen] Iniciando inicialização...');
+    debugPrint('🎬 [SplashScreen] Iniciando inicialização do app...');
     
-    // 1. Verificar autenticação silenciosamente
     final authCubit = context.read<AuthCubit>();
-    await authCubit.checkAuthStatus();
-    
-    // 2. Verificar se já existe um endereço definido (salvo localmente)
     final localizacaoCubit = context.read<LocalizacaoCubit>();
-    await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
+
+    // 1. Inicializar estado de autenticação e restaurar sessão (Guest ou Real)
+    // O inicializarApp já cuida de carregar os endereços se houver token
+    await authCubit.inicializarApp();
     
-    // Tempo mínimo para a splash ser visível e passar sensação de carregamento
-    await Future.delayed(const Duration(seconds: 1));
+    // 2. Tentar carregar localização local caso o AuthCubit não tenha encontrado endereços remotos
+    // (Útil para usuários que definiram localização mas não criaram conta/token ainda)
+    if (localizacaoCubit.state is! LocalizacaoCarregada) {
+      await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
+    }
+    
+    // Tempo mínimo estético
+    await Future.delayed(const Duration(milliseconds: 800));
 
     if (mounted) {
-      final localizacaoState = localizacaoCubit.state;
-      final hasLocation = localizacaoState is LocalizacaoCarregada;
-      
-      print('🚀 [Navigation] Endereço definido: $hasLocation');
+      final hasLocation = localizacaoCubit.state is LocalizacaoCarregada;
+      debugPrint('🚀 [SplashScreen] Inicialização concluída. Localização ativa: $hasLocation');
 
-      String targetRoute;
-      
-      // REGRA: Se NÃO tem endereço, vai para Onboarding (Convidado ou Logado)
-      if (!hasLocation) {
-        targetRoute = Routes.onboarding;
-      } else {
-        // Se TEM endereço, vai para a Home (Lojas)
-        targetRoute = Routes.home;
-      }
+      // REGRA: Sem endereço -> Onboarding | Com endereço -> Home
+      final targetRoute = hasLocation ? Routes.home : Routes.onboarding;
 
       Navigator.of(context).pushNamedAndRemoveUntil(targetRoute, (route) => false);
     }

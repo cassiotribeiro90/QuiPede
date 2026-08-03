@@ -1,5 +1,7 @@
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:math';
 
 class DeviceIdService {
   static const String _key = 'device_id';
@@ -15,8 +17,27 @@ class DeviceIdService {
       return saved;
     }
 
-    // Gera um ID único baseado em timestamp + random
-    final deviceId = 'device_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(9999)}';
+    String? deviceId;
+    final deviceInfo = DeviceInfoPlugin();
+
+    try {
+      if (kIsWeb) {
+        final webInfo = await deviceInfo.webBrowserInfo;
+        deviceId = 'web_${webInfo.userAgent?.hashCode}_${DateTime.now().millisecondsSinceEpoch}';
+      } else if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceId = androidInfo.id; // Unique ID on Android
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceId = iosInfo.identifierForVendor; // Unique ID on iOS
+      }
+    } catch (e) {
+      debugPrint('❌ [DeviceIdService] Erro ao obter ID do dispositivo: $e');
+    }
+
+    // Fallback se falhar ou retornar nulo
+    deviceId ??= 'device_${DateTime.now().millisecondsSinceEpoch}';
+
     _cachedDeviceId = deviceId;
     await prefs.setString(_key, deviceId);
     return deviceId;

@@ -90,10 +90,11 @@ class _LojasListScreenState extends State<LojasListScreen> {
 
   void _navegarParaEnderecos(BuildContext context) {
     final authState = context.read<AuthCubit>().state;
-    if (authState is! AuthAuthenticated) {
-      Navigator.pushNamed(context, Routes.login);
-    } else {
+    // 🔥 PERMITIR ACESSO PARA AuthAuthenticated OU AuthGuest
+    if (authState is AuthAuthenticated || authState is AuthGuest) {
       Navigator.pushNamed(context, Routes.meusEnderecos);
+    } else {
+      Navigator.pushNamed(context, Routes.login);
     }
   }
 

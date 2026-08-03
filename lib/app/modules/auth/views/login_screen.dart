@@ -87,17 +87,21 @@ class _LoginScreenState extends State<LoginScreen> {
               final params = args?['params'];
 
               if (redirectTo != null) {
-                Navigator.pushReplacementNamed(context, redirectTo, arguments: params);
+                // ✅ Redireciona para o destino e limpa a pilha de autenticação
+                Navigator.pushNamedAndRemoveUntil(
+                  context, 
+                  redirectTo, 
+                  (route) => false,
+                  arguments: params
+                );
                 return;
               }
 
-              // ✅ Lógica de correção: Se logou com sucesso, verificar endereço
+              // Lógica padrão: verificar endereço
               final localState = context.read<LocalizacaoCubit>().state;
               if (localState is LocalizacaoCarregada) {
-                // Se tem endereço (retornado pelo login e salvo no Cubit), vai para Home
                 Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
               } else {
-                // Caso raro de não ter endereço nem após o login, vai para Onboarding
                 Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
               }
             }

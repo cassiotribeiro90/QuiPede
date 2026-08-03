@@ -27,7 +27,6 @@ class _CepInputPageState extends State<CepInputPage> {
   @override
   void initState() {
     super.initState();
-    // Inicia o foco automaticamente
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _focusNode.requestFocus();
@@ -51,9 +50,7 @@ class _CepInputPageState extends State<CepInputPage> {
       return;
     }
 
-    // 🔥 Fecha o teclado ao buscar
     FocusScope.of(context).unfocus();
-
     setState(() => _isLoading = true);
     context.read<EnderecoCubit>().buscarCep(cep);
   }
@@ -87,7 +84,6 @@ class _CepInputPageState extends State<CepInputPage> {
               ),
             ).then((result) {
               print('🔙 [CepInputPage] Retorno da EnderecoConfirmacaoPage: $result');
-              // 🔥 NAVEGAÇÃO SEGURA
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   if (result == true) {
@@ -102,7 +98,6 @@ class _CepInputPageState extends State<CepInputPage> {
           if (state is EnderecoOperacaoSucesso) {
             print('✅ [CepInputPage] EnderecoOperacaoSucesso recebido!');
             setState(() => _isLoading = false);
-            // 🔥 NAVEGAÇÃO SEGURA
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 Navigator.pop(context, true);
@@ -134,86 +129,81 @@ class _CepInputPageState extends State<CepInputPage> {
             ),
           ),
           backgroundColor: Colors.white,
-          body: Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Digite seu CEP',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+          body: Align(
+            alignment: Alignment.topCenter,
+            child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Digite seu CEP',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Encontre seu endereço rapidamente para ver as lojas próximas.',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 32),
+                    TextFormField(
+                      controller: _cepController,
+                      focusNode: _focusNode,
+                      autofocus: true,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [_cepMaskFormatter],
+                      maxLength: 10,
+                      textInputAction: TextInputAction.search,
+                      onFieldSubmitted: (_) => _isLoading ? null : _buscarCep(),
+                      decoration: InputDecoration(
+                        labelText: 'CEP',
+                        hintText: 'Ex: 12345-678',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        prefixIcon: const Icon(Icons.mail_outline),
+                        counterText: '',
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Encontre seu endereço rapidamente para ver as lojas próximas.',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 32),
-                      TextFormField(
-                        controller: _cepController,
-                        focusNode: _focusNode,
-                        autofocus: true, // 🔥 Foca automaticamente ao abrir
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [_cepMaskFormatter],
-                        maxLength: 10,
-                        textInputAction: TextInputAction.search, // 🔥 Ícone de busca no teclado
-                        onFieldSubmitted: (_) => _isLoading ? null : _buscarCep(), // 🔥 Busca ao apertar Enter
-                        decoration: InputDecoration(
-                          labelText: 'CEP',
-                          hintText: 'Ex: 12345-678',
-                          border: OutlineInputBorder(
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _buscarCep,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          prefixIcon: const Icon(Icons.mail_outline),
-                          counterText: '',
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _buscarCep,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                        child: _isLoading
+                            ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                              : const Text(
-                            'Buscar CEP',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        )
+                            : const Text(
+                          'Buscar CEP',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
           ),
         ),
       ),

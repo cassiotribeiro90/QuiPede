@@ -11,6 +11,8 @@ import '../../home/bloc/localizacao_state.dart';
 import '../../../../shared/widgets/endereco_selecionado_widget.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../routes/app_routes.dart';
+import '../../auth/bloc/auth_cubit.dart';
+import '../../auth/bloc/auth_state.dart';
 
 class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
@@ -27,9 +29,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   @override
   void initState() {
     super.initState();
-    // 🔥 Carregar opções de pagamento ao abrir a tela
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
+        _verificarConvidado();
         final cubit = context.read<CarrinhoCubit>();
         if (cubit.state is CarrinhoLoaded) {
           final state = cubit.state as CarrinhoLoaded;
@@ -39,6 +41,17 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         }
       }
     });
+  }
+
+  void _verificarConvidado() {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthGuest) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, Routes.completarCadastro);
+        }
+      });
+    }
   }
 
   @override
@@ -82,204 +95,212 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         ],
       ),
       backgroundColor: context.backgroundColor,
-      body: MultiBlocListener(
-        listeners: [
-          BlocListener<CarrinhoCubit, CarrinhoState>(
-            listener: (context, state) {
-              if (state is CarrinhoError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-                );
+      body: BlocListener<AuthCubit, AuthState>(
+        listener: (context, authState) {
+          if (authState is AuthGuest) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, Routes.completarCadastro);
               }
-            },
-          ),
-          BlocListener<PedidoCubit, PedidoState>(
-            listener: (context, state) {
-              if (state is PedidoCriado) {
-                context.read<CarrinhoCubit>().limparCarrinho();
-                Navigator.pushReplacementNamed(
-                  context,
-                  Routes.pedidoDetalhe,
-                  arguments: state.pedidoId,
-                );
-              } else if (state is PedidoError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-                );
+            });
+          }
+        },
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<CarrinhoCubit, CarrinhoState>(
+              listener: (context, state) {
+                if (state is CarrinhoError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                  );
+                }
+              },
+            ),
+            BlocListener<PedidoCubit, PedidoState>(
+              listener: (context, state) {
+                if (state is PedidoCriado) {
+                  context.read<CarrinhoCubit>().limparCarrinho();
+                  Navigator.pushReplacementNamed(
+                    context,
+                    Routes.pedidoDetalhe,
+                    arguments: state.pedidoId,
+                  );
+                } else if (state is PedidoError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                  );
+                }
+              },
+            ),
+          ],
+          child: BlocBuilder<CarrinhoCubit, CarrinhoState>(
+            builder: (context, state) {
+              if (state is CarrinhoLoading) {
+                return const Center(child: CircularProgressIndicator());
               }
-            },
-          ),
-        ],
-        child: BlocBuilder<CarrinhoCubit, CarrinhoState>(
-          builder: (context, state) {
-            if (state is CarrinhoLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
 
-            if (state is CarrinhoLoaded) {
-              if (state.itens.isEmpty) {
-                return Center(
+              if (state is CarrinhoLoaded) {
+                if (state.itens.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shopping_bag_outlined, size: 80, color: context.textHint),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Sua sacola está vazia',
+                          style: context.titleMedium.copyWith(color: context.textSecondary),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Continuar Comprando'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final bool isOperationPending = state.isDebouncing || state.isRequesting;
+
+                return SingleChildScrollView(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.shopping_bag_outlined, size: 80, color: context.textHint),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Sua sacola está vazia',
-                        style: context.titleMedium.copyWith(color: context.textSecondary),
+                      if (state.lojaNome != null)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              color: primaryColor,
+                              child: Text(
+                                state.lojaNome!,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              color: context.surfaceColor,
+                              child: BlocBuilder<LocalizacaoCubit, LocalizacaoState>(
+                                builder: (context, locState) {
+                                  return EnderecoSelecionadoWidget(
+                                    endereco: locState is LocalizacaoCarregada ? locState.endereco : null,
+                                    onTap: () {},
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      const Divider(height: 1),
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: state.itens.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final item = state.itens[index];
+
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: context.surfaceColor,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (item.imagem != null)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      item.imagem!,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(Icons.fastfood),
+                                    ),
+                                  ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.nome,
+                                        style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                      if (item.observacao != null)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            item.observacao!,
+                                            style: context.bodySmall.copyWith(color: context.textSecondary),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            _formatarMoeda(item.precoTotal),
+                                            style: context.bodyLarge.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: isOperationPending ? context.textHint : context.primaryColor,
+                                            ),
+                                          ),
+                                          QuantitySelector(
+                                            quantity: item.quantidade,
+                                            itemName: item.nome,
+                                            onChanged: (novaQtd) {
+                                              if (_debounceTimers[item.id]?.isActive ?? false) {
+                                                _debounceTimers[item.id]!.cancel();
+                                              }
+                                              _debounceTimers[item.id] = Timer(const Duration(milliseconds: 600), () {
+                                                if (mounted) {
+                                                  context.read<CarrinhoCubit>().atualizarQuantidade(item.id, novaQtd);
+                                                }
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Continuar Comprando'),
-                      ),
+                      _buildObservacoes(context),
+                      _buildFormaPagamentoSection(context, state),
+                      _buildResumo(context, state),
                     ],
                   ),
                 );
               }
 
-              final bool isOperationPending = state.isDebouncing || state.isRequesting;
-
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (state.lojaNome != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            color: primaryColor,
-                            child: Text(
-                              state.lojaNome!,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(20),
-                            color: context.surfaceColor,
-                            child: BlocBuilder<LocalizacaoCubit, LocalizacaoState>(
-                              builder: (context, locState) {
-                                return EnderecoSelecionadoWidget(
-                                  endereco: locState is LocalizacaoCarregada ? locState.endereco : null,
-                                  onTap: () {
-                                    // Pode abrir modal de troca de endereço ou onboarding
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    const Divider(height: 1),
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      itemCount: state.itens.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final item = state.itens[index];
-
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: context.surfaceColor,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (item.imagem != null)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    item.imagem!,
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.fastfood),
-                                  ),
-                                ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.nome,
-                                      style: context.bodyLarge.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                    if (item.observacao != null)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          item.observacao!,
-                                          style: context.bodySmall.copyWith(color: context.textSecondary),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          _formatarMoeda(item.precoTotal),
-                                          style: context.bodyLarge.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: isOperationPending ? context.textHint : context.primaryColor,
-                                          ),
-                                        ),
-                                        QuantitySelector(
-                                          quantity: item.quantidade,
-                                          itemName: item.nome,
-                                          onChanged: (novaQtd) {
-                                            // 🔥 Debounce inteligente na UI
-                                            if (_debounceTimers[item.id]?.isActive ?? false) {
-                                              _debounceTimers[item.id]!.cancel();
-                                            }
-                                            _debounceTimers[item.id] = Timer(const Duration(milliseconds: 600), () {
-                                              if (mounted) {
-                                                context.read<CarrinhoCubit>().atualizarQuantidade(item.id, novaQtd);
-                                              }
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    _buildObservacoes(context),
-                    _buildFormaPagamentoSection(context, state),
-                    _buildResumo(context, state),
-                  ],
-                ),
-              );
-            }
-
-            return const SizedBox.shrink();
-          },
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
     );
@@ -398,7 +419,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
               );
             },
           ),
-          if (state.formaPagamentoSelecionada == 'dinheiro' && 
+          if (state.formaPagamentoSelecionada == 'dinheiro' &&
               state.formasPagamento['dinheiro']?['troco'] == true)
             Padding(
               padding: const EdgeInsets.only(top: 16),
@@ -515,9 +536,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                 children: [
                   Text('Taxa de entrega', style: context.bodyMedium.copyWith(color: context.textSecondary)),
                   Text(
-                    state.taxaEntrega! > 0 
-                      ? _formatarMoeda(state.taxaEntrega!)
-                      : 'Grátis',
+                    state.taxaEntrega! > 0
+                        ? _formatarMoeda(state.taxaEntrega!)
+                        : 'Grátis',
                     style: context.bodyLarge.copyWith(
                       color: state.taxaEntrega! == 0 ? Colors.green : null,
                       fontWeight: state.taxaEntrega! == 0 ? FontWeight.bold : null,
@@ -572,15 +593,15 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                     ),
                   ),
                   child: (isBlocked || isCriando)
-                    ? const SizedBox(
-                        height: 20, 
-                        width: 20, 
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                      )
-                    : const Text(
-                        'Finalizar Pedido',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                  )
+                      : const Text(
+                    'Finalizar Pedido',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 );
               },
             ),
@@ -591,9 +612,16 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Future<void> _finalizarPedido(BuildContext context, CarrinhoLoaded state) async {
+    final authCubit = context.read<AuthCubit>();
+
+    if (authCubit.state is AuthGuest) {
+      Navigator.pushReplacementNamed(context, Routes.completarCadastro);
+      return;
+    }
+
     final locCubit = context.read<LocalizacaoCubit>();
     final locState = locCubit.state;
-    
+
     if (locState is! LocalizacaoCarregada || locState.endereco.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Selecione um endereço de entrega salvo'), backgroundColor: Colors.orange),

@@ -49,9 +49,50 @@ class ApiClient {
           // Adiciona device_id no header
           final deviceId = await DeviceIdService.getDeviceId();
           options.headers['X-Device-Id'] = deviceId;
+
+          // 🔥 LOG DETALHADO DA REQUISIÇÃO
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          debugPrint('📤 [ApiClient] ENVIANDO REQUISIÇÃO');
+          debugPrint('📤 URL: ${options.baseUrl}${options.path}');
+          debugPrint('📤 Método: ${options.method}');
+          debugPrint('📤 Headers: ${options.headers}');
+          debugPrint('📤 Requer autenticação? ${options.extra['requiresAuth']}');
+          if (options.data != null) {
+            debugPrint('📤 Body: ${options.data}');
+          }
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
           return handler.next(options);
         },
+        onResponse: (response, handler) {
+          // 🔥 LOG DETALHADO DA RESPOSTA
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          debugPrint('📥 [ApiClient] RESPOSTA RECEBIDA');
+          debugPrint('📥 URL: ${response.requestOptions.baseUrl}${response.requestOptions.path}');
+          debugPrint('📥 Status: ${response.statusCode}');
+          debugPrint('📥 Headers: ${response.headers.map}');
+          if (response.data != null) {
+            debugPrint('📥 Body: ${response.data}');
+          }
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+          return handler.next(response);
+        },
         onError: (error, handler) async {
+          // 🔥 LOG DETALHADO DO ERRO
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          debugPrint('❌ [ApiClient] ERRO NA REQUISIÇÃO');
+          debugPrint('❌ URL: ${error.requestOptions.baseUrl}${error.requestOptions.path}');
+          debugPrint('❌ Método: ${error.requestOptions.method}');
+          debugPrint('❌ Tipo: ${error.type}');
+          debugPrint('❌ Mensagem: ${error.message}');
+          if (error.response != null) {
+            debugPrint('❌ Status Code: ${error.response?.statusCode}');
+            debugPrint('❌ Response Body: ${error.response?.data}');
+          }
+          debugPrint('❌ Stack Trace: ${error.stackTrace}');
+          debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
           // Se houver erro, tenta novamente com o device_id (caso não tenha sido enviado)
           if (error.requestOptions.headers['X-Device-Id'] == null) {
             final deviceId = await DeviceIdService.getDeviceId();

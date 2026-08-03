@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../di/dependencies.dart';
+import '../../auth/bloc/auth_cubit.dart';
 import '../models/endereco_model.dart';
 import '../repositories/endereco_repository.dart';
 import 'endereco_state.dart';
@@ -48,7 +50,15 @@ class EnderecoCubit extends Cubit<EnderecoState> {
       final result = await _repository.criarEndereco(endereco);
 
       if (!isClosed) {
-        // 🔥 VERIFICA SE O RESULTADO TEM O CAMPO 'endereco'
+        // 🔥 CAPTURAR TOKEN E USUÁRIO (CONVIDADO) RETORNADOS PELO BACKEND
+        final token = result['token'];
+        final usuarioJson = result['usuario'];
+        
+        if (token != null && usuarioJson != null) {
+          debugPrint('🔑 [EnderecoCubit] Token de convidado detectado no retorno. Atualizando AuthCubit...');
+          getIt<AuthCubit>().onEnderecoCriadoComToken(token, usuarioJson);
+        }
+
         final enderecoData = result['endereco'];
 
         if (enderecoData != null && enderecoData is Map<String, dynamic>) {

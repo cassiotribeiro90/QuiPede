@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,9 +7,12 @@ class TokenService {
   factory TokenService() => _instance;
   
   static const String ACCESS_TOKEN_KEY = 'access_token';
+  static const String GUEST_TOKEN_KEY = 'guest_token'; // 🔥 Chave separada para convidados
+  static const String USER_KEY = 'user_data';
   static const String REFRESH_TOKEN_KEY = 'refresh_token';
   static const String TOKEN_EXPIRES_KEY = 'token_expires_at';
   static const String BASE_URL_KEY = 'base_url';
+  static const String IS_GUEST_KEY = 'is_guest';
 
   late final SharedPreferences _prefs;
 
@@ -22,17 +26,54 @@ class TokenService {
     String accessToken, 
     String? refreshToken, {
     int expiresIn = 900,
+    bool isGuest = false,
+    Map<String, dynamic>? userJson,
   }) async {
-    await _prefs.setString(ACCESS_TOKEN_KEY, accessToken);
+    if (isGuest) {
+      await _prefs.setString(GUEST_TOKEN_KEY, accessToken);
+      await _prefs.remove(ACCESS_TOKEN_KEY);
+    } else {
+      await _prefs.setString(ACCESS_TOKEN_KEY, accessToken);
+      await _prefs.remove(GUEST_TOKEN_KEY);
+    }
+    
+    if (userJson != null) {
+      await saveUser(userJson);
+    }
+
     if (refreshToken != null) {
       await _prefs.setString(REFRESH_TOKEN_KEY, refreshToken);
+    } else {
+      await _prefs.remove(REFRESH_TOKEN_KEY);
     }
+    
+    await _prefs.setBool(IS_GUEST_KEY, isGuest);
     final expiresAt = DateTime.now().millisecondsSinceEpoch + (expiresIn * 1000);
     await _prefs.setString(TOKEN_EXPIRES_KEY, expiresAt.toString());
   }
 
-  String? getAccessToken() => _prefs.getString(ACCESS_TOKEN_KEY);
+  Future<void> saveUser(Map<String, dynamic> userJson) async {
+    await _prefs.setString(USER_KEY, jsonEncode(userJson));
+  }
+
+  Map<String, dynamic>? getUser() {
+    final data = _prefs.getString(USER_KEY);
+    if (data == null || data.isEmpty) return null;
+    try {
+      return jsonDecode(data);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Retorna o token disponível, priorizando o de usuário autenticado
+  String? getAccessToken() {
+    return _prefs.getString(ACCESS_TOKEN_KEY) ?? _prefs.getString(GUEST_TOKEN_KEY);
+  }
+
   String? getRefreshToken() => _prefs.getString(REFRESH_TOKEN_KEY);
+  
+  bool isGuest() => _prefs.getBool(IS_GUEST_KEY) ?? (_prefs.getString(GUEST_TOKEN_KEY) != null);
 
   Map<String, String> getAuthHeader() {
     final token = getAccessToken();
@@ -49,15 +90,21 @@ class TokenService {
     return DateTime.now().millisecondsSinceEpoch > (expiresAt - 30000);
   }
 
-  bool isLoggedIn() {
+  bool hasToken() {
     final token = getAccessToken();
-    return token != null && token.isNotEmpty && !isTokenExpired();
+    return token != null && token.isNotEmpty;
   }
+
+  /// Alias para verificar se há um token ativo e não expirado
+  bool isLoggedIn() => hasToken() && !isTokenExpired();
 
   Future<void> clearTokens() async {
     await _prefs.remove(ACCESS_TOKEN_KEY);
+    await _prefs.remove(GUEST_TOKEN_KEY);
+    await _prefs.remove(USER_KEY);
     await _prefs.remove(REFRESH_TOKEN_KEY);
     await _prefs.remove(TOKEN_EXPIRES_KEY);
+    await _prefs.remove(IS_GUEST_KEY);
   }
 
   Future<void> saveBaseUrl(String url) async {
@@ -93,7 +140,8 @@ class TokenService {
         final expiresIn = data['expires_in'] ?? 900;
 
         if (newAccessToken.isNotEmpty) {
-          await saveTokens(newAccessToken, newRefreshToken, expiresIn: expiresIn);
+          // Refresh token geralmente é apenas para usuários autenticados
+          await saveTokens(newAccessToken, newRefreshToken, expiresIn: expiresIn, isGuest: false);
           return true;
         }
       }

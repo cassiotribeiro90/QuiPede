@@ -16,18 +16,26 @@ class RefreshInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // 🔥 VERIFICA SE REQUER AUTENTICAÇÃO
     final requiresAuth = options.extra['requiresAuth'] ?? true;
+
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('🔐 [RefreshInterceptor] requiresAuth: $requiresAuth');
 
     if (requiresAuth) {
       final token = tokenService.getAccessToken();
+      debugPrint('🔐 [RefreshInterceptor] Token encontrado: ${token != null ? "SIM (${token.substring(0, 10)}...)" : "NÃO"}');
+
       if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';
+        debugPrint('🔐 [RefreshInterceptor] Header Authorization adicionado');
+      } else {
+        debugPrint('🔐 [RefreshInterceptor] NENHUM TOKEN DISPONÍVEL!');
       }
     } else {
-      // 🔥 REMOVE O HEADER DE AUTENTICAÇÃO SE NÃO FOR NECESSÁRIO
       options.headers.remove('Authorization');
+      debugPrint('🔐 [RefreshInterceptor] Requisição pública, sem token');
     }
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     handler.next(options);
   }

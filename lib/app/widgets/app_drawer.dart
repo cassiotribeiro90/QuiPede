@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../modules/auth/bloc/auth_cubit.dart';
 import '../modules/auth/bloc/auth_state.dart';
 import '../routes/app_routes.dart';
@@ -10,72 +11,69 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
-      builder: (context, state) {
-        final isLogged = state is AuthAuthenticated;
+      builder: (context, authState) {
+        final isLogged = authState is AuthAuthenticated;
+        final isGuest = authState is AuthGuest;
 
         return Drawer(
-          child: Column(
+          child: ListView(
+            padding: EdgeInsets.zero,
             children: [
-              DrawerHeader(
-                decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-                child: const Center(
-                  child: Text(
-                    'QuiPede',
-                    style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.storefront),
-                      title: const Text('Lojas'),
-                      onTap: () => _goTo(context, Routes.home),
-                    ),
-                    if (isLogged) ...[
-                      ListTile(
-                        leading: const Icon(Icons.person),
-                        title: const Text('Perfil'),
-                        onTap: () => _goTo(context, Routes.perfil),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.shopping_bag),
-                        title: const Text('Meus Pedidos'),
-                        onTap: () => _goTo(context, Routes.pedidos),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.location_on),
-                        title: const Text('Meus Endereços de Entrega'),
-                        onTap: () => _goTo(context, Routes.meusEnderecos),
-                      ),
-                    ],
-                    ListTile(
-                      leading: const Icon(Icons.settings),
-                      title: const Text('Configurações'),
-                      onTap: () {
-                        // Implementar rota de configurações se existir
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              _buildHeader(context, isLogged, isGuest),
               const Divider(),
-              if (isLogged)
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text('Sair', style: TextStyle(color: Colors.red)),
-                  onTap: () => _logout(context),
-                )
-              else
-                ListTile(
-                  leading: const Icon(Icons.login, color: Colors.blue),
-                  title: const Text('Entrar', style: TextStyle(color: Colors.blue)),
-                  onTap: () => _goTo(context, Routes.login),
+
+              // Lojas (sempre visível)
+              _buildMenuItem(
+                icon: Icons.storefront,
+                label: 'Lojas',
+                onTap: () => _navigateAndClose(context, Routes.home),
+              ),
+
+              // Carrinho (sempre visível)
+              _buildMenuItem(
+                icon: Icons.shopping_cart,
+                label: 'Carrinho',
+                onTap: () => _navigateAndClose(context, Routes.carrinho),
+              ),
+
+              const Divider(),
+
+              // ===== SE LOGADO REAL =====
+              if (isLogged) ...[
+                _buildMenuItem(
+                  icon: Icons.shopping_bag,
+                  label: 'Meus Pedidos',
+                  onTap: () => _navigateAndClose(context, Routes.pedidos),
                 ),
-              const SizedBox(height: 20),
+                _buildMenuItem(
+                  icon: Icons.person,
+                  label: 'Meu Perfil',
+                  onTap: () => _navigateAndClose(context, Routes.perfil),
+                ),
+                _buildMenuItem(
+                  icon: Icons.logout,
+                  label: 'Sair',
+                  isLogout: true,
+                  onTap: () => _confirmarLogout(context),
+                ),
+              ],
+
+              // ===== SE CONVIDADO OU DESLOGADO =====
+              if (!isLogged) ...[
+                _buildMenuItem(
+                  icon: Icons.login,
+                  label: isGuest ? 'Identificar-se' : 'Entrar',
+                  isLogin: true,
+                  onTap: () => _navigateAndClose(context, Routes.login),
+                ),
+                if (isGuest)
+                  _buildMenuItem(
+                    icon: Icons.exit_to_app,
+                    label: 'Sair do Convidado',
+                    isLogout: true,
+                    onTap: () => _confirmarSairConvidado(context),
+                  ),
+              ],
             ],
           ),
         );
@@ -83,29 +81,71 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  void _goTo(BuildContext context, String route) {
-    Navigator.pop(context); // Fecha o drawer
-
-
-    if (route == Routes.login) {
-      // ✅ Para o login, usamos pushNamed para "empilhar" e permitir o retorno
-      Navigator.pushNamed(context, route);
-    } else if (route == Routes.home) {
-      Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
-    } else {
-      // ✅ Para outras telas, usamos replacement para não acumular pilhas infinitas
-      Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
-    }
+  Widget _buildHeader(BuildContext context, bool isLogged, bool isGuest) {
+    return DrawerHeader(
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const Text(
+            'QuiPede',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isLogged ? 'Bem-vindo de volta!' : (isGuest ? 'Modo Visitante' : 'Faça login para mais recursos'),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _logout(BuildContext context) async {
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isLogout = false,
+    bool isLogin = false,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isLogout ? Colors.red : (isLogin ? Colors.green : null),
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: isLogout ? Colors.red : (isLogin ? Colors.green : null),
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  void _navigateAndClose(BuildContext context, String route) {
+    Navigator.pop(context); // Fecha o drawer
+    Navigator.pushNamed(context, route);
+  }
+
+  void _confirmarLogout(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Sair'),
         content: const Text('Tem certeza que deseja sair?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(_, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(_, false),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(_, true),
             child: const Text('Sair', style: TextStyle(color: Colors.red)),
@@ -115,9 +155,42 @@ class AppDrawer extends StatelessWidget {
     );
 
     if (confirm == true) {
-      await context.read<AuthCubit>().logout();
       if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
+        Navigator.pop(context); // Fecha o drawer
+        await context.read<AuthCubit>().logout();
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+        }
+      }
+    }
+  }
+
+  void _confirmarSairConvidado(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sair'),
+        content: const Text('Seu endereço será removido e você voltará à tela inicial.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sair', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      if (context.mounted) {
+        Navigator.pop(context); // Fecha o drawer
+        await context.read<AuthCubit>().sairConvidado();
+        if (context.mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
+        }
       }
     }
   }

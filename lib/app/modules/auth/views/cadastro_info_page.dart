@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../routes/app_routes.dart';
 import '../../../../app/core/utils/masks.dart';
 import '../../../../app/core/utils/validators.dart';
 import '../bloc/auth_cubit.dart';
@@ -48,7 +47,7 @@ class _CadastroInfoPageState extends State<CadastroInfoPage> {
         confirmarSenha: _confirmarSenhaController.text.trim(),
       );
       
-      final isValid = await context.read<AuthCubit>().validarEtapa1(info.toJson());
+     //  final isValid = await context.read<AuthCubit>().validarEtapa1(info.toJson());
       
      /* if (isValid && mounted) {
         Navigator.pushNamed(

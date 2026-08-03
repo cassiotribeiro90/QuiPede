@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../di/dependencies.dart';
 import '../modules/auth/views/cadastro_page.dart';
+import '../modules/auth/views/completar_cadastro_page.dart';
 import '../modules/auth/views/login_screen.dart';
 import '../modules/auth/views/splash_screen.dart';
 import '../modules/carrinho/views/carrinho_page.dart';
@@ -47,6 +48,12 @@ class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const CadastroPage(),
+        );
+
+      case Routes.completarCadastro:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const CompletarCadastroPage(),
         );
 
       case Routes.home:

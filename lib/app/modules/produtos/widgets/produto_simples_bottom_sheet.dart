@@ -49,17 +49,13 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
 
     return BlocConsumer<CarrinhoCubit, CarrinhoState>(
       listener: (context, state) {
-        print('📥 [ProdutoModal] LISTENER: ${state.runtimeType}');
-
         if (state is CarrinhoConflitoLojaDetectado) {
-          print('🔥 CONFLITO!');
           setState(() => _isAdding = false);
           _mostrarDialogoConflito(state);
           return;
         }
 
         if (state is CarrinhoLoaded && _isAdding) {
-          print('✅ SUCESSO!');
           setState(() => _isAdding = false);
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -75,7 +71,6 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
         }
 
         if (state is CarrinhoError && _isAdding) {
-          print('❌ ERRO: ${state.message}');
           setState(() => _isAdding = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -265,8 +260,10 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
   }
 
   Future<void> _handleAcao() async {
-    final authCubit = getIt<AuthCubit>();
-    if (authCubit.state is! AuthAuthenticated) {
+    final authState = context.read<AuthCubit>().state;
+    
+    // 🔥 PERMITIR ADIÇÃO PARA AuthAuthenticated OU AuthGuest
+    if (authState is! AuthAuthenticated && authState is! AuthGuest) {
       Navigator.pop(context, {
         'requestLogin': true,
         'produto': widget.produto,
@@ -277,7 +274,6 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
       return;
     }
 
-    print('🔄 [ProdutoModal] Adicionando...');
     setState(() => _isAdding = true);
 
     final observacao = _observacaoController.text.trim().isNotEmpty
@@ -293,8 +289,6 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
   }
 
   void _mostrarDialogoConflito(CarrinhoConflitoLojaDetectado conflito) {
-    print('🔥 [ProdutoModal] Exibindo diálogo');
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -322,14 +316,12 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
         actions: [
           TextButton(
             onPressed: () {
-              print('🔙 Manter carrinho');
               Navigator.pop(dialogContext);
             },
             child: const Text('Manter carrinho'),
           ),
           ElevatedButton(
             onPressed: () {
-              print('🔄 Limpar e adicionar');
               Navigator.pop(dialogContext);
               setState(() => _isAdding = true);
               context.read<CarrinhoCubit>().limparEAdicionar(conflito);

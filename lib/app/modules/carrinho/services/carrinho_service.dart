@@ -103,7 +103,7 @@ class CarrinhoService {
   Future<CarrinhoResponse> carregarCarrinho({int? enderecoId}) async {
     try {
       final response = await _apiClient.get(
-        '/app/carrinho',
+        'app/carrinho',
         queryParameters: enderecoId != null ? {'endereco_id': enderecoId} : null,
       );
 
