@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../di/dependencies.dart';
 import '../../home/views/cep_input_page.dart';
 import '../../home/views/busca_endereco_page.dart';
 import '../bloc/endereco_cubit.dart';
@@ -93,7 +94,12 @@ class EnderecoActionCards extends StatelessWidget {
   void _navigateToCepPage(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CepInputPage()),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: getIt<EnderecoCubit>(),
+          child: const CepInputPage(),
+        ),
+      ),
     ).then((result) {
       if (result == true && context.mounted) {
         context.read<EnderecoCubit>().carregarEnderecos();
@@ -104,7 +110,12 @@ class EnderecoActionCards extends StatelessWidget {
   void _navigateToBuscaEnderecoPage(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const BuscaEnderecoPage()),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: getIt<EnderecoCubit>(),
+          child: const BuscaEnderecoPage(),
+        ),
+      ),
     ).then((result) {
       if (result == true && context.mounted) {
         context.read<EnderecoCubit>().carregarEnderecos();

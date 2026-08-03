@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../routes/app_routes.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 
@@ -22,7 +23,7 @@ class PerfilScreen extends StatelessWidget {
                   const Text('Bem-vindo!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 32),
                   ElevatedButton(
-                    onPressed: () => context.read<AuthCubit>().logout(),
+                    onPressed: () => _confirmarLogout(context),
                     child: const Text('Sair da Conta'),
                   ),
                 ],
@@ -33,5 +34,36 @@ class PerfilScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _confirmarLogout(BuildContext context) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sair'),
+        content: const Text('Deseja realmente sair da sua conta?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sair', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado == true && context.mounted) {
+      await context.read<AuthCubit>().logout();
+      if (context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          Routes.onboarding,
+          (route) => false,
+        );
+      }
+    }
   }
 }

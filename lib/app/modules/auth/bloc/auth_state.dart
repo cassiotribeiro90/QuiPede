@@ -9,9 +9,7 @@ abstract class AuthState extends Equatable {
 }
 
 class AuthInitial extends AuthState {}
-
 class AuthChecking extends AuthState {}
-
 class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
@@ -42,33 +40,25 @@ class AuthError extends AuthState {
   List<Object?> get props => [message];
 }
 
-class AuthSuccess extends AuthAuthenticated {
-  const AuthSuccess({required super.accessToken, super.user});
-}
+// --- Estados para o Fluxo OTP ---
 
-// --- Novos Estados para OTP ---
-
-class AuthOtpEnviado extends AuthState {
+class AuthPhoneEnviado extends AuthState {
   final String telefone;
-  final bool sucesso;
-  const AuthOtpEnviado({required this.telefone, this.sucesso = false});
-
+  const AuthPhoneEnviado({required this.telefone});
   @override
-  List<Object?> get props => [telefone, sucesso];
+  List<Object?> get props => [telefone];
 }
 
 class AuthOtpVerificando extends AuthState {
   final String telefone;
   const AuthOtpVerificando({required this.telefone});
-
   @override
   List<Object?> get props => [telefone];
 }
 
 class AuthOtpErro extends AuthState {
-  final String message;
-  const AuthOtpErro(this.message);
-
+  final String mensagem;
+  const AuthOtpErro(this.mensagem);
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [mensagem];
 }

@@ -6,10 +6,9 @@ import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
 import 'widgets/endereco_card.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../../routes/app_routes.dart';
 import '../../../core/utils/estados_brasil.dart';
 
-class EnderecoConfirmacaoPage extends StatefulWidget {
+class EnderecoConfirmacaoPage extends StatelessWidget {
   final Map<String, dynamic> endereco;
   final double latitude;
   final double longitude;
@@ -22,10 +21,35 @@ class EnderecoConfirmacaoPage extends StatefulWidget {
   });
 
   @override
-  State<EnderecoConfirmacaoPage> createState() => _EnderecoConfirmacaoPageState();
+  Widget build(BuildContext context) {
+    // 🔥 Injeta o EnderecoCubit aqui para tornar a tela autossuficiente
+    return BlocProvider.value(
+      value: getIt<EnderecoCubit>(),
+      child: _EnderecoConfirmacaoBody(
+        endereco: endereco,
+        latitude: latitude,
+        longitude: longitude,
+      ),
+    );
+  }
 }
 
-class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
+class _EnderecoConfirmacaoBody extends StatefulWidget {
+  final Map<String, dynamic> endereco;
+  final double latitude;
+  final double longitude;
+
+  const _EnderecoConfirmacaoBody({
+    required this.endereco,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  @override
+  State<_EnderecoConfirmacaoBody> createState() => _EnderecoConfirmacaoBodyState();
+}
+
+class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
   final _formKey = GlobalKey<FormState>();
   final _numeroController = TextEditingController();
   final _complementoController = TextEditingController();
@@ -41,7 +65,20 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
   }
 
   Future<void> _confirmar() async {
-    if (!_formKey.currentState!.validate()) return;
+    // 🔥 Remove o foco dos campos (fecha teclado)
+    FocusScope.of(context).unfocus();
+
+    if (!_formKey.currentState!.validate()) {
+      // 🔥 Algum campo inválido → mostrar SnackBar único
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preencha todos os campos obrigatórios'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
 
     final ufSigla = converterEstadoParaSigla(widget.endereco['uf'] ?? '');
 
@@ -53,6 +90,7 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
       uf: ufSigla,
       cep: widget.endereco['cep'] ?? '',
       complemento: _complementoController.text.trim().isEmpty ? null : _complementoController.text.trim(),
+      referencia: _referenciaController.text.trim().isEmpty ? null : _referenciaController.text.trim(),
       latitude: widget.latitude,
       longitude: widget.longitude,
     );
@@ -60,7 +98,7 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
     setState(() => _isLoading = true);
 
     try {
-      await getIt<EnderecoCubit>().criarEndereco(enderecoModel);
+      await context.read<EnderecoCubit>().criarEndereco(enderecoModel);
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -79,7 +117,7 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
         if (state is EnderecoOperacaoSucesso) {
-          print('✅ [EnderecoConfirmacaoPage] Sucesso! Chamando Navigator.pop(true)');
+          print('✅ [_EnderecoConfirmacaoBody] Sucesso! Chamando Navigator.pop(true)');
           setState(() => _isLoading = false);
           
           ScaffoldMessenger.of(context).showSnackBar(
@@ -117,6 +155,7 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
           padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -133,6 +172,7 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
                 ),
                 const SizedBox(height: 24),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 1,
@@ -143,8 +183,9 @@ class _EnderecoConfirmacaoPageState extends State<EnderecoConfirmacaoPage> {
                           labelText: 'Número *',
                           hintText: '123',
                           border: OutlineInputBorder(),
+                          errorStyle: TextStyle(height: 0),
                         ),
-                        validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
+                        validator: (value) => (value == null || value.isEmpty) ? '' : null,
                       ),
                     ),
                     const SizedBox(width: 12),

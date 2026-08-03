@@ -4,6 +4,8 @@ import '../di/dependencies.dart';
 import '../modules/auth/views/cadastro_page.dart';
 import '../modules/auth/views/completar_cadastro_page.dart';
 import '../modules/auth/views/login_screen.dart';
+import '../modules/auth/views/phone_input_page.dart';
+import '../modules/auth/views/otp_verification_page.dart';
 import '../modules/auth/views/splash_screen.dart';
 import '../modules/carrinho/views/carrinho_page.dart';
 import '../modules/home/bloc/home_cubit.dart';
@@ -41,13 +43,26 @@ class AppRouter {
       case Routes.login:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const LoginScreen(),
+          builder: (_) => const PhoneInputPage(),
+        );
+
+      case Routes.phoneInput:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const PhoneInputPage(),
+        );
+
+      case Routes.otpVerify:
+        final phone = settings.arguments as String;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => OtpVerificationPage(telefone: phone),
         );
 
       case Routes.cadastro:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const CadastroPage(),
+          builder: (_) => const PhoneInputPage(),
         );
 
       case Routes.completarCadastro:

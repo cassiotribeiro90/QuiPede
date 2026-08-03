@@ -1,4 +1,4 @@
-// lib/widgets/app_drawer.dart
+// lib/app/modules/appart/widgets/app_drawer.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -126,7 +126,7 @@ class AppDrawer extends StatelessWidget {
 
   void _navigateAndClose(BuildContext context, String route) {
     Navigator.pop(context); // Fecha o drawer
-    Navigator.pushReplacementNamed(context, route);
+    Navigator.pushNamed(context, route);
   }
 
   void _confirmarLogout(BuildContext context) async {
@@ -149,11 +149,13 @@ class AppDrawer extends StatelessWidget {
     );
 
     if (confirm == true) {
-      Navigator.pop(context); // Fecha o drawer
-      await context.read<AuthCubit>().logout();
       if (context.mounted) {
-        // ✅ Após logout, vai para a home
-        Navigator.pushReplacementNamed(context, Routes.home);
+        Navigator.pop(context); // Fecha o drawer
+        await context.read<AuthCubit>().logout();
+        if (context.mounted) {
+          // ✅ Redireciona para onboarding e limpa a pilha
+          Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
+        }
       }
     }
   }

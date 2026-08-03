@@ -67,7 +67,8 @@ Future<void> setupDependencies() async {
     AuthCubit(
       getIt<ApiClient>(),
       getIt<LocalizacaoCubit>(),
-      getIt<EnderecoCubit>(), // 🔥 AGORA FUNCIONA
+      getIt<EnderecoCubit>(),
+      getIt<SharedPreferences>(), // ✅ Injetado
     ),
   );
 

@@ -159,7 +159,8 @@ class AppDrawer extends StatelessWidget {
         Navigator.pop(context); // Fecha o drawer
         await context.read<AuthCubit>().logout();
         if (context.mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+          // ✅ Redireciona para onboarding e limpa a pilha
+          Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
         }
       }
     }
@@ -189,6 +190,7 @@ class AppDrawer extends StatelessWidget {
         Navigator.pop(context); // Fecha o drawer
         await context.read<AuthCubit>().sairConvidado();
         if (context.mounted) {
+          // ✅ Redireciona para onboarding e limpa a pilha
           Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
         }
       }

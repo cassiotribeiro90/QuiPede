@@ -17,7 +17,7 @@ class SocialLoginButtons extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'ou continue br',
+                'ou continue com',
                 style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
               ),
             ),
@@ -98,7 +98,7 @@ class _SocialButton extends StatelessWidget {
             icon,
             const SizedBox(width: 12),
             Text(
-              'Entrar br $label',
+              'Entrar com $label',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ],

@@ -68,9 +68,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       print('🔙 [OnboardingPage] result = $result');
       if (result == true && mounted) {
         print('✅ [OnboardingPage] Sucesso no CEP! Sincronizando endereço...');
-        // 🔥 CARREGA O ENDEREÇO ANTES DE NAVEGAR
         context.read<AuthCubit>().carregarEnderecoUsuario();
-        // Aguarda um pouco para garantir que o estado foi atualizado
         Future.delayed(const Duration(milliseconds: 300), () {
           _navegarParaHome();
         });
@@ -94,7 +92,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
       print('🔙 [OnboardingPage] result = $result');
       if (result == true && mounted) {
         print('✅ [OnboardingPage] Sucesso na busca! Sincronizando endereço...');
-        // 🔥 CARREGA O ENDEREÇO ANTES DE NAVEGAR
         context.read<AuthCubit>().carregarEnderecoUsuario();
         Future.delayed(const Duration(milliseconds: 300), () {
           _navegarParaHome();
@@ -133,7 +130,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
             print('🔙 [OnboardingPage] result = $result');
             if (result == true && mounted) {
               print('✅ [OnboardingPage] Sucesso no GPS! Sincronizando endereço...');
-              // 🔥 CARREGA O ENDEREÇO ANTES DE NAVEGAR
               context.read<AuthCubit>().carregarEnderecoUsuario();
               Future.delayed(const Duration(milliseconds: 300), () {
                 _navegarParaHome();
@@ -240,8 +236,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   OnboardingOptionCard(
                     icon: Icons.person_outline_rounded,
                     title: 'Já tenho uma conta',
-                    subtitle: 'Entrar com email ou redes sociais',
-                    onTap: () => Navigator.pushNamed(context, Routes.login),
+                    subtitle: 'Entrar com seu número de telefone',
+                    onTap: () => Navigator.pushNamed(context, Routes.phoneInput),
                   ),
 
                   const SizedBox(height: 40),

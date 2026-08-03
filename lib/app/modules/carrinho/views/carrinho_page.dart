@@ -48,7 +48,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     if (authState is AuthGuest) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.pushReplacementNamed(context, Routes.completarCadastro);
+          Navigator.pushNamed(
+            context, 
+            Routes.phoneInput, 
+            arguments: {'redirectToCheckout': true}
+          );
         }
       });
     }
@@ -97,13 +101,8 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
       backgroundColor: context.backgroundColor,
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, authState) {
-          if (authState is AuthGuest) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, Routes.completarCadastro);
-              }
-            });
-          }
+          // Se o usuário autenticar via OTP vindo do checkout, ele voltará para cá e o listener não precisa agir
+          // A navegação de volta é tratada no OtpVerificationPage
         },
         child: MultiBlocListener(
           listeners: [
@@ -615,7 +614,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     final authCubit = context.read<AuthCubit>();
 
     if (authCubit.state is AuthGuest) {
-      Navigator.pushReplacementNamed(context, Routes.completarCadastro);
+      Navigator.pushNamed(
+        context, 
+        Routes.phoneInput, 
+        arguments: {'redirectToCheckout': true}
+      );
       return;
     }
 

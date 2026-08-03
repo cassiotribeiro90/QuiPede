@@ -13,7 +13,7 @@ import 'endereco_confirmacao_page.dart';
 import 'widgets/endereco_sugestao_tile.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
-class BuscaEnderecoPage extends StatefulWidget {
+class BuscaEnderecoPage extends StatelessWidget {
   final double? initialLat;
   final double? initialLng;
 
@@ -24,10 +24,31 @@ class BuscaEnderecoPage extends StatefulWidget {
   });
 
   @override
-  State<BuscaEnderecoPage> createState() => _BuscaEnderecoPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: getIt<EnderecoCubit>(),
+      child: _BuscaEnderecoBody(
+        initialLat: initialLat,
+        initialLng: initialLng,
+      ),
+    );
+  }
 }
 
-class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
+class _BuscaEnderecoBody extends StatefulWidget {
+  final double? initialLat;
+  final double? initialLng;
+
+  const _BuscaEnderecoBody({
+    this.initialLat,
+    this.initialLng,
+  });
+
+  @override
+  State<_BuscaEnderecoBody> createState() => _BuscaEnderecoBodyState();
+}
+
+class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
   final _searchController = TextEditingController();
   final _localizacaoService = LocalizacaoService(getIt<ApiClient>());
 
@@ -224,13 +245,10 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: getIt<EnderecoCubit>(),
-                  child: EnderecoConfirmacaoPage(
-                    endereco: item.toMap(),
-                    latitude: item.latitude ?? 0.0,
-                    longitude: item.longitude ?? 0.0,
-                  ),
+                builder: (_) => EnderecoConfirmacaoPage(
+                  endereco: item.toMap(),
+                  latitude: item.latitude ?? 0.0,
+                  longitude: item.longitude ?? 0.0,
                 ),
               ),
             ).then((result) {

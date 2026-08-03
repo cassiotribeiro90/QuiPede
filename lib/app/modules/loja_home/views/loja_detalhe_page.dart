@@ -28,7 +28,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
   late final LojaHomeCubit _cubit;
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
-  bool _carrinhoJaCarregado = false;   // 🔥 trava contra loop
+  bool _carrinhoJaCarregado = false;
 
   @override
   void initState() {
@@ -38,7 +38,6 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _cubit.loadLoja();
-        // Não carrega carrinho aqui – o BlocListener fará isso quando houver token
       }
     });
 
@@ -71,20 +70,23 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
   void _abrirProduto(BuildContext context, dynamic produto) {
     final authState = context.read<AuthCubit>().state;
 
+    // 🔥 Convidado E autenticado podem adicionar ao carrinho normalmente
     if (authState is AuthAuthenticated || authState is AuthGuest) {
       _abrirBottomSheetProduto(produto, widget.lojaId);
       return;
     }
 
-    // Sem token → onboarding para cadastrar endereço
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Selecione um endereço para adicionar itens à sua sacola'),
-        backgroundColor: Colors.blue,
-        duration: Duration(seconds: 3),
-      ),
-    );
-    Navigator.pushNamed(context, Routes.onboarding);
+    // 🔥 SÓ redireciona para onboarding se for AuthUnauthenticated (sem token nenhum)
+    if (authState is AuthUnauthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cadastre um endereço para começar a pedir'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      Navigator.pushNamed(context, Routes.onboarding);
+    }
   }
 
   void _abrirBottomSheetProduto(dynamic produto, int lojaId) {
@@ -143,17 +145,15 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
               }
             },
           ),
-          // 🔥 Listener inteligente – dispara apenas uma vez ao virar convidado/autenticado
+          // 🔥 Carrega carrinho quando virar convidado ou autenticado
           BlocListener<AuthCubit, AuthState>(
             listener: (context, authState) {
               if (!mounted) return;
               if ((authState is AuthGuest || authState is AuthAuthenticated) &&
                   !_carrinhoJaCarregado) {
                 _carrinhoJaCarregado = true;
-                // Agenda para o próximo frame, evitando conflitos de build
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
-                    // Sem forceRefresh, respeitando a trava do cubit
                     context.read<CarrinhoCubit>().carregarCarrinho();
                   }
                 });
@@ -164,15 +164,12 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
           ),
         ],
         child: BlocBuilder<LojaHomeCubit, LojaHomeState>(
-          // 🔥 buildWhen: evita reconstruir desnecessariamente
           buildWhen: (previous, current) {
             if (previous is LojaHomeLoaded && current is LojaHomeLoaded) {
-              // Se apenas o isLoadingMore mudou, ignore
               if (previous.isLoadingMore != current.isLoadingMore) return false;
-              // Se apenas o isFiltering mudou, ignore (já tem overlay separado)
               if (previous.isFiltering != current.isFiltering) return false;
             }
-            return true; // reconstrói em outros casos (erro, loading, etc.)
+            return true;
           },
           builder: (context, state) {
             return ResponsivePageScaffold(
@@ -253,7 +250,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
         _isLoadingMore = false;
         await Future.wait([
           _cubit.refresh(),
-          if (_carrinhoJaCarregado)   // só atualiza se já foi carregado antes
+          if (_carrinhoJaCarregado)
             context.read<CarrinhoCubit>().carregarCarrinho(forceRefresh: true),
         ]);
       },

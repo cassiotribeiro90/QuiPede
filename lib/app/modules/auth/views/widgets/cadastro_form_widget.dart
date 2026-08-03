@@ -13,11 +13,13 @@ import 'custom_text_field.dart';
 class CadastroFormWidget extends StatefulWidget {
   final bool isCompletarCadastro;
   final VoidCallback? onSuccess;
+  final String? telefonePreenchido;
 
   const CadastroFormWidget({
     super.key,
     this.isCompletarCadastro = false,
     this.onSuccess,
+    this.telefonePreenchido,
   });
 
   @override
@@ -29,20 +31,22 @@ class _CadastroFormWidgetState extends State<CadastroFormWidget> {
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _telefoneController = TextEditingController();
-  final _senhaController = TextEditingController();
-  final _confirmarSenhaController = TextEditingController();
 
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _termosAceitos = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.telefonePreenchido != null) {
+      _telefoneController.text = widget.telefonePreenchido!;
+    }
+  }
 
   @override
   void dispose() {
     _nomeController.dispose();
     _emailController.dispose();
     _telefoneController.dispose();
-    _senhaController.dispose();
-    _confirmarSenhaController.dispose();
     super.dispose();
   }
 
@@ -61,31 +65,14 @@ class _CadastroFormWidgetState extends State<CadastroFormWidget> {
       FocusScope.of(context).unfocus();
 
       final authCubit = context.read<AuthCubit>();
-      final authState = authCubit.state;
       
-      if (authState is AuthGuest || widget.isCompletarCadastro) {
-        await authCubit.completarCadastroConvidado(
-          nome: _nomeController.text.trim(),
-          email: _emailController.text.trim(),
-          senha: _senhaController.text.trim(),
-          telefone: _telefoneController.text.replaceAll(RegExp(r'\D'), ''),
-        );
-      } else {
-        final dados = {
-          'nome': _nomeController.text.trim(),
-          'email': _emailController.text.trim(),
-          'telefone': _telefoneController.text.replaceAll(RegExp(r'\D'), ''),
-          'senha': _senhaController.text.trim(),
-          'confirmar_senha': _confirmarSenhaController.text.trim(),
-          'termos_aceitos': 1,
-        };
-
-        final locState = context.read<LocalizacaoCubit>().state;
-        if (locState is LocalizacaoCarregada) {
-          dados['endereco'] = locState.endereco.toJson();
-        }
-        await authCubit.cadastrar(dados);
-      }
+      // A autenticação agora é via OTP. Se estamos aqui, é para completar os dados de perfil
+      // (Nome, Email) que o backend exige.
+      await authCubit.completarCadastroConvidado(
+        nome: _nomeController.text.trim(),
+        email: _emailController.text.trim(),
+        telefone: _telefoneController.text.replaceAll(RegExp(r'\D'), ''),
+      );
       
       if (authCubit.state is AuthAuthenticated && widget.onSuccess != null) {
         widget.onSuccess!();
@@ -129,51 +116,12 @@ class _CadastroFormWidgetState extends State<CadastroFormWidget> {
                 controller: _telefoneController,
                 hintText: 'Telefone',
                 prefixIcon: Icons.phone_outlined,
-                enabled: !isLoading,
+                enabled: false, // Telefone verificado via OTP
                 keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.next,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   PhoneInputFormatter(),
                 ],
-                validator: AppValidators.validatePhone,
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _senhaController,
-                hintText: 'Senha',
-                prefixIcon: Icons.lock_outline,
-                enabled: !isLoading,
-                obscureText: _obscurePassword,
-                textInputAction: TextInputAction.next,
-                suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Informe uma senha';
-                  if (value.length < 6) return 'A senha deve ter pelo menos 6 caracteres';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _confirmarSenhaController,
-                hintText: 'Confirmar senha',
-                prefixIcon: Icons.lock_outline,
-                enabled: !isLoading,
-                obscureText: _obscureConfirmPassword,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => isLoading ? null : _submit(),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Confirme sua senha';
-                  if (value != _senhaController.text) return 'As senhas não coincidem';
-                  return null;
-                },
               ),
               const SizedBox(height: 20),
               _buildTermos(primaryColor),
@@ -194,7 +142,7 @@ class _CadastroFormWidgetState extends State<CadastroFormWidget> {
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
                     : Text(
-                        widget.isCompletarCadastro ? 'FINALIZAR E COMPRAR' : 'CADASTRAR',
+                        widget.isCompletarCadastro ? 'FINALIZAR E COMPRAR' : 'SALVAR DADOS',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
               ),
