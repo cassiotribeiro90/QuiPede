@@ -4,11 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/masks.dart';
 import '../../../../core/utils/validators.dart';
-import '../../../home/bloc/localizacao_cubit.dart';
-import '../../../home/bloc/localizacao_state.dart';
 import '../../bloc/auth_cubit.dart';
 import '../../bloc/auth_state.dart';
-import 'custom_text_field.dart';
+import '../../../../core/widgets/app_text_field.dart';
 
 class CadastroFormWidget extends StatefulWidget {
   final bool isCompletarCadastro;
@@ -66,8 +64,6 @@ class _CadastroFormWidgetState extends State<CadastroFormWidget> {
 
       final authCubit = context.read<AuthCubit>();
       
-      // A autenticação agora é via OTP. Se estamos aqui, é para completar os dados de perfil
-      // (Nome, Email) que o backend exige.
       await authCubit.completarCadastroConvidado(
         nome: _nomeController.text.trim(),
         email: _emailController.text.trim(),
@@ -93,30 +89,32 @@ class _CadastroFormWidgetState extends State<CadastroFormWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CustomTextField(
+              AppTextField(
                 controller: _nomeController,
-                hintText: 'Nome completo',
+                label: 'Nome completo',
                 prefixIcon: Icons.person_outline,
                 enabled: !isLoading,
+                isRequired: true,
                 textInputAction: TextInputAction.next,
                 validator: (v) => (v == null || v.isEmpty) ? 'Informe seu nome' : null,
               ),
               const SizedBox(height: 16),
-              CustomTextField(
+              AppTextField(
                 controller: _emailController,
-                hintText: 'E-mail',
+                label: 'E-mail',
                 prefixIcon: Icons.email_outlined,
                 enabled: !isLoading,
+                isRequired: true,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 validator: AppValidators.validateEmail,
               ),
               const SizedBox(height: 16),
-              CustomTextField(
+              AppTextField(
                 controller: _telefoneController,
-                hintText: 'Telefone',
+                label: 'Telefone',
                 prefixIcon: Icons.phone_outlined,
-                enabled: false, // Telefone verificado via OTP
+                enabled: false,
                 keyboardType: TextInputType.phone,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,

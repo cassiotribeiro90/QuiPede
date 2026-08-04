@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
+import 'package:quipede/app/core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
 import '../models/endereco_sugestao.dart';
 import '../services/localizacao_service.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
@@ -171,16 +172,25 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              const Text(
+
+              // 🔥 Título "Buscar Endereço"
+              Text(
                 'Buscar Endereço',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: AppTextStyles.titleMedium.copyWith( // 24px
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
+
+              // 🔥 Subtítulo
+              Text(
                 'Digite rua, bairro ou cidade para encontrar o local.',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: AppTextStyles.bodyMedium.copyWith( // 18px
+                  color: Colors.grey,
+                ),
               ),
               const SizedBox(height: 32),
+
               TextField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
@@ -224,12 +234,23 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
           children: [
             Icon(Icons.search, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
-            const Text('Digite pelo menos 3 caracteres para buscar'),
+            // 🔥 Texto "Digite pelo menos 3 caracteres..."
+            Text(
+              'Digite pelo menos 3 caracteres para buscar',
+              style: AppTextStyles.bodyLarge, // 20px
+            ),
           ],
         ),
       );
     }
-    if (_sugestoes.isEmpty) return const Center(child: Text('Nenhum endereço encontrado'));
+    if (_sugestoes.isEmpty) {
+      return Center(
+        child: Text(
+          'Nenhum endereço encontrado',
+          style: AppTextStyles.bodyLarge, // 20px
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: _sugestoes.length,
       itemBuilder: (context, index) {

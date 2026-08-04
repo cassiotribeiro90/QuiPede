@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:quipede/app/di/dependencies.dart';
+import 'package:quipede/app/core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import 'endereco_confirmacao_page.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../../core/theme/input_styles.dart';
+import '../../../core/widgets/app_text_field.dart';
 
 class CepInputPage extends StatelessWidget {
   const CepInputPage({super.key});
@@ -131,32 +132,38 @@ class _CepInputBodyState extends State<_CepInputBody> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 16),
-                const Text(
+
+                // 🔥 Título "Digite seu CEP"
+                Text(
                   'Digite seu CEP',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.titleMedium.copyWith( // 24px
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+
+                // 🔥 Subtítulo
+                Text(
                   'Encontre seu endereço rapidamente para ver as lojas próximas.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: AppTextStyles.bodyMedium.copyWith( // 18px
+                    color: Colors.grey,
+                  ),
                 ),
                 const SizedBox(height: 32),
-                TextFormField(
+
+                AppTextField(
                   controller: _cepController,
-                  focusNode: _focusNode,
-                  autofocus: true,
+                  label: 'CEP',
+                  hint: 'Ex: 12345-678',
+                  prefixIcon: Icons.mail_outline,
                   keyboardType: TextInputType.number,
                   inputFormatters: [_cepMaskFormatter],
-                  maxLength: 10,
                   textInputAction: TextInputAction.search,
                   onFieldSubmitted: (_) => _isLoading ? null : _buscarCep(),
-                  decoration: InputStyles.decoration(
-                    label: 'CEP',
-                    hint: 'Ex: 12345-678',
-                    prefixIcon: Icons.mail_outline,
-                  ).copyWith(counterText: ''),
+                  autofocus: true,
                 ),
                 const SizedBox(height: 20),
+
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -169,10 +176,15 @@ class _CepInputBodyState extends State<_CepInputBody> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                            width: 24, height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                          )
-                        : const Text('Buscar CEP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      width: 24, height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                        : Text(
+                      'Buscar CEP',
+                      style: AppTextStyles.button.copyWith( // 18px
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ],

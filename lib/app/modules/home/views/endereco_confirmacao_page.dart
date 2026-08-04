@@ -7,7 +7,7 @@ import '../../enderecos/models/endereco_model.dart';
 import 'widgets/endereco_card.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/utils/estados_brasil.dart';
-import '../../../core/theme/input_styles.dart';
+import '../../../core/widgets/app_text_field.dart';
 
 class EnderecoConfirmacaoPage extends StatelessWidget {
   final Map<String, dynamic> endereco;
@@ -153,7 +153,6 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
           padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -174,40 +173,35 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                   children: [
                     Expanded(
                       flex: 1,
-                      child: TextFormField(
+                      child: AppTextField(
                         controller: _numeroController,
+                        label: 'Número',
+                        isRequired: true,
+                        hint: '123',
+                        prefixIcon: Icons.numbers,
                         keyboardType: TextInputType.number,
-                        decoration: InputStyles.decoration(
-                          label: 'Número *',
-                          hint: '123',
-                          prefixIcon: Icons.numbers,
-                        ).copyWith(errorStyle: const TextStyle(height: 0)),
-                        validator: (value) => (value == null || value.isEmpty) ? '' : null,
+                        validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 2,
-                      child: TextFormField(
+                      child: AppTextField(
                         controller: _complementoController,
-                        decoration: InputStyles.decoration(
-                          label: 'Complemento (opcional)',
-                          hint: 'Apto, Bloco, etc.',
-                          prefixIcon: Icons.add_home_outlined,
-                        ),
+                        label: 'Complemento',
+                        hint: 'Apto, Bloco, etc.',
+                        prefixIcon: Icons.add_home_outlined,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                AppTextField(
                   controller: _referenciaController,
+                  label: 'Ponto de referência',
+                  hint: 'Ex: portão verde, próximo ao mercado',
+                  prefixIcon: Icons.info_outline,
                   maxLines: 2,
-                  decoration: InputStyles.decoration(
-                    label: 'Ponto de referência (opcional)',
-                    hint: 'Ex: portão verde, próximo ao mercado',
-                    prefixIcon: Icons.info_outline,
-                  ).copyWith(alignLabelWithHint: true),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -242,10 +236,6 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Voltar'),
-                ),
               ],
             ),
           ),

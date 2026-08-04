@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
 import '../../../di/dependencies.dart';
 import '../../home/views/cep_input_page.dart';
 import '../../home/views/busca_endereco_page.dart';
@@ -65,18 +66,18 @@ class EnderecoActionCards extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 🔥 Título do card
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: AppTextStyles.bodyLarge.copyWith( // 20px
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
+                    // 🔥 Subtítulo do card
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: AppTextStyles.bodyMedium.copyWith( // 18px
                         color: Colors.grey.shade600,
                       ),
                     ),

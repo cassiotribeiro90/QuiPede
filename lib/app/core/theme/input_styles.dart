@@ -1,50 +1,69 @@
+// lib/app/core/theme/input_styles.dart
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 
 class InputStyles {
-  // Estilo para campos de texto com borda (Outlined) - Moderno e limpo
-  static InputDecorationTheme get outlinedDecorationTheme {
-    return const InputDecorationTheme(
-      // Define a borda padrão
+  static const Color _primaryColor = AppColors.primary;
+  static const Color _surfaceColor = AppColors.surface;
+  static const double _borderRadius = 16.0;
+
+  // 🔥 TODAS AS VARIÁVEIS DE TAMANHO EM UM ÚNICO LUGAR
+  static const double labelFontSize = 22.0;
+  static const double floatingLabelFontSize = 18.0;
+  static const double hintFontSize = 22.0;
+  static const double inputTextFontSize = 22.0;
+
+  static InputDecorationTheme get borderlessDecorationTheme {
+    return InputDecorationTheme(
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: _surfaceColor, width: 1.5),
       ),
-      // Borda quando o campo está habilitado
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: _surfaceColor, width: 1.5),
       ),
-      // Borda quando o campo está em foco (com a cor principal do app)
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Color(0xFFF57C00), width: 2.0),
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2.0),
       ),
-      // Borda quando o campo tem erro
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.red, width: 1.5),
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
       ),
-      // Borda quando o campo está em foco e com erro
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.red, width: 2.0),
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: AppColors.primary, width: 2.0),
       ),
-      // Espaçamento interno
-      contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      // Estilo do label (flutuante ou estático)
-      labelStyle: TextStyle(color: Colors.grey, fontSize: 16.0),
-      // Estilo do placeholder
-      hintStyle: TextStyle(color: Colors.grey, fontSize: 14.0),
-      // Cor do ícone de prefixo
-      prefixIconColor: Colors.grey,
-      // Cor do ícone de sufixo
-      suffixIconColor: Colors.grey,
-      // Fundo do campo (transparente para outlined)
-      filled: false,
+
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 18.0),
+
+      // 🔥 USANDO AS VARIÁVEIS
+      labelStyle: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: labelFontSize,
+        fontWeight: FontWeight.w500,
+      ),
+
+      floatingLabelStyle: const TextStyle(
+        color: AppColors.primary,
+        fontSize: floatingLabelFontSize,
+        fontWeight: FontWeight.w600,
+      ),
+
+      hintStyle: const TextStyle(
+        color: AppColors.textHint,
+        fontSize: hintFontSize,
+        fontWeight: FontWeight.w400,
+      ),
+
+      prefixIconColor: AppColors.primary,
+      suffixIconColor: AppColors.primary,
+      filled: true,
+      fillColor: _surfaceColor,
     );
   }
 
-  // Método prático para criar a decoração de um campo
   static InputDecoration decoration({
     required String label,
     String? hint,
@@ -59,32 +78,111 @@ class InputStyles {
       prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
       suffixIcon: suffixIcon,
       errorText: errorText,
-      // Aplica o tema definido acima, mas permite sobrescrita
-      border: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: AppColors.surface, width: 1.5),
       ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: AppColors.surface, width: 1.5),
       ),
       focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Color(0xFFF57C00), width: 2.0),
+        borderRadius: BorderRadius.all(Radius.circular(16.0)),
+        borderSide: BorderSide(color: AppColors.primary, width: 2.0),
       ),
-      errorBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.red, width: 1.5),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
       ),
       focusedErrorBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12.0)),
-        borderSide: BorderSide(color: Colors.red, width: 2.0),
+        borderRadius: BorderRadius.all(Radius.circular(16.0)),
+        borderSide: BorderSide(color: AppColors.primary, width: 2.0),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      labelStyle: const TextStyle(color: Colors.grey, fontSize: 16.0),
-      hintStyle: const TextStyle(color: Colors.grey, fontSize: 14.0),
-      prefixIconColor: Colors.grey,
-      suffixIconColor: Colors.grey,
+
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 18.0),
+
+      // 🔥 USANDO AS VARIÁVEIS
+      labelStyle: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: labelFontSize,
+        fontWeight: FontWeight.w500,
+      ),
+      floatingLabelStyle: const TextStyle(
+        color: AppColors.primary,
+        fontSize: floatingLabelFontSize,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: const TextStyle(
+        color: AppColors.textHint,
+        fontSize: hintFontSize,
+        fontWeight: FontWeight.w400,
+      ),
+
+      prefixIconColor: AppColors.primary,
+      suffixIconColor: AppColors.primary,
+      filled: true,
+      fillColor: AppColors.surface,
+    );
+  }
+
+  static InputDecoration transparentDecoration({
+    required String label,
+    String? hint,
+    IconData? prefixIcon,
+    Widget? suffixIcon,
+    String? errorText,
+    bool isRequired = false,
+  }) {
+    return InputDecoration(
+      labelText: isRequired ? '$label *' : label,
+      hintText: hint,
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+      suffixIcon: suffixIcon,
+      errorText: errorText,
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: Colors.transparent, width: 1.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: Colors.transparent, width: 1.5),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16.0)),
+        borderSide: BorderSide(color: AppColors.primary, width: 2.0),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(_borderRadius),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+      ),
+      focusedErrorBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16.0)),
+        borderSide: BorderSide(color: AppColors.primary, width: 2.0),
+      ),
+
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 18.0),
+
+      // 🔥 USANDO AS VARIÁVEIS
+      labelStyle: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: labelFontSize,
+        fontWeight: FontWeight.w500,
+      ),
+      floatingLabelStyle: const TextStyle(
+        color: AppColors.primary,
+        fontSize: floatingLabelFontSize,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: const TextStyle(
+        color: AppColors.textHint,
+        fontSize: hintFontSize,
+        fontWeight: FontWeight.w400,
+      ),
+
+      prefixIconColor: AppColors.primary,
+      suffixIconColor: AppColors.primary,
       filled: false,
     );
   }

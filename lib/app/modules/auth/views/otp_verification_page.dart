@@ -4,7 +4,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../routes/app_routes.dart';
-import '../../../core/theme/input_styles.dart';
+import '../../../core/widgets/app_text_field.dart';
 
 class OtpVerificationPage extends StatelessWidget {
   final String telefone;
@@ -86,8 +86,6 @@ class _OtpBodyState extends State<_OtpBody> {
           );
         } else if (state is AuthAuthenticated) {
           final user = context.read<AuthCubit>().usuario;
-          // Só navega aqui se o nome NÃO estiver vazio. 
-          // Se estiver vazio, o AuthCubit já agendou a ida para "Quase lá".
           if (user != null && user.nome.isNotEmpty) {
             if (widget.redirectToCheckout) {
               Navigator.pushNamedAndRemoveUntil(context, Routes.carrinho, (route) => false);
@@ -126,18 +124,20 @@ class _OtpBodyState extends State<_OtpBody> {
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 32),
-                  TextField(
+                  AppTextField(
                     controller: _codeController,
-                    focusNode: _focusNode,
+                    label: 'Código de verificação',
+                    hint: '000000',
+                    prefixIcon: Icons.security,
                     keyboardType: TextInputType.number,
-                    maxLength: 6,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 32, letterSpacing: 16),
-                    decoration: InputStyles.decoration(
-                      label: 'Código de verificação',
-                      hint: '000000',
-                      prefixIcon: Icons.security,
-                    ).copyWith(counterText: ''),
+                    autofocus: true,
+                    validator: (value) {
+                      if (value == null || value.length < 6) {
+                        return 'Digite o código de 6 dígitos';
+                      }
+                      return null;
+                    },
                   ),
                   if (_isLoading) ...[
                     const SizedBox(height: 24),

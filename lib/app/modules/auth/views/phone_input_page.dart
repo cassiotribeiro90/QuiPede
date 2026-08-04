@@ -6,7 +6,7 @@ import '../bloc/auth_state.dart';
 import 'otp_verification_page.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../routes/app_routes.dart';
-import '../../../core/theme/input_styles.dart';
+import '../../../core/widgets/app_text_field.dart';
 
 class PhoneInputPage extends StatelessWidget {
   final bool redirectToCheckout;
@@ -107,22 +107,22 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 32),
-                    TextFormField(
+                    AppTextField(
                       controller: _phoneController,
-                      inputFormatters: [_maskFormatter],
+                      label: 'Telefone',
+                      hint: '(11) 99999-8888',
+                      prefixIcon: Icons.phone_android,
+                      isRequired: true,
                       keyboardType: TextInputType.phone,
                       autofocus: true,
-                      decoration: InputStyles.decoration(
-                        label: 'Telefone',
-                        hint: '(11) 99999-8888',
-                        prefixIcon: Icons.phone_android,
-                      ),
+                      inputFormatters: [_maskFormatter],
                       validator: (v) {
                         if (v == null || v.replaceAll(RegExp(r'[^0-9]'), '').length != 11) {
                           return 'Digite um telefone válido com DDD';
                         }
                         return null;
                       },
+                      onFieldSubmitted: (_) => _enviar(),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(

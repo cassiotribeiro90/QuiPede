@@ -7,6 +7,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/endereco_selecionado_widget.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
 import 'widgets/cadastro_form_widget.dart';
 
 class CadastroPage extends StatelessWidget {
@@ -42,38 +43,48 @@ class CadastroPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  // 🔥 Título "📍 Endereço de entrega"
+                  Text(
                     '📍 Endereço de entrega',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: AppTextStyles.bodyLarge.copyWith( // 20px
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   EnderecoSelecionadoWidget(
                     endereco: isEnderecoDefinido ? locState.endereco : null,
                     onTap: () => Navigator.pushNamed(context, Routes.onboarding),
                   ),
-                  
+
+                  // 🔥 Mensagem de aviso "Defina um endereço para continuar"
                   if (!isEnderecoDefinido)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8.0),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
                         '⚠️ Defina um endereço para continuar',
-                        style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.bodySmall.copyWith( // 16px
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
 
                   const SizedBox(height: 32),
                   const Divider(),
                   const SizedBox(height: 32),
-                  
-                  const Text(
+
+                  // 🔥 Título "Dados Pessoais"
+                  Text(
                     'Dados Pessoais',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: AppTextStyles.bodyLarge.copyWith( // 20px
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   const CadastroFormWidget(),
-                  
+
                   const SizedBox(height: 24),
                 ],
               ),

@@ -175,12 +175,8 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                               color: primaryColor,
                               child: Text(
                                 state.lojaNome!,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                                style: context.titleMedium.copyWith(color: Colors.white)
+                              )
                             ),
                             Container(
                               width: double.infinity,

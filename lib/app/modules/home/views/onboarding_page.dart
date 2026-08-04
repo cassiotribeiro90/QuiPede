@@ -6,6 +6,7 @@ import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/routes/app_routes.dart';
 import 'package:quipede/app/core/utils/platform_utils.dart';
+import 'package:quipede/app/core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
 import '../services/localizacao_service.dart';
 import 'busca_endereco_page.dart';
 import 'cep_input_page.dart';
@@ -43,7 +44,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         Navigator.pushNamedAndRemoveUntil(
           context,
           Routes.home,
-          (route) => false,
+              (route) => false,
         );
         print('✅ [OnboardingPage] pushNamedAndRemoveUntil executado sem exceção');
       } catch (e, stack) {
@@ -192,20 +193,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  const Text(
+
+                  // 🔥 Título "Como você quer começar?"
+                  Text(
                     'Como você quer começar?',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E1E1E),
-                      letterSpacing: -0.5,
+                    style: AppTextStyles.titleLarge.copyWith( // 28px
+                      color: const Color(0xFF1E1E1E),
                     ),
                   ),
                   const SizedBox(height: 8),
+
+                  // 🔥 Subtítulo
                   Text(
                     'Escolha uma forma de definir seu endereço de entrega e encontre as melhores lojas.',
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: AppTextStyles.bodyLarge.copyWith( // 20px
                       color: Colors.grey.shade600,
                       height: 1.4,
                     ),
@@ -241,11 +242,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ),
 
                   const SizedBox(height: 40),
+
+                  // 🔥 Texto "Ao continuar, você concorda..."
                   Center(
                     child: Text(
                       'Ao continuar, você concorda com nossos Termos de Uso.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      style: AppTextStyles.bodySmall.copyWith( // 16px
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),

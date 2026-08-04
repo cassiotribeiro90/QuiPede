@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../../app/core/theme/app_text_styles.dart'; // 🔥 IMPORT CORRETO
 import '../../app/modules/enderecos/models/endereco_model.dart';
-
 
 class EnderecoSelecionadoWidget extends StatelessWidget {
   final EnderecoModel? endereco;
@@ -44,14 +43,18 @@ class EnderecoSelecionadoWidget extends StatelessWidget {
                     isEnderecoDefinido
                         ? endereco!.resumido
                         : 'Nenhum endereço definido',
-                    style: TextStyle(
+                    style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isEnderecoDefinido ? Colors.black87 : Colors.red.shade700,
                     ),
                   ),
                   if (isEnderecoDefinido)
-                    const Text('Toque para alterar',
-                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text(
+                      'Toque para alterar',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.grey,
+                      ),
+                    ),
                 ],
               ),
             ),

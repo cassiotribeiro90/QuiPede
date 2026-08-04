@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../enderecos/models/endereco_model.dart';
-
 
 class EnderecoCard extends StatelessWidget {
   final EnderecoModel? endereco;
@@ -114,13 +113,15 @@ class EnderecoCard extends StatelessWidget {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
+
+                    // 🔥 Label do endereço
                     Text(
                       displayLabel,
-                      style: const TextStyle(
+                      style: AppTextStyles.bodyLarge.copyWith( // 20px
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
                       ),
                     ),
+
                     if (displayPrincipal) ...[
                       const SizedBox(width: 8),
                       Container(
@@ -129,10 +130,9 @@ class EnderecoCard extends StatelessWidget {
                           color: Theme.of(context).primaryColor,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Principal',
-                          style: TextStyle(
-                            fontSize: 10,
+                          style: AppTextStyles.caption.copyWith( // 13px
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -148,9 +148,8 @@ class EnderecoCard extends StatelessWidget {
                     onPressed: onSetPrincipal,
                     child: Text(
                       'Selecionar',
-                      style: TextStyle(
+                      style: AppTextStyles.bodySmall.copyWith( // 16px
                         color: Theme.of(context).primaryColor,
-                        fontSize: 12,
                       ),
                     ),
                   ),
@@ -174,10 +173,11 @@ class EnderecoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
+
+          // 🔥 Endereço completo
           Text(
             displayCompleto,
-            style: TextStyle(
-              fontSize: 14,
+            style: AppTextStyles.bodyMedium.copyWith( // 18px
               color: Colors.grey.shade700,
             ),
           ),

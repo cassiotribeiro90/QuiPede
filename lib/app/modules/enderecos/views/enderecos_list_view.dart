@@ -5,6 +5,7 @@ import '../bloc/endereco_state.dart';
 import '../widgets/endereco_action_cards.dart';
 import '../models/endereco_model.dart';
 import '../../../core/theme/app_theme_extension.dart';
+import '../../../core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
 import '../../../routes/app_routes.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../home/bloc/localizacao_cubit.dart';
@@ -27,7 +28,6 @@ class _EnderecosListViewState extends State<EnderecosListView> {
   Widget build(BuildContext context) {
     return BlocConsumer<EnderecoCubit, EnderecoState>(
       listenWhen: (previous, current) {
-        // 🔥 Só escuta erros. Sucesso é tratado pela EnderecoConfirmacaoPage
         return current is EnderecoError;
       },
       listener: (context, state) {
@@ -41,14 +41,13 @@ class _EnderecosListViewState extends State<EnderecosListView> {
         }
       },
       builder: (context, state) {
-        // 🔥 ATUALIZA O ENDEREÇO NO TOPO
         if (state is EnderecoLoaded && state.enderecoPrincipal != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
               context.read<LocalizacaoCubit>().definirEnderecoCompleto(
-                    state.enderecoPrincipal!,
-                    origem: 'endereco_padrao',
-                  );
+                state.enderecoPrincipal!,
+                origem: 'endereco_padrao',
+              );
             }
           });
         }
@@ -113,28 +112,31 @@ class _EnderecosListViewState extends State<EnderecosListView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 🔥 Logradouro
                   Text(
                     endereco.logradouro,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: AppTextStyles.bodyLarge.copyWith( // 20px
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
+
+                  // 🔥 Bairro, Cidade - UF
                   Text(
                     '${endereco.bairro}, ${endereco.cidade} - ${endereco.uf}',
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: AppTextStyles.bodyMedium.copyWith( // 18px
                       color: Colors.grey.shade600,
                     ),
                   ),
+
+                  // 🔥 CEP
                   Text(
                     'CEP: ${endereco.cep}',
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: AppTextStyles.bodySmall.copyWith( // 16px
                       color: Colors.grey.shade500,
                     ),
                   ),
+
                   if (endereco.principal == true) ...[
                     const SizedBox(height: 8),
                     Container(
@@ -143,10 +145,9 @@ class _EnderecosListViewState extends State<EnderecosListView> {
                         color: Theme.of(context).primaryColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Principal',
-                        style: TextStyle(
-                          fontSize: 10,
+                        style: AppTextStyles.caption.copyWith( // 13px
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -168,11 +169,17 @@ class _EnderecosListViewState extends State<EnderecosListView> {
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
-            Text(state.message),
+            Text(
+              state.message,
+              style: AppTextStyles.bodyLarge, // 20px
+            ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => context.read<EnderecoCubit>().carregarEnderecos(),
-              child: const Text('Tentar novamente'),
+              child: Text(
+                'Tentar novamente',
+                style: AppTextStyles.button, // 18px
+              ),
             ),
           ],
         ),
@@ -191,15 +198,21 @@ class _EnderecosListViewState extends State<EnderecosListView> {
           children: [
             Icon(Icons.location_off_outlined, size: 80, color: context.textHint.withOpacity(0.5)),
             const SizedBox(height: 24),
+
+            // 🔥 Título "Nenhum endereço cadastrado"
             Text(
               'Nenhum endereço cadastrado',
-              style: context.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: context.titleLarge?.copyWith(fontWeight: FontWeight.bold) ??
+                  AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold), // 28px
             ),
             const SizedBox(height: 12),
+
+            // 🔥 Subtítulo
             Text(
               'Adicione um endereço para encontrar as melhores lojas e receber seus pedidos com segurança.',
               textAlign: TextAlign.center,
-              style: context.bodyMedium.copyWith(color: context.textSecondary),
+              style: context.bodyMedium?.copyWith(color: context.textSecondary) ??
+                  AppTextStyles.bodyMedium.copyWith(color: context.textSecondary), // 18px
             ),
             const SizedBox(height: 40),
             const EnderecoActionCards(),
