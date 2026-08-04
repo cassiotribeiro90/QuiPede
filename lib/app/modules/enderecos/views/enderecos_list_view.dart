@@ -7,6 +7,7 @@ import '../models/endereco_model.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../routes/app_routes.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../home/bloc/localizacao_cubit.dart';
 
 class EnderecosListView extends StatefulWidget {
   const EnderecosListView({super.key});
@@ -26,17 +27,10 @@ class _EnderecosListViewState extends State<EnderecosListView> {
   Widget build(BuildContext context) {
     return BlocConsumer<EnderecoCubit, EnderecoState>(
       listenWhen: (previous, current) {
-        return current is EnderecoOperacaoSucesso || current is EnderecoError;
+        // 🔥 Só escuta erros. Sucesso é tratado pela EnderecoConfirmacaoPage
+        return current is EnderecoError;
       },
       listener: (context, state) {
-        if (state is EnderecoOperacaoSucesso) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.mensagem),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
         if (state is EnderecoError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -47,6 +41,18 @@ class _EnderecosListViewState extends State<EnderecosListView> {
         }
       },
       builder: (context, state) {
+        // 🔥 ATUALIZA O ENDEREÇO NO TOPO
+        if (state is EnderecoLoaded && state.enderecoPrincipal != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              context.read<LocalizacaoCubit>().definirEnderecoCompleto(
+                    state.enderecoPrincipal!,
+                    origem: 'endereco_padrao',
+                  );
+            }
+          });
+        }
+
         return ResponsivePageScaffold(
           appBar: AppBar(
             title: const Text('Meus Endereços'),
@@ -97,7 +103,6 @@ class _EnderecosListViewState extends State<EnderecosListView> {
 
             final endereco = state.enderecos[index];
 
-            // 🔥 CONTAINER SIMPLES PARA TESTE (SUBSTITUI O ENDERECOCARD)
             return Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

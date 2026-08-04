@@ -12,6 +12,7 @@ import '../services/social_auth_service.dart';
 import 'auth_state.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
+import '../../enderecos/models/endereco_model.dart';
 import '../../../routes/app_routes.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -24,7 +25,6 @@ class AuthCubit extends Cubit<AuthState> {
   bool _isProcessing = false;
   UsuarioModel? _usuario;
 
-  // 🔥 CHAVES ESSENCIAIS PARA O CARRINHO E TOKEN SERVICE
   static const String keyAccessToken = 'access_token';
   static const String keyGuestToken = 'guest_token';
 
@@ -75,6 +75,10 @@ class AuthCubit extends Cubit<AuthState> {
             _usuario = authResponse.user;
             await _apiClient.tokenService.saveUser(_usuario!.toJson());
 
+            if (authResponse.endereco != null) {
+              _localizacaoCubit.definirEnderecoCompleto(authResponse.endereco!, origem: 'endereco_padrao');
+            }
+
             emit(AuthAuthenticated(accessToken: token, user: _usuario));
             await carregarEnderecoUsuario();
             _isProcessing = false;
@@ -117,6 +121,7 @@ class AuthCubit extends Cubit<AuthState> {
       final data = response.data['data'];
       final accessToken = data['access_token'] ?? data['token'];
       final userJson = data['usuario'] ?? data['user'];
+      final enderecoJson = data['endereco'];
 
       if (userJson != null) {
         final usuarioMap = Map<String, dynamic>.from(userJson);
@@ -124,6 +129,14 @@ class AuthCubit extends Cubit<AuthState> {
         await _apiClient.tokenService.saveUser(usuarioMap);
         _usuario = UsuarioModel.fromJson(usuarioMap);
         emit(AuthAuthenticated(accessToken: accessToken, user: _usuario));
+
+        // 🔥 Carrega endereço retornado E lista completa
+        if (enderecoJson != null) {
+          final endereco = EnderecoModel.fromJson(Map<String, dynamic>.from(enderecoJson));
+          _localizacaoCubit.definirEnderecoCompleto(endereco, origem: 'endereco_padrao');
+        }
+        // 🔥 SEMPRE carrega a lista completa de endereços
+        await carregarEnderecoUsuario();
       } else {
         emit(const AuthOtpErro('Usuário não encontrado após verificação.'));
       }
@@ -174,20 +187,20 @@ class AuthCubit extends Cubit<AuthState> {
       if (state is EnderecoLoaded && state.enderecoPrincipal != null) {
         _localizacaoCubit.definirEnderecoCompleto(state.enderecoPrincipal!, origem: 'endereco_padrao');
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('⚠️ [AuthCubit] Erro ao carregar endereço: $e');
+    }
   }
 
   Future<void> logout() async {
     debugPrint('🚪 [AuthCubit] Iniciando logout...');
 
-    // Tenta invalidar token no backend COM autenticação
     try {
       await _apiClient.post('app/auth/logout', requiresAuth: true);
     } catch (e) {
       debugPrint('⚠️ [AuthCubit] Erro no logout (ignorado): $e');
     }
 
-    // 🔥 Limpa TUDO localmente, sempre
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
     await _localizacaoCubit.limparLocalizacao();
@@ -201,9 +214,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(AuthUnauthenticated());
 
-    // 🔥 FORÇA redirecionamento usando o navigatorKey global
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('🚪 [AuthCubit] Redirecionando para onboarding');
       ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
         Routes.onboarding,
             (route) => false,
@@ -214,7 +225,6 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> sairConvidado() async {
     debugPrint('🔐 [AuthCubit] Saindo do modo convidado...');
 
-    // Tenta remover endereço no backend COM autenticação
     try {
       final enderecoId = _prefs.getInt('endereco_convidado_id');
       if (enderecoId != null) {
@@ -237,7 +247,6 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthUnauthenticated());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('🚪 [AuthCubit] sairConvidado() concluído, redirecionando para onboarding');
       ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
         Routes.onboarding,
             (route) => false,

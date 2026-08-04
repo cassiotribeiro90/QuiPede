@@ -95,7 +95,9 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
       longitude: widget.longitude,
     );
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       await context.read<EnderecoCubit>().criarEndereco(enderecoModel);
@@ -117,8 +119,8 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
         if (state is EnderecoOperacaoSucesso) {
-          print('✅ [_EnderecoConfirmacaoBody] Sucesso! Chamando Navigator.pop(true)');
           setState(() => _isLoading = false);
+          print('✅ [EnderecoConfirmacao] Sucesso!');
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.green),
