@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,13 +28,13 @@ class AuthCubit extends Cubit<AuthState> {
   static const String keyGuestToken = 'guest_token';
 
   AuthCubit(
-      this._apiClient,
-      this._localizacaoCubit,
-      this._enderecoCubit,
-      this._prefs,
-      )   : _socialAuthService = SocialAuthService(_apiClient),
-        _authService = AuthService(_apiClient),
-        super(AuthInitial());
+    this._apiClient,
+    this._localizacaoCubit,
+    this._enderecoCubit,
+    this._prefs,
+  ) : _socialAuthService = SocialAuthService(_apiClient),
+      _authService = AuthService(_apiClient),
+      super(AuthInitial());
 
   UsuarioModel? get usuario => _usuario;
 
@@ -51,11 +50,9 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final token = _apiClient.tokenService.getAccessToken();
       final isGuest = _apiClient.tokenService.isGuest();
-      debugPrint('🔐 [AuthCubit] Token encontrado: ${token != null ? "Sim" : "Não"} (Guest: $isGuest)');
 
       if (token != null && token.isNotEmpty) {
         if (isGuest) {
-          debugPrint('🔐 [AuthCubit] Restaurando sessão de convidado...');
           final userJson = _apiClient.tokenService.getUser();
           if (userJson != null) {
             _usuario = UsuarioModel.fromJson(userJson);
@@ -66,7 +63,6 @@ class AuthCubit extends Cubit<AuthState> {
           return;
         }
 
-        debugPrint('🔐 [AuthCubit] Validando token de usuário real...');
         try {
           final response = await _apiClient.get('app/auth/me', requiresAuth: true);
           if (response.statusCode == 200 && response.data['success'] == true) {
@@ -89,7 +85,6 @@ class AuthCubit extends Cubit<AuthState> {
         }
       }
 
-      debugPrint('🔐 [AuthCubit] Nenhuma sessão válida encontrada.');
       emit(AuthUnauthenticated());
     } catch (e) {
       debugPrint('❌ [AuthCubit] ERRO NA INICIALIZAÇÃO: $e');
@@ -110,7 +105,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> verificarOTP(String telefone, String codigo) async {
+  Future<void> verificarOTP(String telefone, String codigo, {bool redirectToCheckout = false}) async {
     emit(AuthOtpVerificando(telefone: telefone));
     try {
       final response = await _apiClient.post('/app/auth/verify-otp', data: {
@@ -128,15 +123,23 @@ class AuthCubit extends Cubit<AuthState> {
         await _apiClient.tokenService.saveTokens(accessToken, null, isGuest: false);
         await _apiClient.tokenService.saveUser(usuarioMap);
         _usuario = UsuarioModel.fromJson(usuarioMap);
+        
         emit(AuthAuthenticated(accessToken: accessToken, user: _usuario));
 
-        // 🔥 Carrega endereço retornado E lista completa
         if (enderecoJson != null) {
           final endereco = EnderecoModel.fromJson(Map<String, dynamic>.from(enderecoJson));
           _localizacaoCubit.definirEnderecoCompleto(endereco, origem: 'endereco_padrao');
         }
-        // 🔥 SEMPRE carrega a lista completa de endereços
         await carregarEnderecoUsuario();
+
+        if (_usuario?.nome == null || _usuario!.nome.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ApiClient.navigatorKey.currentState?.pushReplacementNamed(
+              Routes.completarPerfil,
+              arguments: redirectToCheckout,
+            );
+          });
+        }
       } else {
         emit(const AuthOtpErro('Usuário não encontrado após verificação.'));
       }
@@ -145,11 +148,77 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // ============ MÉTODOS LEGADOS (STUBS) ============
-  Future<void> login(String email, String senha) async {}
-  Future<void> cadastrar(Map<String, dynamic> dados) async {}
-  Future<void> socialLogin(String provider) async {}
-  Future<void> completarCadastroConvidado({required String nome, required String email, String? senha, String? telefone}) async {}
+  Future<void> completarPerfil({
+    required String nome,
+    String? email,
+    String? whatsapp,
+  }) async {
+    emit(AuthLoading());
+    try {
+      final response = await _apiClient.put('/app/auth/me', data: {
+        'nome': nome,
+        'email': email,
+        'whatsapp': whatsapp,
+      }, requiresAuth: true);
+      
+      final data = response.data['data'];
+      final usuarioJson = data['usuario'] ?? data['user'];
+      
+      if (usuarioJson != null) {
+        final usuarioMap = Map<String, dynamic>.from(usuarioJson);
+        await _apiClient.tokenService.saveUser(usuarioMap);
+        _usuario = UsuarioModel.fromJson(usuarioMap);
+        
+        final token = _apiClient.tokenService.getAccessToken() ?? '';
+        emit(AuthAuthenticated(accessToken: token, user: _usuario));
+      }
+    } catch (e) {
+      emit(const AuthOtpErro('Erro ao salvar perfil. Tente novamente.'));
+    }
+  }
+
+  // ============ MÉTODOS LEGADOS / COMPATIBILIDADE ============
+
+  Future<void> login(String email, String senha) async {
+    emit(AuthLoading());
+    try {
+      emit(const AuthError('O login por senha foi desativado. Use o telefone.'));
+    } catch (e) {
+      emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> cadastrar(Map<String, dynamic> dados) async {
+    emit(AuthLoading());
+    try {
+      emit(const AuthError('O cadastro direto foi desativado. Use o fluxo de telefone.'));
+    } catch (e) {
+      emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> socialLogin(String provider) async {
+    emit(AuthLoading());
+    try {
+      emit(const AuthError('Login social temporariamente indisponível.'));
+    } catch (e) {
+      emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> completarCadastroConvidado({
+    required String nome,
+    required String email,
+    String? senha,
+    String? telefone,
+  }) async {
+    emit(AuthLoading());
+    try {
+      emit(const AuthError('Use o fluxo de completar perfil após o OTP.'));
+    } catch (e) {
+      emit(AuthError(e.toString()));
+    }
+  }
 
   // ============ GESTÃO DE SESSÃO ============
 
@@ -173,13 +242,6 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> onEnderecoCriadoComToken(String token, Map<String, dynamic> usuarioJson) => setConvidado(token, usuarioJson);
 
-  Future<void> setAutenticado(String token, Map<String, dynamic> usuarioJson, {String? refreshToken, int? expiresIn}) async {
-    _usuario = UsuarioModel.fromJson(usuarioJson);
-    await _apiClient.tokenService.saveTokens(token, refreshToken, expiresIn: expiresIn ?? 86400, isGuest: false, userJson: usuarioJson);
-    emit(AuthAuthenticated(accessToken: token, user: _usuario));
-    await carregarEnderecoUsuario();
-  }
-
   Future<void> carregarEnderecoUsuario() async {
     try {
       await _enderecoCubit.carregarEnderecos();
@@ -190,36 +252,6 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       debugPrint('⚠️ [AuthCubit] Erro ao carregar endereço: $e');
     }
-  }
-
-  Future<void> logout() async {
-    debugPrint('🚪 [AuthCubit] Iniciando logout...');
-
-    try {
-      await _apiClient.post('app/auth/logout', requiresAuth: true);
-    } catch (e) {
-      debugPrint('⚠️ [AuthCubit] Erro no logout (ignorado): $e');
-    }
-
-    _usuario = null;
-    await _apiClient.tokenService.clearTokens();
-    await _localizacaoCubit.limparLocalizacao();
-
-    await _prefs.remove('guest_token');
-    await _prefs.remove('access_token');
-    await _prefs.remove('is_guest');
-    await _prefs.remove('endereco_padrao_id');
-    await _prefs.remove('endereco_padrao_json');
-    await _prefs.remove('endereco_convidado_id');
-
-    emit(AuthUnauthenticated());
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        Routes.onboarding,
-            (route) => false,
-      );
-    });
   }
 
   Future<void> sairConvidado() async {
@@ -239,6 +271,36 @@ class AuthCubit extends Cubit<AuthState> {
     await _localizacaoCubit.limparLocalizacao();
 
     await _prefs.remove('guest_token');
+    await _prefs.remove('is_guest');
+    await _prefs.remove('endereco_padrao_id');
+    await _prefs.remove('endereco_padrao_json');
+    await _prefs.remove('endereco_convidado_id');
+
+    emit(AuthUnauthenticated());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        Routes.onboarding,
+            (route) => false,
+      );
+    });
+  }
+
+  Future<void> logout() async {
+    debugPrint('🚪 [AuthCubit] Iniciando logout...');
+
+    try {
+      await _apiClient.post('app/auth/logout', requiresAuth: true);
+    } catch (e) {
+      debugPrint('⚠️ [AuthCubit] Erro no logout (ignorado): $e');
+    }
+
+    _usuario = null;
+    await _apiClient.tokenService.clearTokens();
+    await _localizacaoCubit.limparLocalizacao();
+
+    await _prefs.remove('guest_token');
+    await _prefs.remove('access_token');
     await _prefs.remove('is_guest');
     await _prefs.remove('endereco_padrao_id');
     await _prefs.remove('endereco_padrao_json');

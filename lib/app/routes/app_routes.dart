@@ -6,6 +6,7 @@ class Routes {
   static const String otpVerify = '/otp-verify';
   static const String cadastro = '/cadastro';
   static const String completarCadastro = '/completar-cadastro';
+  static const String completarPerfil = '/completar-perfil';
   static const String home = '/home';
   static const String lojaHome = '/loja-home';
   static const String carrinho = '/carrinho';

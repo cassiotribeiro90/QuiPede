@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../di/dependencies.dart';
 import '../modules/auth/views/cadastro_page.dart';
 import '../modules/auth/views/completar_cadastro_page.dart';
+import '../modules/auth/views/completar_perfil_page.dart';
 import '../modules/auth/views/login_screen.dart';
 import '../modules/auth/views/phone_input_page.dart';
 import '../modules/auth/views/otp_verification_page.dart';
@@ -69,6 +70,12 @@ class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const CompletarCadastroPage(),
+        );
+
+      case Routes.completarPerfil:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const CompletarPerfilPage(),
         );
 
       case Routes.home:

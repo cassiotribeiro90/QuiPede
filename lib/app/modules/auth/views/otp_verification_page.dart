@@ -52,7 +52,11 @@ class _OtpBodyState extends State<_OtpBody> {
     if (_codeController.text.length == 6 && !_autoVerifying) {
       _autoVerifying = true;
       setState(() => _isLoading = true);
-      context.read<AuthCubit>().verificarOTP(widget.telefone, _codeController.text);
+      context.read<AuthCubit>().verificarOTP(
+        widget.telefone, 
+        _codeController.text,
+        redirectToCheckout: widget.redirectToCheckout,
+      );
     }
   }
 
@@ -79,10 +83,15 @@ class _OtpBodyState extends State<_OtpBody> {
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),
           );
         } else if (state is AuthAuthenticated) {
-          if (widget.redirectToCheckout) {
-            Navigator.pushNamedAndRemoveUntil(context, Routes.carrinho, (route) => false);
-          } else {
-            Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+          final user = context.read<AuthCubit>().usuario;
+          // Só navega aqui se o nome NÃO estiver vazio. 
+          // Se estiver vazio, o AuthCubit já agendou a ida para "Quase lá".
+          if (user != null && user.nome.isNotEmpty) {
+            if (widget.redirectToCheckout) {
+              Navigator.pushNamedAndRemoveUntil(context, Routes.carrinho, (route) => false);
+            } else {
+              Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+            }
           }
         }
       },
