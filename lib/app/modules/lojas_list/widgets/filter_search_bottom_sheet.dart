@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/utils/text_utils.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
+import '../../../core/theme/input_styles.dart';
 
 class FilterSearchBottomSheet extends StatefulWidget {
   final Function(String? search, String? categoria, String? ordenacao) onApplyFilters;
@@ -112,9 +113,9 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
     return TextField(
       controller: _searchController,
       autofocus: false,
-      decoration: InputDecoration(
-        hintText: 'Pesquisar lojas ou categorias',
-        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+      decoration: InputStyles.decoration(
+        label: 'Pesquisar lojas ou categorias',
+        prefixIcon: Icons.search,
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.close, size: 20),
@@ -125,12 +126,6 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
                 },
               )
             : null,
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
       ),
       onChanged: (val) => setState(() {}),
     );

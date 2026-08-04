@@ -4,6 +4,7 @@ import '../bloc/endereco_cubit.dart';
 import '../bloc/endereco_state.dart';
 import '../models/endereco_model.dart';
 import '../../../core/utils/estados_brasil.dart';
+import '../../../core/theme/input_styles.dart';
 
 class EnderecoFormView extends StatefulWidget {
   final EnderecoModel? endereco;
@@ -117,9 +118,10 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
               TextFormField(
                 controller: _labelController,
                 enabled: !_isLoading,
-                decoration: const InputDecoration(
-                  labelText: 'Apelido (opcional)',
-                  hintText: 'Ex: Casa, Trabalho, etc.',
+                decoration: InputStyles.decoration(
+                  label: 'Apelido (opcional)',
+                  hint: 'Ex: Casa, Trabalho, etc.',
+                  prefixIcon: Icons.bookmark_outline,
                 ),
               ),
               const SizedBox(height: 16),
@@ -129,16 +131,17 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
                 controller: _cepController,
                 focusNode: _cepFocusNode,
                 enabled: !_isLoading,
-                decoration: InputDecoration(
-                  labelText: 'CEP *',
-                  hintText: '12345-678',
+                decoration: InputStyles.decoration(
+                  label: 'CEP *',
+                  hint: '12345-678',
+                  prefixIcon: Icons.location_on_outlined,
                   suffixIcon: IconButton(
                     icon: _isLoading
                         ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.search),
                     onPressed: _isLoading ? null : _buscarCep,
                   ),
@@ -156,9 +159,10 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
               TextFormField(
                 controller: _logradouroController,
                 enabled: !_isLoading,
-                decoration: const InputDecoration(
-                  labelText: 'Logradouro *',
-                  hintText: 'Rua, Avenida, etc.',
+                decoration: InputStyles.decoration(
+                  label: 'Logradouro *',
+                  hint: 'Rua, Avenida, etc.',
+                  prefixIcon: Icons.home_outlined,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Digite o logradouro';
@@ -173,9 +177,10 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
                     child: TextFormField(
                       controller: _numeroController,
                       enabled: !_isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'Número *',
-                        hintText: '123',
+                      decoration: InputStyles.decoration(
+                        label: 'Número *',
+                        hint: '123',
+                        prefixIcon: Icons.numbers,
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -189,9 +194,10 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
                     child: TextFormField(
                       controller: _complementoController,
                       enabled: !_isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'Complemento',
-                        hintText: 'Apto, Bloco, etc.',
+                      decoration: InputStyles.decoration(
+                        label: 'Complemento',
+                        hint: 'Apto, Bloco, etc.',
+                        prefixIcon: Icons.add_home_outlined,
                       ),
                     ),
                   ),
@@ -202,8 +208,9 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
               TextFormField(
                 controller: _bairroController,
                 enabled: !_isLoading,
-                decoration: const InputDecoration(
-                  labelText: 'Bairro *',
+                decoration: InputStyles.decoration(
+                  label: 'Bairro *',
+                  prefixIcon: Icons.map_outlined,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Digite o bairro';
@@ -219,8 +226,9 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
                     child: TextFormField(
                       controller: _cidadeController,
                       enabled: !_isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'Cidade *',
+                      decoration: InputStyles.decoration(
+                        label: 'Cidade *',
+                        prefixIcon: Icons.location_city_outlined,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) return 'Digite a cidade';
@@ -233,8 +241,8 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
                     child: TextFormField(
                       controller: _ufController,
                       enabled: !_isLoading,
-                      decoration: const InputDecoration(
-                        labelText: 'UF *',
+                      decoration: InputStyles.decoration(
+                        label: 'UF *',
                       ),
                       maxLength: 2,
                       textCapitalization: TextCapitalization.characters,
@@ -263,13 +271,13 @@ class _EnderecoFormViewState extends State<EnderecoFormView> {
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
                       : Text(widget.isEditing ? 'Atualizar' : 'Cadastrar'),
                 ),
               ),

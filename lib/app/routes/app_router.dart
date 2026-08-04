@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../di/dependencies.dart';
-import '../modules/auth/views/cadastro_page.dart';
-import '../modules/auth/views/completar_cadastro_page.dart';
 import '../modules/auth/views/completar_perfil_page.dart';
-import '../modules/auth/views/login_screen.dart';
 import '../modules/auth/views/phone_input_page.dart';
 import '../modules/auth/views/otp_verification_page.dart';
 import '../modules/auth/views/splash_screen.dart';
@@ -48,16 +45,23 @@ class AppRouter {
         );
 
       case Routes.phoneInput:
+        final bool redirectToCheckout = settings.arguments as bool? ?? false;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const PhoneInputPage(),
+          builder: (_) => PhoneInputPage(redirectToCheckout: redirectToCheckout),
         );
 
       case Routes.otpVerify:
-        final phone = settings.arguments as String;
+        final args = settings.arguments as Map<String, dynamic>;
+        final String phone = args['telefone'] as String;
+        final bool redirectToCheckout = args['redirectToCheckout'] as bool? ?? false;
+        
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => OtpVerificationPage(telefone: phone),
+          builder: (_) => OtpVerificationPage(
+            telefone: phone,
+            redirectToCheckout: redirectToCheckout,
+          ),
         );
 
       case Routes.cadastro:
@@ -66,16 +70,12 @@ class AppRouter {
           builder: (_) => const PhoneInputPage(),
         );
 
-      case Routes.completarCadastro:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const CompletarCadastroPage(),
-        );
 
       case Routes.completarPerfil:
+        final bool redirectToCheckout = settings.arguments as bool? ?? false;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const CompletarPerfilPage(),
+          builder: (_) => CompletarPerfilPage(redirectToCheckout: redirectToCheckout),
         );
 
       case Routes.home:

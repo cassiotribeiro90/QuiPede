@@ -6,6 +6,7 @@ import '../bloc/auth_state.dart';
 import 'otp_verification_page.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/theme/input_styles.dart';
 
 class PhoneInputPage extends StatelessWidget {
   final bool redirectToCheckout;
@@ -13,6 +14,7 @@ class PhoneInputPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 [LOG] PhoneInputPage foi construída');
     return BlocProvider.value(
       value: context.read<AuthCubit>(),
       child: _PhoneInputBody(redirectToCheckout: redirectToCheckout),
@@ -57,17 +59,13 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
       listener: (context, state) {
         if (state is AuthPhoneEnviado) {
           setState(() => _isLoading = false);
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (_) => BlocProvider.value(
-                value: context.read<AuthCubit>(),
-                child: OtpVerificationPage(
-                  telefone: state.telefone,
-                  redirectToCheckout: widget.redirectToCheckout,
-                ),
-              ),
-            ),
+            Routes.otpVerify,
+            arguments: {
+              'telefone': state.telefone,
+              'redirectToCheckout': widget.redirectToCheckout,
+            },
           );
         } else if (state is AuthOtpErro) {
           setState(() => _isLoading = false);
@@ -114,11 +112,10 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
                       inputFormatters: [_maskFormatter],
                       keyboardType: TextInputType.phone,
                       autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: 'Telefone',
-                        hintText: '(11) 99999-8888',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        prefixIcon: const Icon(Icons.phone_android),
+                      decoration: InputStyles.decoration(
+                        label: 'Telefone',
+                        hint: '(11) 99999-8888',
+                        prefixIcon: Icons.phone_android,
                       ),
                       validator: (v) {
                         if (v == null || v.replaceAll(RegExp(r'[^0-9]'), '').length != 11) {

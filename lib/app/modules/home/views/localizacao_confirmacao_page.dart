@@ -8,6 +8,7 @@ import '../../enderecos/models/endereco_model.dart';
 import 'widgets/endereco_card.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/utils/estados_brasil.dart';
+import '../../../core/theme/input_styles.dart';
 
 class LocalizacaoConfirmacaoPage extends StatefulWidget {
   final Map<String, dynamic> endereco;
@@ -161,10 +162,10 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
                     child: TextFormField(
                       controller: _numeroController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Número *',
-                        hintText: '123',
-                        border: OutlineInputBorder(),
+                      decoration: InputStyles.decoration(
+                        label: 'Número *',
+                        hint: '123',
+                        prefixIcon: Icons.numbers,
                       ),
                       validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
                     ),
@@ -174,10 +175,10 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
                     flex: 2,
                     child: TextFormField(
                       controller: _complementoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Complemento (opcional)',
-                        hintText: 'Apto, Bloco, etc.',
-                        border: OutlineInputBorder(),
+                      decoration: InputStyles.decoration(
+                        label: 'Complemento (opcional)',
+                        hint: 'Apto, Bloco, etc.',
+                        prefixIcon: Icons.add_home_outlined,
                       ),
                     ),
                   ),
@@ -187,12 +188,11 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
               TextFormField(
                 controller: _referenciaController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Ponto de referência (opcional)',
-                  hintText: 'Ex: portão verde, próximo ao mercado',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
+                decoration: InputStyles.decoration(
+                  label: 'Ponto de referência (opcional)',
+                  hint: 'Ex: portão verde, próximo ao mercado',
+                  prefixIcon: Icons.info_outline,
+                ).copyWith(alignLabelWithHint: true),
               ),
               const SizedBox(height: 32),
               SizedBox(

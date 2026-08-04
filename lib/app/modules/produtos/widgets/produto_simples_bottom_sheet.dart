@@ -4,6 +4,7 @@ import '../../../di/dependencies.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
+import '../../../core/theme/input_styles.dart';
 
 class ProdutoSimplesBottomSheet extends StatefulWidget {
   final dynamic produto;
@@ -120,12 +121,11 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
                       TextField(
                         controller: _observacaoController,
                         enabled: !_isAdding,
-                        decoration: InputDecoration(
-                          hintText: 'Alguma observação?',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                        decoration: InputStyles.decoration(
+                          label: 'Observações',
+                          hint: 'Alguma observação? Ex: Sem cebola...',
+                          prefixIcon: Icons.edit_note,
+                        ).copyWith(alignLabelWithHint: true),
                         maxLines: 2,
                       ),
                       const SizedBox(height: 20),
@@ -262,7 +262,6 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
   Future<void> _handleAcao() async {
     final authState = context.read<AuthCubit>().state;
     
-    // 🔥 PERMITIR ADIÇÃO PARA AuthAuthenticated OU AuthGuest
     if (authState is! AuthAuthenticated && authState is! AuthGuest) {
       Navigator.pop(context, {
         'requestLogin': true,

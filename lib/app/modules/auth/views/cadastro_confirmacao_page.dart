@@ -29,6 +29,9 @@ class CadastroConfirmacaoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    debugPrint('🔍 [LOG] CadastroConfirmacaoPage foi construída');
+
     const primaryColor = Color(0xFFF57C00);
 
     return Scaffold(

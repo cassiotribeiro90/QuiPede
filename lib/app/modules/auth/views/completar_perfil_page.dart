@@ -5,7 +5,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../routes/app_routes.dart';
-import 'widgets/custom_text_field.dart';
+import '../../../core/theme/input_styles.dart';
 
 class CompletarPerfilPage extends StatefulWidget {
   final bool redirectToCheckout;
@@ -51,6 +51,7 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 [LOG] CompletarPerfilPage foi construída');
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
@@ -69,11 +70,19 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
       },
       child: ResponsivePageScaffold(
         appBar: AppBar(
-          title: const Text('Completar Perfil'),
+          title: const Text('Complete seu perfil'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            tooltip: 'Voltar',
+          ),
           elevation: 0,
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           foregroundColor: Colors.black,
         ),
+        backgroundColor: Colors.white,
         body: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
@@ -101,10 +110,12 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 32),
-                    CustomTextField(
+                    TextFormField(
                       controller: _nomeController,
-                      hintText: 'Nome *',
-                      prefixIcon: Icons.person_outline,
+                      decoration: InputStyles.decoration(
+                        label: 'Nome *',
+                        prefixIcon: Icons.person_outline,
+                      ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Por favor, insira seu nome';
@@ -113,10 +124,12 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    CustomTextField(
+                    TextFormField(
                       controller: _emailController,
-                      hintText: 'E-mail (opcional)',
-                      prefixIcon: Icons.email_outlined,
+                      decoration: InputStyles.decoration(
+                        label: 'E-mail (opcional)',
+                        prefixIcon: Icons.email_outlined,
+                      ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value != null && value.isNotEmpty) {
@@ -129,10 +142,12 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    CustomTextField(
+                    TextFormField(
                       controller: _whatsappController,
-                      hintText: 'WhatsApp (opcional)',
-                      prefixIcon: Icons.phone_android,
+                      decoration: InputStyles.decoration(
+                        label: 'WhatsApp (opcional)',
+                        prefixIcon: Icons.phone_android,
+                      ),
                       keyboardType: TextInputType.phone,
                       inputFormatters: [_whatsappMask],
                     ),

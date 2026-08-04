@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_decoration.dart';
+import 'input_styles.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -39,18 +40,7 @@ class AppTheme {
         labelMedium: AppTextStyles.label,
       ),
       
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppColors.surface,
-        border: OutlineInputBorder(
-          borderRadius: AppDecoration.borderRadiusMedium,
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: AppDecoration.inputEnabledBorder,
-        focusedBorder: AppDecoration.inputFocusedBorder,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
-      ),
+      inputDecorationTheme: InputStyles.outlinedDecorationTheme,
       
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: AppDecoration.primaryButton,

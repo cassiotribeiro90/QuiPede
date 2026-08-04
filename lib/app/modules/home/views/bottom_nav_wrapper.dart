@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quipede/app/modules/home/views/onboarding_page.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
-import '../../auth/views/login_screen.dart';
 import 'home_screen.dart';
 import '../../perfil/views/perfil_view.dart';
 
@@ -34,7 +34,7 @@ class _BottomNavWrapperState extends State<BottomNavWrapper> {
       print('🚀 Navegando para login'); // ← DEVE APARECER
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const OnboardingPage()),
       ).then((_) {
         setState(() {});
       });

@@ -13,6 +13,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
+import '../../../core/theme/input_styles.dart';
 
 class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
@@ -101,8 +102,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
       backgroundColor: context.backgroundColor,
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, authState) {
-          // Se o usuário autenticar via OTP vindo do checkout, ele voltará para cá e o listener não precisa agir
-          // A navegação de volta é tratada no OtpVerificationPage
         },
         child: MultiBlocListener(
           listeners: [
@@ -319,15 +318,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
           TextField(
             controller: _observacaoController,
             maxLines: 2,
-            decoration: InputDecoration(
-              hintText: 'Alguma preferência? Ex: Tirar cebola, campainha estragada...',
-              hintStyle: context.bodySmall.copyWith(color: context.textHint),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: context.primaryColor),
-              ),
-            ),
+            decoration: InputStyles.decoration(
+              label: 'Observações',
+              hint: 'Alguma preferência? Ex: Tirar cebola, campainha estragada...',
+              prefixIcon: Icons.edit_note,
+            ).copyWith(alignLabelWithHint: true),
           ),
         ],
       ),
@@ -441,16 +436,11 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                       controller: _trocoController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}'))],
-                      decoration: InputDecoration(
-                        labelText: 'Troco para quanto?',
-                        hintText: 'Ex: 50,00',
-                        prefixText: 'R\$ ',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: context.primaryColor),
-                        ),
-                      ),
+                      decoration: InputStyles.decoration(
+                        label: 'Troco para quanto?',
+                        hint: 'Ex: 50,00',
+                        prefixIcon: Icons.payments_outlined,
+                      ).copyWith(prefixText: 'R\$ '),
                       onChanged: (val) {
                         final valor = double.tryParse(val.replaceAll(',', '.'));
                         context.read<CarrinhoCubit>().atualizarTrocoPara(valor);

@@ -4,6 +4,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/theme/input_styles.dart';
 
 class OtpVerificationPage extends StatelessWidget {
   final String telefone;
@@ -70,6 +71,7 @@ class _OtpBodyState extends State<_OtpBody> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 [LOG] OtpVerificationPage foi construída');
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthOtpErro) {
@@ -131,11 +133,11 @@ class _OtpBodyState extends State<_OtpBody> {
                     maxLength: 6,
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 32, letterSpacing: 16),
-                    decoration: InputDecoration(
-                      hintText: '000000',
-                      counterText: '',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+                    decoration: InputStyles.decoration(
+                      label: 'Código de verificação',
+                      hint: '000000',
+                      prefixIcon: Icons.security,
+                    ).copyWith(counterText: ''),
                   ),
                   if (_isLoading) ...[
                     const SizedBox(height: 24),

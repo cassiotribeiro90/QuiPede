@@ -7,6 +7,7 @@ import '../../enderecos/models/endereco_model.dart';
 import 'widgets/endereco_card.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/utils/estados_brasil.dart';
+import '../../../core/theme/input_styles.dart';
 
 class EnderecoConfirmacaoPage extends StatelessWidget {
   final Map<String, dynamic> endereco;
@@ -22,7 +23,6 @@ class EnderecoConfirmacaoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 Injeta o EnderecoCubit aqui para tornar a tela autossuficiente
     return BlocProvider.value(
       value: getIt<EnderecoCubit>(),
       child: _EnderecoConfirmacaoBody(
@@ -65,11 +65,9 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
   }
 
   Future<void> _confirmar() async {
-    // 🔥 Remove o foco dos campos (fecha teclado)
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
-      // 🔥 Algum campo inválido → mostrar SnackBar único
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Preencha todos os campos obrigatórios'),
@@ -120,13 +118,11 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
       listener: (context, state) {
         if (state is EnderecoOperacaoSucesso) {
           setState(() => _isLoading = false);
-          print('✅ [EnderecoConfirmacao] Sucesso!');
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.green),
           );
 
-          // 🔥 RETORNA SUCESSO PARA QUEM CHAMOU (CEP Page ou Busca Page)
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               Navigator.pop(context, true);
@@ -181,12 +177,11 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                       child: TextFormField(
                         controller: _numeroController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Número *',
-                          hintText: '123',
-                          border: OutlineInputBorder(),
-                          errorStyle: TextStyle(height: 0),
-                        ),
+                        decoration: InputStyles.decoration(
+                          label: 'Número *',
+                          hint: '123',
+                          prefixIcon: Icons.numbers,
+                        ).copyWith(errorStyle: const TextStyle(height: 0)),
                         validator: (value) => (value == null || value.isEmpty) ? '' : null,
                       ),
                     ),
@@ -195,10 +190,10 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                       flex: 2,
                       child: TextFormField(
                         controller: _complementoController,
-                        decoration: const InputDecoration(
-                          labelText: 'Complemento (opcional)',
-                          hintText: 'Apto, Bloco, etc.',
-                          border: OutlineInputBorder(),
+                        decoration: InputStyles.decoration(
+                          label: 'Complemento (opcional)',
+                          hint: 'Apto, Bloco, etc.',
+                          prefixIcon: Icons.add_home_outlined,
                         ),
                       ),
                     ),
@@ -208,12 +203,11 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                 TextFormField(
                   controller: _referenciaController,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Ponto de referência (opcional)',
-                    hintText: 'Ex: portão verde, próximo ao mercado',
-                    border: OutlineInputBorder(),
-                    alignLabelWithHint: true,
-                  ),
+                  decoration: InputStyles.decoration(
+                    label: 'Ponto de referência (opcional)',
+                    hint: 'Ex: portão verde, próximo ao mercado',
+                    prefixIcon: Icons.info_outline,
+                  ).copyWith(alignLabelWithHint: true),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(

@@ -6,6 +6,7 @@ import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import 'endereco_confirmacao_page.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../../core/theme/input_styles.dart';
 
 class CepInputPage extends StatelessWidget {
   const CepInputPage({super.key});
@@ -149,13 +150,11 @@ class _CepInputBodyState extends State<_CepInputBody> {
                   maxLength: 10,
                   textInputAction: TextInputAction.search,
                   onFieldSubmitted: (_) => _isLoading ? null : _buscarCep(),
-                  decoration: InputDecoration(
-                    labelText: 'CEP',
-                    hintText: 'Ex: 12345-678',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: const Icon(Icons.mail_outline),
-                    counterText: '',
-                  ),
+                  decoration: InputStyles.decoration(
+                    label: 'CEP',
+                    hint: 'Ex: 12345-678',
+                    prefixIcon: Icons.mail_outline,
+                  ).copyWith(counterText: ''),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(

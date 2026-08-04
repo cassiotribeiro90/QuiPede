@@ -12,6 +12,7 @@ import '../../enderecos/bloc/endereco_state.dart';
 import 'endereco_confirmacao_page.dart';
 import 'widgets/endereco_sugestao_tile.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../../core/theme/input_styles.dart';
 
 class BuscaEnderecoPage extends StatelessWidget {
   final double? initialLat;
@@ -169,7 +170,6 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Título e subtítulo padronizados
               const SizedBox(height: 16),
               const Text(
                 'Buscar Endereço',
@@ -181,22 +181,17 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 32),
-              // Campo de busca com estilo igual ao de CEP
               TextField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
-                decoration: InputDecoration(
-                  labelText: 'Endereço',
-                  hintText: 'Ex: Avenida Paulista, São Paulo',
-                  prefixIcon: const Icon(Icons.search),
+                decoration: InputStyles.decoration(
+                  label: 'Endereço',
+                  hint: 'Ex: Avenida Paulista, São Paulo',
+                  prefixIcon: Icons.search,
                   suffixIcon: _buildGpsSuffix(),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              // Lista de resultados (ocupa o espaço restante)
               Expanded(
                 child: _buildContent(),
               ),

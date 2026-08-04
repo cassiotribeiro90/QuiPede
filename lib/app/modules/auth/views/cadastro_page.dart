@@ -14,6 +14,7 @@ class CadastroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 [LOG] CadastroPage foi construída');
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {

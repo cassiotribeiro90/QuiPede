@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/theme/input_styles.dart';
 
 class LojaSearchBar extends StatefulWidget {
   final Function(String) onSearch;
@@ -49,10 +50,9 @@ class _LojaSearchBarState extends State<LojaSearchBar> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextField(
         controller: _controller,
-        decoration: InputDecoration(
-          hintText: 'Pesquisar lojas...',
-          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
-          prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+        decoration: InputStyles.decoration(
+          label: 'Pesquisar lojas...',
+          prefixIcon: Icons.search,
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear, size: 20),
@@ -62,13 +62,8 @@ class _LojaSearchBarState extends State<LojaSearchBar> {
                   },
                 )
               : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+        ).copyWith(
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
         ),
         onChanged: _onChanged,
       ),

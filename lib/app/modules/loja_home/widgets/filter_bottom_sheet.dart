@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../models/categoria_filter_model.dart';
+import '../../../core/theme/input_styles.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final List<CategoriaFilterModel> categorias;
@@ -114,9 +115,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   Widget _buildSearchField() {
     return TextField(
       controller: _searchController,
-      decoration: InputDecoration(
-        hintText: 'Pesquisar produtos...',
-        prefixIcon: Icon(Icons.search, color: context.textHint),
+      decoration: InputStyles.decoration(
+        label: 'Pesquisar produtos',
+        hint: 'Ex: Pizza, Hambúrguer...',
+        prefixIcon: Icons.search,
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.close, size: 20),
@@ -127,20 +129,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 },
               )
             : null,
-        filled: true,
-        fillColor: context.surfaceColor,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: context.primaryColor, width: 1.5),
-        ),
       ),
       onChanged: (val) => setState(() {}),
     );

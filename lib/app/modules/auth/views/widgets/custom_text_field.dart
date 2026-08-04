@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/theme/input_styles.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -40,33 +41,12 @@ class CustomTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
-      decoration: InputDecoration(
-        hintText: hintText,
-        prefixIcon: Icon(prefixIcon, size: 22, color: Colors.grey.shade600),
+      decoration: InputStyles.decoration(
+        label: hintText,
+        prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: enabled ? Colors.grey.shade100 : Colors.grey.shade200,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFF57C00), width: 1),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
+      ).copyWith(
+        fillColor: enabled ? Colors.white : Colors.grey.shade200,
       ),
     );
   }
