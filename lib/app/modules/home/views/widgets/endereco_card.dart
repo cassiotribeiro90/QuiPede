@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../enderecos/models/endereco_model.dart';
 
@@ -86,7 +87,7 @@ class EnderecoCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: displayPrincipal
             ? Theme.of(context).primaryColor.withOpacity(0.05)
@@ -109,16 +110,16 @@ class EnderecoCard extends StatelessWidget {
                   children: [
                     Icon(
                       displayPrincipal ? Icons.check_circle : Icons.location_on,
-                      color: displayPrincipal ? Theme.of(context).primaryColor : Colors.grey,
-                      size: 20,
+                      color: AppColors.primary,
+                      size: 24,
                     ),
                     const SizedBox(width: 8),
 
                     // 🔥 Label do endereço
                     Text(
-                      displayLabel,
-                      style: AppTextStyles.bodyLarge.copyWith( // 20px
-                        fontWeight: FontWeight.bold,
+                      displayCompleto,
+                      style: AppTextStyles.titleMedium.copyWith( // 18px
+                        color: Colors.grey.shade700,
                       ),
                     ),
 
@@ -173,14 +174,6 @@ class EnderecoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-
-          // 🔥 Endereço completo
-          Text(
-            displayCompleto,
-            style: AppTextStyles.bodyMedium.copyWith( // 18px
-              color: Colors.grey.shade700,
-            ),
-          ),
         ],
       ),
     );

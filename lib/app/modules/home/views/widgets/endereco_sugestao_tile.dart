@@ -36,8 +36,7 @@ class EnderecoSugestaoTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       endereco.descricao,
-                      style: AppTextStyles.bodyMedium.copyWith( // 18px
-                        fontWeight: FontWeight.w500,
+                      style: AppTextStyles.bodyLarge.copyWith( // 18px
                       ),
                     ),
                   ),

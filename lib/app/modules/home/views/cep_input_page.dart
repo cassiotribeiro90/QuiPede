@@ -154,7 +154,7 @@ class _CepInputBodyState extends State<_CepInputBody> {
                 AppTextField(
                   controller: _cepController,
                   label: 'CEP',
-                  hint: 'Ex: 12345-678',
+                  hint: '000000-000',
                   prefixIcon: Icons.mail_outline,
                   keyboardType: TextInputType.number,
                   inputFormatters: [_cepMaskFormatter],

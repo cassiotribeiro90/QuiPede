@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme_extension.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_decoration.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
 import '../../../core/theme/input_styles.dart';
 
@@ -62,7 +64,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       child: Column(
         children: [
           _buildHandle(),
-          // Cabeçalho fixo
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
@@ -70,7 +71,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               children: [
                 Text(
                   'Filtrar lojas',
-                  style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  style: context.titleMedium?.copyWith(fontWeight: FontWeight.bold) ??
+                      AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -82,12 +84,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             ),
           ),
           const Divider(height: 1),
-          // Barra de pesquisa (fixa)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: _buildSearchField(),
           ),
-          // Conteúdo rolável
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -103,7 +103,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ),
             ),
           ),
-          // Rodapé fixo com botões
           _buildFixedFooter(),
         ],
       ),
@@ -131,13 +130,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         prefixIcon: Icons.search,
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: () {
-                  setState(() {
-                    _searchController.clear();
-                  });
-                },
-              )
+          icon: const Icon(Icons.close, size: 20),
+          onPressed: () {
+            setState(() {
+              _searchController.clear();
+            });
+          },
+        )
             : null,
       ),
       onChanged: (val) => setState(() {}),
@@ -148,20 +147,35 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Ordenar por', style: context.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          'Ordenar por',
+          style: context.titleSmall?.copyWith(fontWeight: FontWeight.bold) ??
+              AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: _ordenacoes.map((option) {
             final isSelected = _tempOrdenacao == option['value'];
+            final chipTheme = AppDecoration.chipStyle(
+              selected: isSelected,
+              context: context,
+            );
+            
             return ChoiceChip(
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(option['icon']!, style: const TextStyle(fontSize: 14)),
+                  Text(
+                    option['icon']!,
+                    style: AppTextStyles.bodyLarge,
+                  ),
                   const SizedBox(width: 6),
-                  Text(option['label']!),
+                  Text(
+                    option['label']!,
+                    style: AppTextStyles.bodyLarge,
+                  ),
                 ],
               ),
               selected: isSelected,
@@ -170,19 +184,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   _tempOrdenacao = selected ? option['value'] : null;
                 });
               },
-              selectedColor: context.primarySurface,
-              backgroundColor: context.surfaceColor,
-              labelStyle: context.bodyMedium.copyWith(
-                color: isSelected ? context.primaryColor : context.textSecondary,
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-                side: BorderSide(
-                  color: isSelected ? context.primaryColor : context.borderColor,
-                ),
-              ),
+              selectedColor: chipTheme.selectedColor,
+              backgroundColor: chipTheme.backgroundColor,
+              labelStyle: chipTheme.labelStyle,
+              shape: chipTheme.shape,
               showCheckmark: false,
+              padding: AppDecoration.chipPadding, // 🔥 PADDING CENTRALIZADO
             );
           }).toList(),
         ),
@@ -196,34 +203,39 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Categorias', style: context.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          'Categorias',
+          style: context.titleSmall?.copyWith(fontWeight: FontWeight.bold) ??
+              AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: widget.categorias.map((cat) {
             final isSelected = _tempCategoria == cat.value;
+            final chipTheme = AppDecoration.chipStyle(
+              selected: isSelected,
+              context: context,
+            );
+            
             return ChoiceChip(
-              label: Text('${cat.label} (${cat.count})'.trim()),
+              label: Text(
+                '${cat.label} (${cat.count})'.trim(),
+                style: AppTextStyles.bodyLarge,
+              ),
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
                   _tempCategoria = selected ? cat.value : null;
                 });
               },
-              selectedColor: context.primarySurface,
-              backgroundColor: context.surfaceColor,
-              labelStyle: context.bodyMedium.copyWith(
-                color: isSelected ? context.primaryColor : context.textSecondary,
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-                side: BorderSide(
-                  color: isSelected ? context.primaryColor : context.borderColor,
-                ),
-              ),
+              selectedColor: chipTheme.selectedColor,
+              backgroundColor: chipTheme.backgroundColor,
+              labelStyle: chipTheme.labelStyle,
+              shape: chipTheme.shape,
               showCheckmark: false,
+              padding: AppDecoration.chipPadding, // 🔥 PADDING CENTRALIZADO
             );
           }).toList(),
         ),
@@ -257,14 +269,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 widget.onClear();
                 Navigator.pop(context);
               },
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              style: AppDecoration.clearButton,
+              child: Text(
+                'Limpar',
+                style: AppTextStyles.button.copyWith(
+                  color: context.textPrimary,
                 ),
-                side: BorderSide(color: context.borderColor),
               ),
-              child: Text('Limpar', style: TextStyle(color: context.textPrimary)),
             ),
           ),
           const SizedBox(width: 12),
@@ -278,18 +289,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 );
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
+              style: AppDecoration.filterButton,
+              child: Text(
                 'Aplicar',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: AppTextStyles.button.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

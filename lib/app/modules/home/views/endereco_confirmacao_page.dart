@@ -156,9 +156,6 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Center(
-                  child: Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
-                ),
                 const SizedBox(height: 24),
                 EnderecoCard(
                   logradouro: widget.endereco['logradouro'] ?? widget.endereco['descricao'] ?? '',
@@ -178,7 +175,6 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                         label: 'Número',
                         isRequired: true,
                         hint: '123',
-                        prefixIcon: Icons.numbers,
                         keyboardType: TextInputType.number,
                         validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
                       ),
@@ -190,7 +186,6 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                         controller: _complementoController,
                         label: 'Complemento',
                         hint: 'Apto, Bloco, etc.',
-                        prefixIcon: Icons.add_home_outlined,
                       ),
                     ),
                   ],
@@ -200,7 +195,6 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                   controller: _referenciaController,
                   label: 'Ponto de referência',
                   hint: 'Ex: portão verde, próximo ao mercado',
-                  prefixIcon: Icons.info_outline,
                   maxLines: 2,
                 ),
                 const SizedBox(height: 32),
