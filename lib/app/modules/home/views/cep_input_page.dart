@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
+import 'package:quipede/app/core/theme/app_text_styles.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import 'endereco_confirmacao_page.dart';
@@ -73,14 +73,15 @@ class _CepInputBodyState extends State<_CepInputBody> {
   Widget build(BuildContext context) {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
+        // ✅ CEP carregado com sucesso
         if (state is EnderecoCepCarregado) {
           setState(() => _isLoading = false);
           final endereco = {
-            'logradouro': state.dados['logradouro'] ?? '',
-            'bairro': state.dados['bairro'] ?? '',
-            'cidade': state.dados['cidade'] ?? '',
-            'uf': state.dados['uf'] ?? '',
-            'cep': state.dados['cep'] ?? '',
+            'logradouro': state.dadosCep['logradouro'] ?? '',
+            'bairro': state.dadosCep['bairro'] ?? '',
+            'cidade': state.dadosCep['cidade'] ?? '',
+            'uf': state.dadosCep['uf'] ?? '',
+            'cep': state.dadosCep['cep'] ?? '',
           };
           Navigator.push(
             context,
@@ -97,16 +98,21 @@ class _CepInputBodyState extends State<_CepInputBody> {
             }
           });
         }
-        if (state is EnderecoOperacaoSucesso) {
+        // ✅ Endereço criado com sucesso (após confirmação)
+        if (state is EnderecoCriado) {
           setState(() => _isLoading = false);
-          Navigator.pop(context, true);
+          if (mounted) {
+            Navigator.pop(context, true);
+          }
         }
+        // ✅ Erro
         if (state is EnderecoError) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
+        // ✅ Buscando CEP
         if (state is EnderecoCepBuscando) {
           setState(() => _isLoading = true);
         }
@@ -132,25 +138,20 @@ class _CepInputBodyState extends State<_CepInputBody> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 16),
-
-                // 🔥 Título "Digite seu CEP"
                 Text(
                   'Digite seu CEP',
-                  style: AppTextStyles.titleMedium.copyWith( // 24px
+                  style: AppTextStyles.titleMedium.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-
-                // 🔥 Subtítulo
                 Text(
                   'Encontre seu endereço rapidamente para ver as lojas próximas.',
-                  style: AppTextStyles.bodyMedium.copyWith( // 18px
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Colors.grey,
                   ),
                 ),
                 const SizedBox(height: 32),
-
                 AppTextField(
                   controller: _cepController,
                   label: 'CEP',
@@ -163,7 +164,6 @@ class _CepInputBodyState extends State<_CepInputBody> {
                   autofocus: true,
                 ),
                 const SizedBox(height: 20),
-
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -181,7 +181,7 @@ class _CepInputBodyState extends State<_CepInputBody> {
                     )
                         : Text(
                       'Buscar CEP',
-                      style: AppTextStyles.button.copyWith( // 18px
+                      style: AppTextStyles.button.copyWith(
                         color: Colors.white,
                       ),
                     ),

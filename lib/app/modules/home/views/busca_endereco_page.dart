@@ -147,9 +147,9 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
   Widget build(BuildContext context) {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
-        if (state is EnderecoOperacaoSucesso) {
+        if (state is EnderecoCriado) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.mensagem), backgroundColor: Colors.green),
+            SnackBar(content: Text('Endereço adicionado com sucesso!'), backgroundColor: Colors.green),
           );
           Navigator.pop(context, true);
         }

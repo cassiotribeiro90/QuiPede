@@ -93,11 +93,11 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
   Widget build(BuildContext context) {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
-        if (state is EnderecoOperacaoSucesso) {
+        if (state is EnderecoCriado) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.mensagem),
+            const SnackBar(
+              content: Text('Endereço adicionado com sucesso!'),
               backgroundColor: Colors.green,
             ),
           );

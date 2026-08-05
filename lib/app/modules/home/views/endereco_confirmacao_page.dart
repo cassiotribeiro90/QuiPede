@@ -97,30 +97,28 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
       _isLoading = true;
     });
 
-    try {
-      await context.read<EnderecoCubit>().criarEndereco(enderecoModel);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao salvar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    // Dispara a criação — o listener cuida do sucesso/erro
+    context.read<EnderecoCubit>().criarEndereco(enderecoModel);
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<EnderecoCubit, EnderecoState>(
+      listenWhen: (previous, current) {
+        // ✅ Só escuta estados relevantes para esta tela
+        return current is EnderecoCriado || current is EnderecoError || current is EnderecoLoading;
+      },
       listener: (context, state) {
-        if (state is EnderecoOperacaoSucesso) {
+        // ✅ Endereço criado com sucesso
+        if (state is EnderecoCriado) {
+          print('✅ [EnderecoConfirmacaoPage] Endereço criado: ID ${state.endereco.id}');
           setState(() => _isLoading = false);
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.mensagem), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Endereço adicionado com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
           );
 
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -128,12 +126,17 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
               Navigator.pop(context, true);
             }
           });
-        } else if (state is EnderecoError) {
+        }
+        // ✅ Erro ao criar
+        else if (state is EnderecoError) {
+          print('❌ [EnderecoConfirmacaoPage] Erro: ${state.message}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
-        } else if (state is EnderecoLoading) {
+        }
+        // ✅ Loading
+        else if (state is EnderecoLoading) {
           setState(() => _isLoading = true);
         }
       },

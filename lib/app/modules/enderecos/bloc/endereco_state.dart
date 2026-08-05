@@ -1,10 +1,7 @@
-import 'package:equatable/equatable.dart';
-import '../models/endereco_model.dart';
+import 'package:quipede/app/modules/enderecos/models/endereco_model.dart';
 
-abstract class EnderecoState extends Equatable {
+abstract class EnderecoState {
   const EnderecoState();
-  @override
-  List<Object?> get props => [];
 }
 
 class EnderecoInitial extends EnderecoState {}
@@ -14,30 +11,42 @@ class EnderecoLoading extends EnderecoState {}
 class EnderecoLoaded extends EnderecoState {
   final List<EnderecoModel> enderecos;
   final EnderecoModel? enderecoPrincipal;
-  const EnderecoLoaded(this.enderecos, {this.enderecoPrincipal});
-  @override
-  List<Object?> get props => [enderecos, enderecoPrincipal];
-}
 
-class EnderecoOperacaoSucesso extends EnderecoState {
-  final String mensagem;
-  const EnderecoOperacaoSucesso(this.mensagem);
-  @override
-  List<Object> get props => [mensagem];
+  const EnderecoLoaded(this.enderecos, {this.enderecoPrincipal});
 }
 
 class EnderecoError extends EnderecoState {
   final String message;
   const EnderecoError(this.message);
-  @override
-  List<Object> get props => [message];
+}
+
+// ✅ Estado específico: endereço atualizado com sucesso
+class EnderecoAtualizado extends EnderecoState {
+  final EnderecoModel endereco;
+  const EnderecoAtualizado(this.endereco);
+}
+
+// ✅ Estado específico: endereço excluído com sucesso
+class EnderecoExcluido extends EnderecoState {
+  final int id;
+  const EnderecoExcluido(this.id);
+}
+
+// ✅ Estado específico: principal definido com sucesso
+class EnderecoPrincipalDefinido extends EnderecoState {
+  final int id;
+  const EnderecoPrincipalDefinido(this.id);
+}
+
+// ✅ Estado específico: endereço criado com sucesso
+class EnderecoCriado extends EnderecoState {
+  final EnderecoModel endereco;
+  const EnderecoCriado(this.endereco);
 }
 
 class EnderecoCepBuscando extends EnderecoState {}
 
 class EnderecoCepCarregado extends EnderecoState {
-  final Map<String, String> dados;
-  const EnderecoCepCarregado(this.dados);
-  @override
-  List<Object> get props => [dados];
+  final Map<String, String> dadosCep;
+  const EnderecoCepCarregado(this.dadosCep);
 }

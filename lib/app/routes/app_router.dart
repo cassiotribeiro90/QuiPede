@@ -16,10 +16,12 @@ import '../modules/perfil/views/perfil_view.dart';
 import '../modules/pedido/views/pedido_detalhe_page.dart';
 import '../modules/pedido/bloc/pedido_cubit.dart';
 import '../modules/enderecos/views/enderecos_list_view.dart';
+import '../modules/enderecos/views/endereco_edit_view.dart';
 import '../modules/enderecos/bloc/endereco_cubit.dart';
 import '../modules/home/bloc/localizacao_cubit.dart';
 import '../modules/auth/bloc/auth_cubit.dart';
 import '../modules/carrinho/bloc/carrinho_cubit.dart';
+import '../modules/enderecos/models/endereco_model.dart';
 import 'app_routes.dart';
 
 class AppRouter {
@@ -138,6 +140,16 @@ class AppRouter {
           builder: (_) => BlocProvider.value(
             value: getIt<EnderecoCubit>(),
             child: const EnderecosListView(),
+          ),
+        );
+
+      case Routes.enderecoEdit:
+        final endereco = settings.arguments as EnderecoModel;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<EnderecoCubit>(),
+            child: EnderecoEditView(endereco: endereco),
           ),
         );
 

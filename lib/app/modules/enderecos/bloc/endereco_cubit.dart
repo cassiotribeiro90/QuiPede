@@ -10,11 +10,10 @@ import 'endereco_state.dart';
 class EnderecoCubit extends Cubit<EnderecoState> {
   final EnderecoRepository _repository;
   bool _isCarregando = false;
-  bool _operacaoConcluida = false; // 🔥 NOVA FLAG PARA EVITAR DUPLICATAS
 
   EnderecoCubit(this._repository) : super(EnderecoInitial());
 
-  Future<void> carregarEnderecos() async {
+  Future<void> carregarEnderecos({bool mostrarLoading = true}) async {
     if (_isCarregando) {
       debugPrint('⏳ [EnderecoCubit] Carregamento já em andamento, ignorando...');
       return;
@@ -22,7 +21,11 @@ class EnderecoCubit extends Cubit<EnderecoState> {
     _isCarregando = true;
 
     try {
-      emit(EnderecoLoading());
+      final hasData = state is EnderecoLoaded && (state as EnderecoLoaded).enderecos.isNotEmpty;
+      if (mostrarLoading && !hasData) {
+        emit(EnderecoLoading());
+      }
+
       final enderecos = await _repository.getEnderecos();
 
       if (!isClosed) {
@@ -46,26 +49,18 @@ class EnderecoCubit extends Cubit<EnderecoState> {
     }
   }
 
-  /// Cria um novo endereço
   Future<void> criarEndereco(EnderecoModel endereco) async {
-    if (_operacaoConcluida) {
-      debugPrint('⚠️ [EnderecoCubit] Operação já concluída ou em andamento, ignorando...');
-      return;
-    }
-    _operacaoConcluida = true;
-
     try {
       print('🚀 [EnderecoCubit] Criando endereço: ${endereco.enderecoResumido}');
-      emit(EnderecoLoading());
+
       final result = await _repository.criarEndereco(endereco);
 
       if (!isClosed) {
-        // 🔥 CAPTURAR TOKEN E USUÁRIO (CONVIDADO) RETORNADOS PELO BACKEND
         final token = result['token'];
         final usuarioJson = result['usuario'];
 
         if (token != null && usuarioJson != null) {
-          debugPrint('🔑 [EnderecoCubit] Token de convidado detectado no retorno. Atualizando AuthCubit...');
+          debugPrint('🔑 [EnderecoCubit] Token de convidado detectado. Atualizando AuthCubit...');
           getIt<AuthCubit>().onEnderecoCriadoComToken(token, usuarioJson);
         }
 
@@ -73,8 +68,9 @@ class EnderecoCubit extends Cubit<EnderecoState> {
 
         if (enderecoData != null && enderecoData is Map<String, dynamic>) {
           final novo = EnderecoModel.fromJson(enderecoData);
-          print('✅ [EnderecoCubit] Endereço criado com sucesso: ID ${novo.id}');
+          print('✅ [EnderecoCubit] Endereço criado: ID ${novo.id}');
 
+          // Atualiza lista local
           final currentState = state;
           if (currentState is EnderecoLoaded) {
             final novosEnderecos = [...currentState.enderecos, novo];
@@ -86,22 +82,25 @@ class EnderecoCubit extends Cubit<EnderecoState> {
             }
             emit(EnderecoLoaded(novosEnderecos, enderecoPrincipal: principal));
           } else {
-            await carregarEnderecos();
+            await carregarEnderecos(mostrarLoading: false);
           }
 
+          // ✅ Emite estado específico de sucesso
           if (!isClosed) {
-            emit(const EnderecoOperacaoSucesso('Endereço adicionado com sucesso!'));
+            emit(EnderecoCriado(novo));
           }
         } else {
-          print('⚠️ [EnderecoCubit] Endereço criado, mas dados não retornados no formato esperado. Recarregando...');
-          await carregarEnderecos();
-          if (!isClosed) {
-            emit(const EnderecoOperacaoSucesso('Endereço adicionado com sucesso!'));
+          print('⚠️ [EnderecoCubit] Formato inesperado, recarregando...');
+          await carregarEnderecos(mostrarLoading: false);
+          if (!isClosed && state is EnderecoLoaded) {
+            final loaded = state as EnderecoLoaded;
+            if (loaded.enderecos.isNotEmpty) {
+              emit(EnderecoCriado(loaded.enderecos.last));
+            }
           }
         }
       }
     } catch (e) {
-      _operacaoConcluida = false; // 🔥 PERMITE NOVA TENTATIVA EM CASO DE ERRO
       if (!isClosed) {
         print('❌ [EnderecoCubit] Erro ao criar endereço: $e');
         emit(EnderecoError(e.toString()));
@@ -110,30 +109,57 @@ class EnderecoCubit extends Cubit<EnderecoState> {
   }
 
   Future<void> atualizarEndereco(EnderecoModel endereco) async {
-    _operacaoConcluida = false;
     try {
-      emit(EnderecoLoading());
-      await _repository.atualizarEndereco(endereco);
+      print('🔄 [EnderecoCubit] Atualizando endereço ID ${endereco.id}');
+
+      final atualizado = await _repository.atualizarEndereco(endereco);
+
       if (!isClosed) {
-        await carregarEnderecos();
+        print('✅ [EnderecoCubit] Endereço atualizado: ID ${atualizado.id}');
+
+        // Atualiza lista local
+        final currentState = state;
+        if (currentState is EnderecoLoaded) {
+          final index = currentState.enderecos.indexWhere((e) => e.id == atualizado.id);
+          if (index != -1) {
+            final novosEnderecos = [...currentState.enderecos];
+            novosEnderecos[index] = atualizado;
+
+            EnderecoModel? principal;
+            try {
+              principal = novosEnderecos.firstWhere((e) => e.principal == true);
+            } catch (_) {
+              principal = novosEnderecos.isNotEmpty ? novosEnderecos.first : null;
+            }
+
+            emit(EnderecoLoaded(novosEnderecos, enderecoPrincipal: principal));
+          }
+        }
+
+        // ✅ Emite estado específico de sucesso
         if (!isClosed) {
-          emit(const EnderecoOperacaoSucesso('Endereço atualizado com sucesso!'));
+          emit(EnderecoAtualizado(atualizado));
         }
       }
     } catch (e) {
       if (!isClosed) {
+        print('❌ [EnderecoCubit] Erro ao atualizar endereço: $e');
+        await carregarEnderecos(mostrarLoading: false);
         emit(EnderecoError(e.toString()));
       }
     }
   }
 
   Future<void> deletarEndereco(int id) async {
-    _operacaoConcluida = false;
     try {
-      emit(EnderecoLoading());
+      print('🗑️ [EnderecoCubit] Excluindo endereço ID $id');
+
       await _repository.deletarEndereco(id);
 
       if (!isClosed) {
+        print('✅ [EnderecoCubit] Endereço excluído: ID $id');
+
+        // Atualiza lista local
         final currentState = state;
         if (currentState is EnderecoLoaded) {
           final novosEnderecos = currentState.enderecos.where((e) => e.id != id).toList();
@@ -144,40 +170,56 @@ class EnderecoCubit extends Cubit<EnderecoState> {
             principal = novosEnderecos.isNotEmpty ? novosEnderecos.first : null;
           }
           emit(EnderecoLoaded(novosEnderecos, enderecoPrincipal: principal));
-          emit(const EnderecoOperacaoSucesso('Endereço removido com sucesso!'));
         } else {
-          await carregarEnderecos();
-          if (!isClosed) {
-            emit(const EnderecoOperacaoSucesso('Endereço removido com sucesso!'));
-          }
+          await carregarEnderecos(mostrarLoading: false);
+        }
+
+        // ✅ Emite estado específico de sucesso
+        if (!isClosed) {
+          emit(EnderecoExcluido(id));
         }
       }
     } catch (e) {
       if (!isClosed) {
+        print('❌ [EnderecoCubit] Erro ao excluir endereço: $e');
+        await carregarEnderecos(mostrarLoading: false);
         emit(EnderecoError(e.toString()));
       }
     }
   }
 
   Future<void> definirPrincipal(int id) async {
-    _operacaoConcluida = false;
     try {
-      await _repository.definirPrincipal(id);
+      print('⭐ [EnderecoCubit] Definindo endereço $id como selecionado');
+
+      final enderecosAtualizados = await _repository.definirPrincipal(id);
+
       if (!isClosed) {
-        await carregarEnderecos();
+        EnderecoModel? principal;
+        try {
+          principal = enderecosAtualizados.firstWhere((e) => e.principal == true);
+        } catch (_) {
+          principal = enderecosAtualizados.isNotEmpty ? enderecosAtualizados.first : null;
+        }
+
+        print('✅ [EnderecoCubit] Lista sincronizada: ${enderecosAtualizados.length} endereços');
+        emit(EnderecoLoaded(enderecosAtualizados, enderecoPrincipal: principal));
+
+        // ✅ Emite estado específico de sucesso
         if (!isClosed) {
-          emit(const EnderecoOperacaoSucesso('Endereço principal atualizado!'));
+          emit(EnderecoPrincipalDefinido(id));
         }
       }
     } catch (e) {
       if (!isClosed) {
+        print('❌ [EnderecoCubit] Erro ao definir principal: $e');
+        await carregarEnderecos(mostrarLoading: false);
         emit(EnderecoError(e.toString()));
       }
     }
   }
 
   Future<void> buscarCep(String cep) async {
-    _operacaoConcluida = false;
     try {
       emit(EnderecoCepBuscando());
       final dados = await _repository.buscarCep(cep);
@@ -191,16 +233,11 @@ class EnderecoCubit extends Cubit<EnderecoState> {
     }
   }
 
-  void resetarOperacao() {
-    _operacaoConcluida = false;
-  }
-
   void resetStatus() {
-    _operacaoConcluida = false;
     if (!isClosed) {
       final currentState = state;
-      if (currentState is EnderecoError || currentState is EnderecoOperacaoSucesso) {
-        carregarEnderecos();
+      if (currentState is EnderecoError) {
+        carregarEnderecos(mostrarLoading: false);
       }
     }
   }

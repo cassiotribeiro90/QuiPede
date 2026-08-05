@@ -8,7 +8,6 @@ class EnderecoRepository {
 
   Future<List<EnderecoModel>> getEnderecos() => _service.getEnderecos();
 
-  // 🔥 MUDOU: agora retorna Map<String, dynamic> para capturar token
   Future<Map<String, dynamic>> criarEndereco(EnderecoModel endereco) =>
       _service.criarEndereco(endereco);
 
@@ -17,7 +16,7 @@ class EnderecoRepository {
 
   Future<void> deletarEndereco(int id) => _service.deletarEndereco(id);
 
-  Future<EnderecoModel> definirPrincipal(int id) =>
+  Future<List<EnderecoModel>> definirPrincipal(int id) =>
       _service.definirPrincipal(id);
 
   Future<Map<String, String>> buscarCep(String cep) =>

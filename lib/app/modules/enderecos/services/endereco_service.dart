@@ -49,7 +49,7 @@ class EnderecoService {
       data['device_id'] = deviceId;
 
       print('📡 [EnderecoService] POST /app/enderecos');
-      
+
       final response = await _apiClient.post(
         '/app/enderecos',
         data: data,
@@ -64,7 +64,6 @@ class EnderecoService {
         final resultData = response.data['data'];
         print('✅ [EnderecoService] Endereço criado com sucesso');
 
-        // Normalização do retorno para o Cubit
         if (resultData is List) {
           return {
             'endereco': resultData.isNotEmpty ? resultData.first : null,
@@ -115,18 +114,45 @@ class EnderecoService {
     }
   }
 
-  /// Define um endereço como principal
-  Future<EnderecoModel> definirPrincipal(int id) async {
+  /// Define um endereço como principal (retorna lista completa)
+  Future<List<EnderecoModel>> definirPrincipal(int id) async {
     try {
-      final response = await _apiClient.post(
-        '/app/enderecos/$id/padrao',
+      print('📡 [EnderecoService] PUT /app/enderecos/$id/set-padrao');
+
+      final response = await _apiClient.put(
+        '/app/enderecos/$id/set-padrao',
+        data: {},
       );
 
+      print('📡 [EnderecoService] Status: ${response.statusCode}');
+
       if (response.statusCode == 200 && response.data['success'] == true) {
-        return EnderecoModel.fromJson(response.data['data']);
+        print('✅ [EnderecoService] Endereço definido como principal');
+
+        final data = response.data['data'];
+
+        // ✅ Agora retorna lista completa
+        if (data is List) {
+          return data.map((json) => EnderecoModel.fromJson(json as Map<String, dynamic>)).toList();
+        }
+
+        // Fallback: se voltar objeto único
+        if (data is Map) {
+          return [EnderecoModel.fromJson(Map<String, dynamic>.from(data))];
+        }
+
+        return [];
       }
-      throw Exception('Erro ao definir endereço principal');
-    } catch (e) {
+
+      throw Exception('Erro ao definir endereço principal: ${response.data['message'] ?? 'Resposta inesperada'}');
+    } on DioException catch (e) {
+      print('❌ [EnderecoService] DioException: ${e.response?.statusCode}');
+      print('❌ [EnderecoService] URL: ${e.requestOptions.uri}');
+      print('❌ [EnderecoService] Response: ${e.response?.data}');
+      rethrow;
+    } catch (e, stack) {
+      print('❌ [EnderecoService] Erro ao definir principal: $e');
+      print('❌ [EnderecoService] Stack: $stack');
       rethrow;
     }
   }
