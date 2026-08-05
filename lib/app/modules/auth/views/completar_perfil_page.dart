@@ -1,31 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/theme/app_text_styles.dart';
 
-class CompletarPerfilPage extends StatefulWidget {
+class CompletarPerfilPage extends StatelessWidget {
   final bool redirectToCheckout;
-  const CompletarPerfilPage({super.key, this.redirectToCheckout = false});
+
+  const CompletarPerfilPage({
+    super.key,
+    this.redirectToCheckout = false,
+  });
 
   @override
-  State<CompletarPerfilPage> createState() => _CompletarPerfilPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: context.read<AuthCubit>(),
+      child: _CompletarPerfilBody(redirectToCheckout: redirectToCheckout),
+    );
+  }
 }
 
-class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
+class _CompletarPerfilBody extends StatefulWidget {
+  final bool redirectToCheckout;
+  const _CompletarPerfilBody({required this.redirectToCheckout});
+
+  @override
+  State<_CompletarPerfilBody> createState() => _CompletarPerfilBodyState();
+}
+
+class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _whatsappController = TextEditingController();
-  
-  final _whatsappMask = MaskTextInputFormatter(
-    mask: '(##) #####-####',
-    filter: {"#": RegExp(r'[0-9]')},
-  );
-
   bool _isLoading = false;
 
   @override
@@ -36,51 +47,53 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
     super.dispose();
   }
 
-  void _continuar() {
-    if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _isLoading = true);
-      context.read<AuthCubit>().completarPerfil(
-        nome: _nomeController.text,
-        email: _emailController.text.isEmpty ? null : _emailController.text,
-        whatsapp: _whatsappController.text.isEmpty 
-            ? null 
-            : _whatsappController.text.replaceAll(RegExp(r'[^0-9]'), ''),
-      );
-    }
+  void _salvar() {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isLoading = true);
+    FocusScope.of(context).unfocus();
+
+    final nome = _nomeController.text.trim();
+    final email = _emailController.text.trim();
+    final whatsapp = _whatsappController.text.trim();
+
+    print('📝 [CompletarPerfil] Salvando perfil: nome=$nome, email=$email, whatsapp=$whatsapp');
+
+    context.read<AuthCubit>().completarPerfil(
+      nome: nome,
+      email: email.isNotEmpty ? email : null,
+      whatsapp: whatsapp.isNotEmpty ? whatsapp : null,
+      voltarPara: widget.redirectToCheckout ? Routes.carrinho : Routes.home,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔍 [LOG] CompletarPerfilPage foi construída');
     return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) {
+        return current is AuthPerfilCompleto || current is AuthError;
+      },
       listener: (context, state) {
-        if (state is AuthAuthenticated) {
-          setState(() => _isLoading = false);
-          if (widget.redirectToCheckout) {
-            Navigator.pushNamedAndRemoveUntil(context, Routes.carrinho, (route) => false);
-          } else {
-            Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
-          }
-        } else if (state is AuthOtpErro) {
+        if (state is AuthPerfilCompleto) {
+          print('✅ [CompletarPerfil] Perfil completado com sucesso');
+          // A navegação já é feita pelo Cubit via voltarPara
+        } else if (state is AuthError) {
+          print('❌ [CompletarPerfil] Erro: ${state.message}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       },
       child: ResponsivePageScaffold(
         appBar: AppBar(
-          title: const Text('Completar Perfil'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            tooltip: 'Voltar',
-          ),
-          elevation: 0,
+          title: const Text('Completar Cadastro'),
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
+          elevation: 0,
         ),
         backgroundColor: Colors.white,
         body: Align(
@@ -92,83 +105,114 @@ class _CompletarPerfilPageState extends State<CompletarPerfilPage> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      '🎉',
-                      style: TextStyle(fontSize: 48),
-                    ),
                     const SizedBox(height: 16),
-                    const Text(
+
+                    // Título
+                    Text(
                       'Quase lá!',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Só mais algumas informações para finalizar',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+
+                    // Subtítulo
+                    Text(
+                      'Preencha seus dados para finalizar o cadastro.',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.grey,
+                      ),
                     ),
                     const SizedBox(height: 32),
+
+                    // Nome (obrigatório)
                     AppTextField(
                       controller: _nomeController,
                       label: 'Nome',
-                      isRequired: true,
+                      hint: 'Seu nome',
                       prefixIcon: Icons.person_outline,
+                      isRequired: true,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Por favor, insira seu nome';
+                          return 'Nome é obrigatório';
+                        }
+                        if (value.trim().length < 3) {
+                          return 'Nome muito curto';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
+
+                    // Email (opcional)
                     AppTextField(
                       controller: _emailController,
                       label: 'E-mail (opcional)',
+                      hint: 'seu@email.com',
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value != null && value.isNotEmpty) {
-                          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                          if (!emailRegex.hasMatch(value)) {
-                            return 'Insira um e-mail válido';
+                          final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                          if (!emailRegex.hasMatch(value.trim())) {
+                            return 'E-mail inválido';
                           }
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
+
+                    // Whatsapp (opcional)
                     AppTextField(
                       controller: _whatsappController,
                       label: 'WhatsApp (opcional)',
-                      prefixIcon: Icons.phone_android,
+                      hint: '(11) 99999-9999',
+                      prefixIcon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
-                      // Note: I'll check if AppTextField supports inputFormatters.
-                      // Since it extends StatelessWidget and wraps TextFormField, 
-                      // I might need to add inputFormatters to AppTextField if it doesn't have it.
-                      // For now I'll check AppTextField definition again.
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          final numeros = value.replaceAll(RegExp(r'[^0-9]'), '');
+                          if (numeros.length < 10) {
+                            return 'Número de telefone inválido';
+                          }
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 32),
+
+                    // Botão Salvar
                     SizedBox(
                       width: double.infinity,
-                      height: 54,
+                      height: 50,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _continuar,
+                        onPressed: _isLoading ? null : _salvar,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Theme.of(context).primaryColor,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 0,
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text(
-                                'Continuar',
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
+                            ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                            : Text(
+                          'Finalizar Cadastro',
+                          style: AppTextStyles.button.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],

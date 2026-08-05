@@ -65,6 +65,41 @@ class AuthService {
     }
   }
 
+  /// ✅ Atualizar perfil do usuário (nome, email, whatsapp)
+  Future<Map<String, dynamic>> atualizarPerfil({
+    required String nome,
+    String? email,
+    String? whatsapp,
+  }) async {
+    try {
+      final data = <String, dynamic>{
+        'nome': nome,
+      };
+      if (email != null && email.isNotEmpty) {
+        data['email'] = email;
+      }
+      if (whatsapp != null && whatsapp.isNotEmpty) {
+        data['whatsapp'] = whatsapp;
+      }
+
+      print('📡 [AuthService] POST /app/auth/me com dados: $data');
+
+      final response = await _apiClient.post(
+        'app/auth/me',
+        data: data,
+        requiresAuth: true,
+      );
+
+      print('📡 [AuthService] Status: ${response.statusCode}');
+      print('📡 [AuthService] Response: ${response.data}');
+
+      return response.data;
+    } catch (e) {
+      print('❌ [AuthService] Erro ao atualizar perfil: $e');
+      rethrow;
+    }
+  }
+
   /// Logout
   Future<void> logout() async {
     try {

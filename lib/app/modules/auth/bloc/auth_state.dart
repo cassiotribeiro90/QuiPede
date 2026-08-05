@@ -62,3 +62,13 @@ class AuthOtpErro extends AuthState {
   @override
   List<Object?> get props => [mensagem];
 }
+
+// ✅ Novo estado: perfil completado com sucesso
+class AuthPerfilCompleto extends AuthState {
+  final String accessToken;
+  final UsuarioModel user;
+  const AuthPerfilCompleto({required this.accessToken, required this.user});
+
+  @override
+  List<Object?> get props => [accessToken, user];
+}
