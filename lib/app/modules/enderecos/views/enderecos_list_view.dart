@@ -5,7 +5,7 @@ import '../bloc/endereco_state.dart';
 import '../widgets/endereco_action_cards.dart';
 import '../models/endereco_model.dart';
 import '../../../core/theme/app_theme_extension.dart';
-import '../../../core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
+import '../../../core/theme/app_text_styles.dart';
 import '../../../routes/app_routes.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../home/bloc/localizacao_cubit.dart';
@@ -101,60 +101,126 @@ class _EnderecosListViewState extends State<EnderecosListView> {
             }
 
             final endereco = state.enderecos[index];
+            final isPrincipal = endereco.principal == true;
 
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 🔥 Logradouro
-                  Text(
-                    endereco.logradouro,
-                    style: AppTextStyles.bodyLarge.copyWith( // 20px
-                      fontWeight: FontWeight.bold,
-                    ),
+            return GestureDetector(
+              onTap: () {
+                if (!isPrincipal) {
+                  context.read<EnderecoCubit>().definirPrincipal(endereco.id!);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isPrincipal
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey.shade300,
+                    width: isPrincipal ? 2.5 : 1.0,
                   ),
-                  const SizedBox(height: 4),
-
-                  // 🔥 Bairro, Cidade - UF
-                  Text(
-                    '${endereco.bairro}, ${endereco.cidade} - ${endereco.uf}',
-                    style: AppTextStyles.bodyMedium.copyWith( // 18px
-                      color: Colors.grey.shade600,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Linha 1: Logradouro + botões de ação
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            endereco.logradouro,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // Botões editar/excluir
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  Routes.enderecoForm,
+                                  arguments: endereco,
+                                );
+                              },
+                              tooltip: 'Editar',
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                                color: Colors.red,
+                              ),
+                              onPressed: () => _confirmarExclusao(context, endereco),
+                              tooltip: 'Excluir',
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
 
-                  // 🔥 CEP
-                  Text(
-                    'CEP: ${endereco.cep}',
-                    style: AppTextStyles.bodySmall.copyWith( // 16px
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-
-                  if (endereco.principal == true) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Principal',
-                        style: AppTextStyles.caption.copyWith( // 13px
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    // Linha 2: Número (se existir)
+                    if (endereco.numero.isNotEmpty && endereco.numero != 'S/N')
+                      Text(
+                        'Nº ${endereco.numero}',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Colors.grey.shade600,
                         ),
                       ),
+
+                    const SizedBox(height: 4),
+
+                    // Linha 3: Bairro, Cidade - UF
+                    Text(
+                      '${endereco.bairro}, ${endereco.cidade} - ${endereco.uf}',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.grey.shade600,
+                      ),
                     ),
+
+                    // Linha 4: CEP
+                    Text(
+                      'CEP: ${endereco.cep}',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+
+                    // Selo Principal
+                    if (isPrincipal) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Principal',
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             );
           },
@@ -171,14 +237,14 @@ class _EnderecosListViewState extends State<EnderecosListView> {
             const SizedBox(height: 16),
             Text(
               state.message,
-              style: AppTextStyles.bodyLarge, // 20px
+              style: AppTextStyles.bodyLarge,
             ),
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => context.read<EnderecoCubit>().carregarEnderecos(),
               child: Text(
                 'Tentar novamente',
-                style: AppTextStyles.button, // 18px
+                style: AppTextStyles.button,
               ),
             ),
           ],
@@ -198,21 +264,17 @@ class _EnderecosListViewState extends State<EnderecosListView> {
           children: [
             Icon(Icons.location_off_outlined, size: 80, color: context.textHint.withOpacity(0.5)),
             const SizedBox(height: 24),
-
-            // 🔥 Título "Nenhum endereço cadastrado"
             Text(
               'Nenhum endereço cadastrado',
               style: context.titleLarge?.copyWith(fontWeight: FontWeight.bold) ??
-                  AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold), // 28px
+                  AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-
-            // 🔥 Subtítulo
             Text(
               'Adicione um endereço para encontrar as melhores lojas e receber seus pedidos com segurança.',
               textAlign: TextAlign.center,
               style: context.bodyMedium?.copyWith(color: context.textSecondary) ??
-                  AppTextStyles.bodyMedium.copyWith(color: context.textSecondary), // 18px
+                  AppTextStyles.bodyMedium.copyWith(color: context.textSecondary),
             ),
             const SizedBox(height: 40),
             const EnderecoActionCards(),
@@ -220,5 +282,29 @@ class _EnderecosListViewState extends State<EnderecosListView> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmarExclusao(BuildContext context, EnderecoModel endereco) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir endereço'),
+        content: const Text('Tem certeza que deseja excluir este endereço?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      context.read<EnderecoCubit>().deletarEndereco(endereco.id!);
+    }
   }
 }
