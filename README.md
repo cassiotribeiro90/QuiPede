@@ -36,23 +36,7 @@ App de delivery desenvolvido em Flutter com arquitetura limpa e BLoC.
 
 ---
 
-## 🚀 Como executar
-
-```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/qui-delivery.git
-
-# Entre no diretório
-cd qui-delivery
-
-# Instale as dependências
-flutter pub get
-
-# Execute o app
-flutter run
-
-
-Resumo Técnico do Projeto QuiPede
+## Resumo Técnico do Projeto QuiPede
 
 Stack: Flutter 3.x (Dart) no frontend, PHP 8.x com Yii2 no backend, banco MariaDB/MySQL. Gerenciamento de estado com flutter_bloc (Cubit) e injeção de dependências com GetIt. HTTP via Dio customizado no ApiClient. Navegação por rotas nomeadas (Navigator 1.0). Tema com AppThemeExtension e AppTextStyles (bodyLarge 20px, bodyMedium 18px, bodySmall 16px, caption 13px).
 
