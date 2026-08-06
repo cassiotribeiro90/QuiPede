@@ -16,6 +16,7 @@ class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
   final String accessToken;
+  @override
   final UsuarioModel? user;
   const AuthAuthenticated({required this.accessToken, this.user});
 
@@ -25,6 +26,7 @@ class AuthAuthenticated extends AuthState {
 
 class AuthGuest extends AuthState {
   final String accessToken;
+  @override
   final UsuarioModel? user;
   const AuthGuest({required this.accessToken, this.user});
 
@@ -68,6 +70,7 @@ class AuthOtpErro extends AuthState {
 // ✅ Novo estado: perfil completado com sucesso
 class AuthPerfilCompleto extends AuthState {
   final String accessToken;
+  @override
   final UsuarioModel user;
   const AuthPerfilCompleto({required this.accessToken, required this.user});
 

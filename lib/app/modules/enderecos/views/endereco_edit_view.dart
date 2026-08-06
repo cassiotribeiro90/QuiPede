@@ -47,12 +47,12 @@ class _EnderecoEditViewState extends State<EnderecoEditView> {
       },
       listener: (context, state) {
         if (state is EnderecoAtualizado) {
-          print('✅ [EnderecoEditView] Endereço atualizado, voltando para lista');
+          debugPrint('✅ [EnderecoEditView] Endereço atualizado, voltando para lista');
           if (mounted) {
             Navigator.pop(context);
           }
         } else if (state is EnderecoError) {
-          print('❌ [EnderecoEditView] Erro ao atualizar: ${state.message}');
+          debugPrint('❌ [EnderecoEditView] Erro ao atualizar: ${state.message}');
           setState(() => _isSaving = false);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -156,7 +156,7 @@ class _EnderecoEditViewState extends State<EnderecoEditView> {
       referencia: _referenciaController.text,
     );
 
-    print('📝 [EnderecoEditView] Salvando alterações do endereço ID ${enderecoAtualizado.id}');
+    debugPrint('📝 [EnderecoEditView] Salvando alterações do endereço ID ${enderecoAtualizado.id}');
     context.read<EnderecoCubit>().atualizarEndereco(enderecoAtualizado);
   }
 }

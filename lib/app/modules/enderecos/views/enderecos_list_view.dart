@@ -40,7 +40,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
       },
       listener: (context, state) {
         if (state is EnderecoError) {
-          print('❌ [EnderecosListView] Erro: ${state.message}');
+          debugPrint('❌ [EnderecosListView] Erro: ${state.message}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
@@ -48,7 +48,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
             ),
           );
         } else if (state is EnderecoCriado) {
-          print('✅ [EnderecosListView] Endereço criado: ID ${state.endereco.id}');
+          debugPrint('✅ [EnderecosListView] Endereço criado: ID ${state.endereco.id}');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Endereço adicionado com sucesso!'),
@@ -56,7 +56,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
             ),
           );
         } else if (state is EnderecoExcluido) {
-          print('✅ [EnderecosListView] Endereço excluído: ID ${state.id}');
+          debugPrint('✅ [EnderecosListView] Endereço excluído: ID ${state.id}');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Endereço removido com sucesso!'),
@@ -64,7 +64,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
             ),
           );
         } else if (state is EnderecoPrincipalDefinido) {
-          print('✅ [EnderecosListView] Principal definido: ID ${state.id}');
+          debugPrint('✅ [EnderecosListView] Principal definido: ID ${state.id}');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Endereço selecionado!'),
@@ -122,7 +122,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
 
   Widget _buildBody(BuildContext context, EnderecoState state) {
     if (state is EnderecoLoading && _cachedEnderecos == null) {
-      print('⏳ [EnderecosListView] Mostrando loading inicial');
+      debugPrint('⏳ [EnderecosListView] Mostrando loading inicial');
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -130,16 +130,16 @@ class _EnderecosListViewState extends State<EnderecosListView> {
     final principal = state is EnderecoLoaded ? state.enderecoPrincipal : _cachedPrincipal;
 
     if (enderecos == null) {
-      print('⏳ [EnderecosListView] Aguardando primeira carga');
+      debugPrint('⏳ [EnderecosListView] Aguardando primeira carga');
       return const Center(child: CircularProgressIndicator());
     }
 
     if (enderecos.isEmpty) {
-      print('📭 [EnderecosListView] Lista vazia');
+      debugPrint('📭 [EnderecosListView] Lista vazia');
       return _buildEmptyState(context);
     }
 
-    print('📋 [EnderecosListView] Exibindo ${enderecos.length} endereços');
+    debugPrint('📋 [EnderecosListView] Exibindo ${enderecos.length} endereços');
 
     return RefreshIndicator(
       onRefresh: () => context.read<EnderecoCubit>().carregarEnderecos(),
@@ -161,7 +161,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
           return GestureDetector(
             onTap: () {
               if (!isSelected) {
-                print('👆 [EnderecosListView] Selecionando endereço ID ${endereco.id}');
+                debugPrint('👆 [EnderecosListView] Selecionando endereço ID ${endereco.id}');
                 context.read<EnderecoCubit>().definirPrincipal(endereco.id!);
               }
             },
@@ -179,7 +179,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
                 boxShadow: [
                   if (isSelected)
                     BoxShadow(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -209,14 +209,16 @@ class _EnderecosListViewState extends State<EnderecosListView> {
                               color: Theme.of(context).primaryColor,
                             ),
                             onPressed: () {
-                              print('✏️ [EnderecosListView] Editando endereço ID ${endereco.id}');
+                              debugPrint('✏️ [EnderecosListView] Editando endereço ID ${endereco.id}');
                               // ✅ Recarrega a lista ao voltar da edição
                               getIt<NavigationService>().pushNamed(
                                 Routes.enderecoEdit,
                                 arguments: endereco,
                               ).then((_) {
-                                print('🔄 [EnderecosListView] Voltou da edição, recarregando lista');
-                                context.read<EnderecoCubit>().carregarEnderecos(mostrarLoading: false);
+                                debugPrint('🔄 [EnderecosListView] Voltou da edição, recarregando lista');
+                                if(context.mounted) {
+                                  context.read<EnderecoCubit>().carregarEnderecos(mostrarLoading: false);
+                                }
                               });
                             },
                             tooltip: 'Editar',
@@ -282,7 +284,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.location_off_outlined, size: 80, color: context.textHint.withOpacity(0.5)),
+            Icon(Icons.location_off_outlined, size: 80, color: context.textHint.withValues(alpha: 0.5)),
             const SizedBox(height: 24),
             Text(
               'Nenhum endereço cadastrado',
@@ -303,7 +305,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
   }
 
   Future<void> _confirmarExclusao(BuildContext context, EnderecoModel endereco) async {
-    print('🗑️ [EnderecosListView] Confirmando exclusão do endereço ID ${endereco.id}');
+    debugPrint('🗑️ [EnderecosListView] Confirmando exclusão do endereço ID ${endereco.id}');
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -324,7 +326,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
     );
 
     if (confirm == true && context.mounted) {
-      print('✅ [EnderecosListView] Exclusão confirmada');
+      debugPrint('✅ [EnderecosListView] Exclusão confirmada');
       context.read<EnderecoCubit>().deletarEndereco(endereco.id!);
     }
   }

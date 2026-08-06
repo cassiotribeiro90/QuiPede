@@ -64,7 +64,7 @@ class CarrinhoBottomBar extends StatelessWidget {
             color: context.surfaceColor,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -76,22 +76,22 @@ class CarrinhoBottomBar extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: isBarLoading
-                    ? Row(
+                    ? const Row(
                   children: [
-                    const LoadingSkeleton(width: 40, height: 40, borderRadius: 12),
-                    const SizedBox(width: 12),
+                    LoadingSkeleton(width: 40, height: 40, borderRadius: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           LoadingSkeleton(width: 120, height: 16, borderRadius: 4),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           LoadingSkeleton(width: 60, height: 12, borderRadius: 4),
                         ],
                       ),
                     ),
-                    const LoadingSkeleton(width: 70, height: 20, borderRadius: 4),
+                    LoadingSkeleton(width: 70, height: 20, borderRadius: 4),
                   ],
                 )
                     : Row(

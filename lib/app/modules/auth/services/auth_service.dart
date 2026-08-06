@@ -1,5 +1,4 @@
-import 'package:dio/dio.dart';
-
+import 'package:flutter/foundation.dart';
 import '../../../../shared/api/api_client.dart';
 import '../../../../shared/services/token_service.dart';
 
@@ -78,7 +77,7 @@ class AuthService {
         data['email'] = email;
       }
 
-      print('📡 [AuthService] POST /app/auth/me com dados: $data');
+      debugPrint('📡 [AuthService] POST /app/auth/me com dados: $data');
 
       final response = await _apiClient.post(
         'app/auth/me',
@@ -86,12 +85,12 @@ class AuthService {
         requiresAuth: true,
       );
 
-      print('📡 [AuthService] Status: ${response.statusCode}');
-      print('📡 [AuthService] Response: ${response.data}');
+      debugPrint('📡 [AuthService] Status: ${response.statusCode}');
+      debugPrint('📡 [AuthService] Response: ${response.data}');
 
       return response.data;
     } catch (e) {
-      print('❌ [AuthService] Erro ao atualizar perfil: $e');
+      debugPrint('❌ [AuthService] Erro ao atualizar perfil: $e');
       rethrow;
     }
   }

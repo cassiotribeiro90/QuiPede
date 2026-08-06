@@ -19,7 +19,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
 
   bool _isLoading = false;
 
-  LojaHomeCubit(this._repository, this.lojaId) : super(LojaHomeInitial());
+  LojaHomeCubit(this._repository, this.lojaId) : super(const LojaHomeInitial());
 
   Future<void> loadLoja() async {
     if (_isLoading) return;
@@ -27,7 +27,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
     _isLoading = true;
     _currentPage = 1;
 
-    emit(LojaHomeLoading());
+    emit(const LojaHomeLoading());
 
     try {
       final response = await _repository.getLojaDetalhe(

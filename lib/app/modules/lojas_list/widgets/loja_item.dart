@@ -24,7 +24,7 @@ class LojaItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: context.surfaceColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: context.borderColor.withOpacity(0.5)),
+                border: Border.all(color: context.borderColor.withValues(alpha: 0.5)),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
@@ -121,7 +121,7 @@ class LojaItem extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: context.successColor.withOpacity(0.1),
+                    color: context.successColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(

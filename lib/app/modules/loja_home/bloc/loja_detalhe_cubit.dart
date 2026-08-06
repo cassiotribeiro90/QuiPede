@@ -19,7 +19,7 @@ class LojaDetalheCubit extends Cubit<LojaDetalheState> {
         hasMore: loja.pagination.page < loja.pagination.totalPages,
       ));
     } catch (e) {
-      emit(LojaDetalheError('Erro ao carregar loja: ${e.toString()}'));
+      emit(const LojaDetalheError('Erro ao carregar loja'));
     }
   }
 
@@ -93,7 +93,7 @@ class LojaDetalheCubit extends Cubit<LojaDetalheState> {
           orderBy: currentState.orderBy,
         ));
       } catch (e) {
-        emit(LojaDetalheError('Erro ao filtrar produtos'));
+        emit(const LojaDetalheError('Erro ao filtrar produtos'));
       }
     }
   }
@@ -118,7 +118,7 @@ class LojaDetalheCubit extends Cubit<LojaDetalheState> {
           orderBy: currentState.orderBy,
         ));
       } catch (e) {
-        emit(LojaDetalheError('Erro ao buscar produtos'));
+        emit(const LojaDetalheError('Erro ao buscar produtos'));
       }
     }
   }
@@ -143,7 +143,7 @@ class LojaDetalheCubit extends Cubit<LojaDetalheState> {
           search: currentState.search,
         ));
       } catch (e) {
-        emit(LojaDetalheError('Erro ao ordenar produtos'));
+        emit(const LojaDetalheError('Erro ao ordenar produtos'));
       }
     }
   }

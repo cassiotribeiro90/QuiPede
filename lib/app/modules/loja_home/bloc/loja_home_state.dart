@@ -52,8 +52,6 @@ class LojaHomeLoading extends LojaHomeState {
 }
 
 class LojaHomeLoaded extends LojaHomeState {
-  @override
-  final LojaDetalheModel loja;
   final PaginationModel pagination;
   final LojaFilterOptions filterOptions;
   final bool hasMore;
@@ -65,7 +63,7 @@ class LojaHomeLoaded extends LojaHomeState {
   final int activeFilterCount;
 
   const LojaHomeLoaded({
-    required this.loja,
+    required LojaDetalheModel loja,
     required super.secoes,
     required this.pagination,
     required this.filterOptions,
@@ -82,6 +80,9 @@ class LojaHomeLoaded extends LojaHomeState {
     super.isAddingToCart,
     super.addingProductId,
   }) : super(loja: loja);
+
+  @override
+  LojaDetalheModel get loja => super.loja!;
 
   LojaHomeLoaded copyWith({
     LojaDetalheModel? loja,

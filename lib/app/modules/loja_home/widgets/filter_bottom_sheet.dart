@@ -72,8 +72,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               children: [
                 Text(
                   'Filtrar produtos',
-                  style: context.titleMedium?.copyWith(fontWeight: FontWeight.bold) ??
-                      AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -116,7 +115,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: context.textHint.withOpacity(0.3),
+        color: context.textHint.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -150,8 +149,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       children: [
         Text(
           'Ordenar por',
-          style: context.titleSmall?.copyWith(fontWeight: FontWeight.bold) ??
-              AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+          style: context.titleSmall.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -206,8 +204,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       children: [
         Text(
           'Categorias',
-          style: context.titleSmall?.copyWith(fontWeight: FontWeight.bold) ??
-              AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+          style: context.titleSmall.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -251,7 +248,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         color: context.backgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),

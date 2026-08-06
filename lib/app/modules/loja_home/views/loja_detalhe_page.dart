@@ -189,7 +189,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
                   _buildBody(context, state),
                   if (state is LojaHomeLoaded && state.isFiltering)
                     Container(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       child: const Center(child: CircularProgressIndicator()),
                     ),
                 ],

@@ -53,7 +53,7 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
     final nome = _nomeController.text.trim();
     final email = _emailController.text.trim();
 
-    print('📝 [CompletarPerfil] Salvando perfil: nome=$nome, email=$email');
+    debugPrint('📝 [CompletarPerfil] Salvando perfil: nome=$nome, email=$email');
 
     // ✅ Não passa voltarPara — o Cubit apenas salva e emite AuthPerfilCompleto
     context.read<AuthCubit>().completarPerfil(
@@ -70,13 +70,13 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
       },
       listener: (context, state) {
         if (state is AuthPerfilCompleto) {
-          print('✅ [CompletarPerfil] Perfil completado - fechando tela');
+          debugPrint('✅ [CompletarPerfil] Perfil completado - fechando tela');
           // ✅ Apenas fecha esta tela. O AppRouter validará na próxima vez que abrir o carrinho.
           if (mounted) {
             Navigator.pop(context);
           }
         } else if (state is AuthError) {
-          print('❌ [CompletarPerfil] Erro: ${state.message}');
+          debugPrint('❌ [CompletarPerfil] Erro: ${state.message}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),

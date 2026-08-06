@@ -6,13 +6,13 @@ class TokenService {
   static final TokenService _instance = TokenService._internal();
   factory TokenService() => _instance;
   
-  static const String ACCESS_TOKEN_KEY = 'access_token';
-  static const String GUEST_TOKEN_KEY = 'guest_token'; // 🔥 Chave separada para convidados
-  static const String USER_KEY = 'user_data';
-  static const String REFRESH_TOKEN_KEY = 'refresh_token';
-  static const String TOKEN_EXPIRES_KEY = 'token_expires_at';
-  static const String BASE_URL_KEY = 'base_url';
-  static const String IS_GUEST_KEY = 'is_guest';
+  static const String accessTokenKey = 'access_token';
+  static const String guestTokenKey = 'guest_token';
+  static const String userKey = 'user_data';
+  static const String refreshTokenKey = 'refresh_token';
+  static const String tokenExpiresKey = 'token_expires_at';
+  static const String baseUrlKey = 'base_url';
+  static const String isGuestKey = 'is_guest';
 
   late final SharedPreferences _prefs;
 
@@ -30,11 +30,11 @@ class TokenService {
     Map<String, dynamic>? userJson,
   }) async {
     if (isGuest) {
-      await _prefs.setString(GUEST_TOKEN_KEY, accessToken);
-      await _prefs.remove(ACCESS_TOKEN_KEY);
+      await _prefs.setString(guestTokenKey, accessToken);
+      await _prefs.remove(accessTokenKey);
     } else {
-      await _prefs.setString(ACCESS_TOKEN_KEY, accessToken);
-      await _prefs.remove(GUEST_TOKEN_KEY);
+      await _prefs.setString(accessTokenKey, accessToken);
+      await _prefs.remove(guestTokenKey);
     }
     
     if (userJson != null) {
@@ -42,22 +42,22 @@ class TokenService {
     }
 
     if (refreshToken != null) {
-      await _prefs.setString(REFRESH_TOKEN_KEY, refreshToken);
+      await _prefs.setString(refreshTokenKey, refreshToken);
     } else {
-      await _prefs.remove(REFRESH_TOKEN_KEY);
+      await _prefs.remove(refreshTokenKey);
     }
     
-    await _prefs.setBool(IS_GUEST_KEY, isGuest);
+    await _prefs.setBool(isGuestKey, isGuest);
     final expiresAt = DateTime.now().millisecondsSinceEpoch + (expiresIn * 1000);
-    await _prefs.setString(TOKEN_EXPIRES_KEY, expiresAt.toString());
+    await _prefs.setString(tokenExpiresKey, expiresAt.toString());
   }
 
   Future<void> saveUser(Map<String, dynamic> userJson) async {
-    await _prefs.setString(USER_KEY, jsonEncode(userJson));
+    await _prefs.setString(userKey, jsonEncode(userJson));
   }
 
   Map<String, dynamic>? getUser() {
-    final data = _prefs.getString(USER_KEY);
+    final data = _prefs.getString(userKey);
     if (data == null || data.isEmpty) return null;
     try {
       return jsonDecode(data);
@@ -68,12 +68,12 @@ class TokenService {
 
   /// Retorna o token disponível, priorizando o de usuário autenticado
   String? getAccessToken() {
-    return _prefs.getString(ACCESS_TOKEN_KEY) ?? _prefs.getString(GUEST_TOKEN_KEY);
+    return _prefs.getString(accessTokenKey) ?? _prefs.getString(guestTokenKey);
   }
 
-  String? getRefreshToken() => _prefs.getString(REFRESH_TOKEN_KEY);
+  String? getRefreshToken() => _prefs.getString(refreshTokenKey);
   
-  bool isGuest() => _prefs.getBool(IS_GUEST_KEY) ?? (_prefs.getString(GUEST_TOKEN_KEY) != null);
+  bool isGuest() => _prefs.getBool(isGuestKey) ?? (_prefs.getString(guestTokenKey) != null);
 
   Map<String, String> getAuthHeader() {
     final token = getAccessToken();
@@ -83,7 +83,7 @@ class TokenService {
   }
 
   bool isTokenExpired() {
-    final expiresAtStr = _prefs.getString(TOKEN_EXPIRES_KEY);
+    final expiresAtStr = _prefs.getString(tokenExpiresKey);
     if (expiresAtStr == null) return true;
     final expiresAt = int.tryParse(expiresAtStr) ?? 0;
     // Margem de segurança de 30 segundos
@@ -99,19 +99,19 @@ class TokenService {
   bool isLoggedIn() => hasToken() && !isTokenExpired();
 
   Future<void> clearTokens() async {
-    await _prefs.remove(ACCESS_TOKEN_KEY);
-    await _prefs.remove(GUEST_TOKEN_KEY);
-    await _prefs.remove(USER_KEY);
-    await _prefs.remove(REFRESH_TOKEN_KEY);
-    await _prefs.remove(TOKEN_EXPIRES_KEY);
-    await _prefs.remove(IS_GUEST_KEY);
+    await _prefs.remove(accessTokenKey);
+    await _prefs.remove(guestTokenKey);
+    await _prefs.remove(userKey);
+    await _prefs.remove(refreshTokenKey);
+    await _prefs.remove(tokenExpiresKey);
+    await _prefs.remove(isGuestKey);
   }
 
   Future<void> saveBaseUrl(String url) async {
-    await _prefs.setString(BASE_URL_KEY, url);
+    await _prefs.setString(baseUrlKey, url);
   }
 
-  String? getBaseUrl() => _prefs.getString(BASE_URL_KEY);
+  String? getBaseUrl() => _prefs.getString(baseUrlKey);
 
   Future<bool> refreshToken(Dio dio) async {
     try {

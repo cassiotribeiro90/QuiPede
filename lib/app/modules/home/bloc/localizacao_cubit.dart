@@ -83,7 +83,7 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
       longitude: longitude,
     );
 
-    print('🔍 [LocalizacaoCubit] definirLocalizacaoManual: ${endereco.resumido}');
+    debugPrint('🔍 [LocalizacaoCubit] definirLocalizacaoManual: ${endereco.resumido}');
 
     final estado = LocalizacaoCarregada(
       endereco: endereco,
@@ -97,7 +97,7 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
 
   /// Define a localização a partir de um modelo completo (após confirmação da API)
   void definirEnderecoCompleto(EnderecoModel endereco, {String origem = 'manual'}) {
-    print('🔍 [LocalizacaoCubit] definirEnderecoCompleto: ${endereco.resumido}');
+    debugPrint('🔍 [LocalizacaoCubit] definirEnderecoCompleto: ${endereco.resumido}');
     final estado = LocalizacaoCarregada(
       endereco: endereco,
       origem: origem,

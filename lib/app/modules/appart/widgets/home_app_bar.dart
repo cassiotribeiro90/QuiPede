@@ -21,7 +21,6 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context;
-    final isMobile = MediaQuery.of(context).size.width < 600;
     
     return AppBar(
       elevation: 0,

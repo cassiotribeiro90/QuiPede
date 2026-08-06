@@ -74,14 +74,14 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
             },
           ).then((result) {
             if (result == true && mounted) {
-              print('🧭 [PhoneInputPage] OTP sucesso - substituindo esta tela pelo destino correto');
+              debugPrint('🧭 [PhoneInputPage] OTP sucesso - substituindo esta tela pelo destino correto');
               // ✅ Substitui PhoneInput pelo próximo passo (Carrinho ou CompletarPerfil)
               // O AppRouter fará a validação síncrona
               getIt<NavigationService>().pushReplacementNamed(Routes.carrinho);
             }
           });
         } else if (state is AuthOtpErro) {
-          print('🧭 [PhoneInputPage] AuthOtpErro: ${state.mensagem}');
+          debugPrint('🧭 [PhoneInputPage] AuthOtpErro: ${state.mensagem}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),

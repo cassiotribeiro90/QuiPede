@@ -16,7 +16,7 @@ class EnderecoModel extends Equatable {
   final double? longitude;
   final String? referencia;
   final String? destinatario;
-  final String? telefone_contato;
+  final String? telefoneContato;
 
   const EnderecoModel({
     this.id,
@@ -33,7 +33,7 @@ class EnderecoModel extends Equatable {
     this.longitude,
     this.referencia,
     this.destinatario,
-    this.telefone_contato,
+    this.telefoneContato,
   });
 
   // 🔥 GETTER RESUMIDO
@@ -123,7 +123,7 @@ class EnderecoModel extends Equatable {
         longitude: parseDouble(json['longitude']),
         referencia: json['referencia']?.toString(),
         destinatario: json['destinatario']?.toString(),
-        telefone_contato: json['telefone_contato']?.toString(),
+        telefoneContato: (json['telefone_contato'] ?? json['telefoneContato'])?.toString(),
       );
 
       debugPrint('✅ [EnderecoModel.fromJson] Parsing concluído: ${result.resumido} (ID: ${result.id})');
@@ -155,7 +155,7 @@ class EnderecoModel extends Equatable {
     'longitude': longitude,
     'referencia': referencia,
     'destinatario': destinatario,
-    'telefone_contato': telefone_contato,
+    'telefone_contato': telefoneContato,
   };
 
   // 🔥 COPY WITH
@@ -174,7 +174,7 @@ class EnderecoModel extends Equatable {
     double? longitude,
     String? referencia,
     String? destinatario,
-    String? telefone_contato,
+    String? telefoneContato,
   }) {
     return EnderecoModel(
       id: id ?? this.id,
@@ -191,7 +191,7 @@ class EnderecoModel extends Equatable {
       longitude: longitude ?? this.longitude,
       referencia: referencia ?? this.referencia,
       destinatario: destinatario ?? this.destinatario,
-      telefone_contato: telefone_contato ?? this.telefone_contato,
+      telefoneContato: telefoneContato ?? this.telefoneContato,
     );
   }
 
@@ -211,6 +211,6 @@ class EnderecoModel extends Equatable {
     longitude,
     referencia,
     destinatario,
-    telefone_contato,
+    telefoneContato,
   ];
 }

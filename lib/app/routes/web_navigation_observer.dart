@@ -7,7 +7,7 @@ class WebNavigationObserver extends NavigatorObserver {
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
     _history.add(route.settings.name ?? '/');
-    print('📌 [WebNav] Push: ${route.settings.name}');
+    debugPrint('📌 [WebNav] Push: ${route.settings.name}');
   }
 
   @override
@@ -16,7 +16,7 @@ class WebNavigationObserver extends NavigatorObserver {
     if (_history.isNotEmpty) {
       _history.removeLast();
     }
-    print('📌 [WebNav] Pop: ${route.settings.name}');
+    debugPrint('📌 [WebNav] Pop: ${route.settings.name}');
   }
 
   @override
@@ -25,7 +25,7 @@ class WebNavigationObserver extends NavigatorObserver {
     if (_history.isNotEmpty) {
       _history.removeLast();
     }
-    print('📌 [WebNav] Remove: ${route.settings.name}');
+    debugPrint('📌 [WebNav] Remove: ${route.settings.name}');
   }
 
   @override
@@ -37,7 +37,7 @@ class WebNavigationObserver extends NavigatorObserver {
     if (newRoute != null) {
       _history.add(newRoute.settings.name ?? '/');
     }
-    print('📌 [WebNav] Replace: ${oldRoute?.settings.name} -> ${newRoute?.settings.name}');
+    debugPrint('📌 [WebNav] Replace: ${oldRoute?.settings.name} -> ${newRoute?.settings.name}');
   }
 
   static bool canPop() {

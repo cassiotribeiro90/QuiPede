@@ -24,14 +24,14 @@ class _BottomNavWrapperState extends State<BottomNavWrapper> {
   ];
 
   void _onItemTapped(int index) {
-    print('🖱️ Clicou no índice: $index'); // ← DEVE APARECER
+    debugPrint('🖱️ Clicou no índice: $index');
     
     final authState = context.read<AuthCubit>().state;
     final isLogged = authState is AuthAuthenticated;
 
     // Índice 3 é Perfil/Entrar
     if (index == 3 && !isLogged) {
-      print('🚀 Navegando para login'); // ← DEVE APARECER
+      debugPrint('🚀 Navegando para login');
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const OnboardingPage()),
@@ -52,7 +52,7 @@ class _BottomNavWrapperState extends State<BottomNavWrapper> {
       builder: (context, authState) {
         final isLogged = authState is AuthAuthenticated;
         
-        print('🔐 AuthState: ${isLogged ? "Logado" : "Deslogado"}'); // ← DEVE APARECER
+        debugPrint('🔐 AuthState: ${isLogged ? "Logado" : "Deslogado"}');
 
         return Scaffold(
           body: IndexedStack(

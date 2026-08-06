@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class PendingProductService {
   static final PendingProductService _instance = PendingProductService._internal();
   factory PendingProductService() => _instance;
@@ -9,7 +11,7 @@ class PendingProductService {
   void setProduto(dynamic produto, int lojaId) {
     _produto = produto;
     _lojaId = lojaId;
-    print('✅ [PendingProductService] Produto salvo: ${produto?.nome} - Loja: $lojaId');
+    debugPrint('✅ [PendingProductService] Produto salvo: ${produto?.nome} - Loja: $lojaId');
   }
 
   dynamic getProduto() {
@@ -23,7 +25,7 @@ class PendingProductService {
   bool get hasPending => _produto != null && _lojaId != null;
 
   void clear() {
-    print('✅ [PendingProductService] Limpando produto: ${_produto?.nome}');
+    debugPrint('✅ [PendingProductService] Limpando produto: ${_produto?.nome}');
     _produto = null;
     _lojaId = null;
   }

@@ -6,12 +6,12 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🏠 [HomeScreen] build() chamado');
+    debugPrint('🏠 [HomeScreen] build() chamado');
     try {
       return const LojasListScreen();
     } catch (e, stack) {
-      print('❌ [HomeScreen] ERRO: $e');
-      print(stack);
+      debugPrint('❌ [HomeScreen] ERRO: $e');
+      debugPrint(stack.toString());
       return Scaffold(
         appBar: AppBar(title: const Text('Erro')),
         body: Center(child: Text('Erro ao carregar lojas: $e')),

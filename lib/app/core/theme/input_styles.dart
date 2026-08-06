@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class InputStyles {
-  static const Color _primaryColor = AppColors.primary;
   static const Color _surfaceColor = AppColors.surface;
   static const double _borderRadius = 16.0;
 

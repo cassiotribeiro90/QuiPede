@@ -70,8 +70,6 @@ class EnderecoCard extends StatelessWidget {
     final displayBairro = isListMode ? endereco!.bairro : (bairro ?? '');
     final displayCidade = isListMode ? endereco!.cidade : (cidade ?? '');
     final displayUf = isListMode ? endereco!.uf : (uf ?? '');
-    final displayCep = isListMode ? endereco!.cep : (cep ?? '');
-    final displayLabel = isListMode ? (endereco!.label ?? 'Endereço') : 'Endereço';
     final displayPrincipal = isListMode ? isPrincipal : false;
 
     // 🔥 FALLBACK SEGURO PARA enderecoCompleto
@@ -90,7 +88,7 @@ class EnderecoCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: displayPrincipal
-            ? Theme.of(context).primaryColor.withOpacity(0.05)
+            ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
             : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
@@ -108,8 +106,8 @@ class EnderecoCard extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Icon(
-                      displayPrincipal ? Icons.check_circle : Icons.location_on,
+                    const Icon(
+                      Icons.check_circle,
                       color: AppColors.primary,
                       size: 24,
                     ),
@@ -164,7 +162,7 @@ class EnderecoCard extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onDelete,
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.delete_outline,
                     size: 20,
                     color: Colors.red,

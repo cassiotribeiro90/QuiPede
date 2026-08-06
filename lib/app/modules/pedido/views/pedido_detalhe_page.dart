@@ -132,7 +132,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
                         Text(item.nome, style: context.bodyLarge),
                         Text(
                           '${item.quantidade}x ${_formatarMoeda(item.precoUnitario)}',
-                          style: context.bodySmall?.copyWith(color: context.textSecondary),
+                          style: context.bodySmall.copyWith(color: context.textSecondary),
                         ),
                       ],
                     ),
@@ -143,7 +143,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
                   ),
                 ],
               ),
-            )).toList(),
+            )),
             const Divider(height: 32, thickness: 1),
 
             // Endereço
@@ -179,7 +179,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
                       if (pedido.trocoPara != null)
                         Text(
                           'Troco para ${_formatarMoeda(pedido.trocoPara!)}',
-                          style: context.bodySmall?.copyWith(color: context.textSecondary),
+                          style: context.bodySmall.copyWith(color: context.textSecondary),
                         ),
                     ],
                   ),
@@ -255,7 +255,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: context.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -266,13 +266,13 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
         Text(
           label,
           style: isTotal
-              ? context.titleLarge?.copyWith(fontWeight: FontWeight.bold)
-              : context.bodyMedium?.copyWith(color: context.textSecondary),
+              ? context.titleLarge.copyWith(fontWeight: FontWeight.bold)
+              : context.bodyMedium.copyWith(color: context.textSecondary),
         ),
         Text(
           value,
           style: isTotal
-              ? context.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: context.primaryColor)
+              ? context.titleLarge.copyWith(fontWeight: FontWeight.bold, color: context.primaryColor)
               : context.bodyLarge,
         ),
       ],

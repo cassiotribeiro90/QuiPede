@@ -111,7 +111,7 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
       listener: (context, state) {
         // ✅ Endereço criado com sucesso
         if (state is EnderecoCriado) {
-          print('✅ [EnderecoConfirmacaoPage] Endereço criado: ID ${state.endereco.id}');
+          debugPrint('✅ [EnderecoConfirmacaoPage] Endereço criado: ID ${state.endereco.id}');
           setState(() => _isLoading = false);
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +127,7 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
         }
         // ✅ Erro ao criar
         else if (state is EnderecoError) {
-          print('❌ [EnderecoConfirmacaoPage] Erro: ${state.message}');
+          debugPrint('❌ [EnderecoConfirmacaoPage] Erro: ${state.message}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),

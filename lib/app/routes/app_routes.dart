@@ -12,6 +12,7 @@ class Routes {
   static const String carrinho = '/carrinho';
   static const String pedidos = '/pedidos';
   static const String meusEnderecos = '/meus-enderecos';
+  static const String enderecoConfirmacao = '/endereco-confirmacao';
   static const String enderecoForm = '/endereco-form';
   static const String enderecoEdit = '/endereco-edit';
   static const String pedidoDetalhe = '/pedido-detalhe';

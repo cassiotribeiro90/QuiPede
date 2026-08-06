@@ -31,10 +31,10 @@ class _LojasListScreenState extends State<LojasListScreen> {
   @override
   void initState() {
     super.initState();
-    print('🟢 [LojasListScreen] initState()');
+    debugPrint('🟢 [LojasListScreen] initState()');
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('🟢 [LojasListScreen] PostFrameCallback - carregando lojas');
+      debugPrint('🟢 [LojasListScreen] PostFrameCallback - carregando lojas');
       context.read<LojasCubit>().fetchLojas(perPage: 10);
     });
   }
@@ -52,7 +52,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
       final cubit = context.read<LojasCubit>();
       final state = cubit.state;
       if (cubit.hasMorePages && state is LojasLoaded && !state.isLoadingMore) {
-        print('🔄 [LojasListScreen] Carregando mais lojas');
+        debugPrint('🔄 [LojasListScreen] Carregando mais lojas');
         cubit.fetchLojas(
           page: cubit.currentPage + 1,
           perPage: 10,
@@ -100,12 +100,12 @@ class _LojasListScreenState extends State<LojasListScreen> {
   Widget _buildAppBarTitle(BuildContext context) {
     return BlocBuilder<LocalizacaoCubit, LocalizacaoState>(
       builder: (context, state) {
-        print('🔍 [LojasListScreen] LocalizacaoState: ${state.runtimeType}');
+        debugPrint('🔍 [LojasListScreen] LocalizacaoState: ${state.runtimeType}');
         String titulo = 'Selecionar endereço';
 
         if (state is LocalizacaoCarregada) {
           titulo = state.enderecoFormatado;
-          print('🔍 [LojasListScreen] Exibindo endereço: $titulo');
+          debugPrint('🔍 [LojasListScreen] Exibindo endereço: $titulo');
         }
 
         return GestureDetector(
@@ -129,7 +129,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
+              Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
             ],
           ),
         );
@@ -139,7 +139,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ [LojasListScreen] build() iniciado');
+    debugPrint('🏗️ [LojasListScreen] build() iniciado');
     try {
       return MultiBlocProvider(
         providers: [
@@ -147,7 +147,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
         ],
         child: BlocBuilder<LojasCubit, LojasState>(
           builder: (context, state) {
-            print('📢 [LojasListScreen] BlocBuilder LojasState: ${state.runtimeType}');
+            debugPrint('📢 [LojasListScreen] BlocBuilder LojasState: ${state.runtimeType}');
             try {
               return ResponsivePageScaffold(
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -187,8 +187,8 @@ class _LojasListScreenState extends State<LojasListScreen> {
                 ),
               );
             } catch (e, stack) {
-              print('❌ [LojasListScreen] ERRO NO BUILDER: $e');
-              print(stack);
+              debugPrint('❌ [LojasListScreen] ERRO NO BUILDER: $e');
+              debugPrint(stack.toString());
               return Scaffold(
                 appBar: AppBar(title: const Text('Erro')),
                 body: Center(child: Text('Erro: $e')),
@@ -198,8 +198,8 @@ class _LojasListScreenState extends State<LojasListScreen> {
         ),
       );
     } catch (e, stack) {
-      print('❌ [LojasListScreen] ERRO NO BUILD PRINCIPAL: $e');
-      print(stack);
+      debugPrint('❌ [LojasListScreen] ERRO NO BUILD PRINCIPAL: $e');
+      debugPrint(stack.toString());
       return Scaffold(
         appBar: AppBar(title: const Text('Erro')),
         body: Center(child: Text('Erro: $e')),
@@ -330,7 +330,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
                     thickness: 0.5,
                     indent: 16,
                     endIndent: 16,
-                    color: Colors.grey.shade300.withOpacity(0.5),
+                    color: Colors.grey.shade300.withValues(alpha: 0.5),
                   ),
               ],
             );
@@ -380,13 +380,13 @@ class _LojasListScreenState extends State<LojasListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.storefront_outlined, size: 80, color: Theme.of(context).hintColor.withOpacity(0.5)),
+          Icon(Icons.storefront_outlined, size: 80, color: Theme.of(context).hintColor.withValues(alpha: 0.5)),
           const SizedBox(height: 16),
           Text('Nenhuma loja encontrada', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
             isOverallEmpty ? 'Volte mais tarde!' : 'Tente outros filtros',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
           ),
           if (!isOverallEmpty)
             TextButton(

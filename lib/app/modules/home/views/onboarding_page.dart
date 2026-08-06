@@ -14,7 +14,6 @@ import 'localizacao_confirmacao_page.dart';
 import 'widgets/onboarding_option_card.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
-import '../../auth/bloc/auth_cubit.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -32,7 +31,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _irParaCepPage() {
-    print('📂 [OnboardingPage] Navegando para CepInputPage');
+    debugPrint('📂 [OnboardingPage] Navegando para CepInputPage');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -45,7 +44,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _irParaBuscaEndereco() {
-    print('📂 [OnboardingPage] Navegando para BuscaEnderecoPage');
+    debugPrint('📂 [OnboardingPage] Navegando para BuscaEnderecoPage');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -102,7 +101,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _showError(String message) {
-    print('⚠️ [OnboardingPage] Erro: $message');
+    debugPrint('⚠️ [OnboardingPage] Erro: $message');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.orange),
@@ -112,8 +111,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ [OnboardingPage] build() chamado');
-    final primaryColor = const Color(0xFFF57C00);
+    debugPrint('🏗️ [OnboardingPage] build() chamado');
+    const primaryColor = Color(0xFFF57C00);
 
     return MultiBlocProvider(
       providers: [
@@ -139,7 +138,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
+                        color: primaryColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.delivery_dining_rounded, size: 100, color: primaryColor),
@@ -203,7 +202,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: const Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF57C00)),

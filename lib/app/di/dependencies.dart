@@ -102,5 +102,5 @@ Future<void> setupDependencies() async {
         (lojaId, _) => LojaHomeCubit(getIt<LojaHomeRepository>(), lojaId),
   );
 
-  print('✅ [DI] setupDependencies concluído');
+  debugPrint('✅ [DI] setupDependencies concluído');
 }

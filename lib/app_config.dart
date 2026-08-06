@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  static const String LOGIN = 'app/auth/login';
-  static const String VALIDAR_ETAPA1 = 'app/cadastro/validar-etapa1';
-  static const String CADASTRAR = 'app/auth/cadastro';
-  static const String BUSCAR_CEP = 'app/cadastro/buscar-cep';
-  static const String CONFIRMAR_ENDERECO = 'app/localizacao/confirmar-endereco';
-  static const String GEOCODIFICAR = 'app/localizacao/geocodificar';
-  static const String BUSCAR_ENDERECO = 'app/localizacao/buscar-endereco';
-  static const String REFRESH_TOKEN = 'app/auth/refresh-token';
+  static const String login = 'app/auth/login';
+  static const String validarEtapa1 = 'app/cadastro/validar-etapa1';
+  static const String cadastrar = 'app/auth/cadastro';
+  static const String buscarCep = 'app/cadastro/buscar-cep';
+  static const String confirmarEndereco = 'app/localizacao/confirmar-endereco';
+  static const String geocodificar = 'app/localizacao/geocodificar';
+  static const String buscarEndereco = 'app/localizacao/buscar-endereco';
+  static const String refreshToken = 'app/auth/refresh-token';
 
   static String get baseUrl {
     // 1. Variável de ambiente via --dart-define=API_URL=...

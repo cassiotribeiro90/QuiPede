@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/shared/services/device_id_service.dart';
 import '../models/endereco_model.dart';
@@ -11,11 +12,11 @@ class EnderecoService {
   /// Lista todos os endereços do usuário
   Future<List<EnderecoModel>> getEnderecos() async {
     try {
-      print('📡 [EnderecoService] GET /app/enderecos');
+      debugPrint('📡 [EnderecoService] GET /app/enderecos');
 
       final response = await _apiClient.get('/app/enderecos');
 
-      print('📡 [EnderecoService] Status: ${response.statusCode}');
+      debugPrint('📡 [EnderecoService] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
@@ -34,7 +35,7 @@ class EnderecoService {
 
       return [];
     } catch (e) {
-      print('❌ [EnderecoService] Erro ao carregar endereços: $e');
+      debugPrint('❌ [EnderecoService] Erro ao carregar endereços: $e');
       return [];
     }
   }
@@ -43,12 +44,12 @@ class EnderecoService {
   Future<Map<String, dynamic>> criarEndereco(EnderecoModel endereco) async {
     try {
       final deviceId = await DeviceIdService.getDeviceId();
-      print('📡 [EnderecoService] DeviceId: $deviceId');
+      debugPrint('📡 [EnderecoService] DeviceId: $deviceId');
 
       final data = endereco.toJson();
       data['device_id'] = deviceId;
 
-      print('📡 [EnderecoService] POST /app/enderecos');
+      debugPrint('📡 [EnderecoService] POST /app/enderecos');
 
       final response = await _apiClient.post(
         '/app/enderecos',
@@ -56,13 +57,13 @@ class EnderecoService {
         requiresAuth: false,
       );
 
-      print('📡 [EnderecoService] Status: ${response.statusCode}');
+      debugPrint('📡 [EnderecoService] Status: ${response.statusCode}');
 
       if ((response.statusCode == 200 || response.statusCode == 201) &&
           response.data['success'] == true) {
 
         final resultData = response.data['data'];
-        print('✅ [EnderecoService] Endereço criado com sucesso');
+        debugPrint('✅ [EnderecoService] Endereço criado com sucesso');
 
         if (resultData is List) {
           return {
@@ -77,10 +78,10 @@ class EnderecoService {
 
       throw Exception('Erro ao criar endereço: ${response.data['message'] ?? ''}');
     } on DioException catch (e) {
-      print('❌ [EnderecoService] DioException: ${e.response?.statusCode}');
+      debugPrint('❌ [EnderecoService] DioException: ${e.response?.statusCode}');
       rethrow;
     } catch (e) {
-      print('❌ [EnderecoService] Erro ao criar endereço: $e');
+      debugPrint('❌ [EnderecoService] Erro ao criar endereço: $e');
       rethrow;
     }
   }
@@ -117,17 +118,17 @@ class EnderecoService {
   /// Define um endereço como principal (retorna lista completa)
   Future<List<EnderecoModel>> definirPrincipal(int id) async {
     try {
-      print('📡 [EnderecoService] PUT /app/enderecos/$id/set-padrao');
+      debugPrint('📡 [EnderecoService] PUT /app/enderecos/$id/set-padrao');
 
       final response = await _apiClient.put(
         '/app/enderecos/$id/set-padrao',
         data: {},
       );
 
-      print('📡 [EnderecoService] Status: ${response.statusCode}');
+      debugPrint('📡 [EnderecoService] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        print('✅ [EnderecoService] Endereço definido como principal');
+        debugPrint('✅ [EnderecoService] Endereço definido como principal');
 
         final data = response.data['data'];
 
@@ -146,13 +147,13 @@ class EnderecoService {
 
       throw Exception('Erro ao definir endereço principal: ${response.data['message'] ?? 'Resposta inesperada'}');
     } on DioException catch (e) {
-      print('❌ [EnderecoService] DioException: ${e.response?.statusCode}');
-      print('❌ [EnderecoService] URL: ${e.requestOptions.uri}');
-      print('❌ [EnderecoService] Response: ${e.response?.data}');
+      debugPrint('❌ [EnderecoService] DioException: ${e.response?.statusCode}');
+      debugPrint('❌ [EnderecoService] URL: ${e.requestOptions.uri}');
+      debugPrint('❌ [EnderecoService] Response: ${e.response?.data}');
       rethrow;
     } catch (e, stack) {
-      print('❌ [EnderecoService] Erro ao definir principal: $e');
-      print('❌ [EnderecoService] Stack: $stack');
+      debugPrint('❌ [EnderecoService] Erro ao definir principal: $e');
+      debugPrint('❌ [EnderecoService] Stack: $stack');
       rethrow;
     }
   }

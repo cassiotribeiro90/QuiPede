@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:quipede/shared/api/api_client.dart';
 import '../../../models/carrinho_response.dart';
@@ -25,14 +26,14 @@ class CarrinhoService {
       if (produtoId != null) data['produto_id'] = produtoId;
       if (observacao != null) data['observacao'] = observacao;
 
-      print('📡 [Service] PUT /app/carrinho/atualizar -> $data');
+      debugPrint('📡 [Service] PUT /app/carrinho/atualizar -> $data');
 
       final response = await _apiClient.put(
         '/app/carrinho/atualizar',
         data: data,
       );
 
-      print('📥 [Service] Status: ${response.statusCode}');
+      debugPrint('📥 [Service] Status: ${response.statusCode}');
 
       // 🔥 TRATAR 409 (conflito de loja)
       if (response.statusCode == 409) {
@@ -43,7 +44,7 @@ class CarrinhoService {
           final novaLoja = int.tryParse(status['nova_loja']?.toString() ?? '0') ?? 0;
           final message = json['message'] ?? 'Seu carrinho já tem itens de outra loja.';
 
-          print('🔥 [Service] CONFLITO 409 DETECTADO! lojaAtual=$lojaAtual, novaLoja=$novaLoja');
+          debugPrint('🔥 [Service] CONFLITO 409 DETECTADO! lojaAtual=$lojaAtual, novaLoja=$novaLoja');
 
           final conflito = CarrinhoConflito(
             acao: status['acao'] ?? 'limpar_carrinho',
@@ -71,7 +72,7 @@ class CarrinhoService {
       // Outros erros (400, 500, etc.)
       return CarrinhoResult.error('Erro inesperado: ${response.statusCode}');
     } catch (e) {
-      print('❌ [Service] Erro capturado: $e');
+      debugPrint('❌ [Service] Erro capturado: $e');
 
       if (e is DioException && e.response?.statusCode == 409) {
         final json = e.response?.data;
@@ -81,7 +82,7 @@ class CarrinhoService {
           final novaLoja = int.tryParse(status['nova_loja']?.toString() ?? '0') ?? 0;
           final message = json['message'] ?? 'Seu carrinho já tem itens de outra loja.';
 
-          print('🔥 [Service] CONFLITO 409 (via exceção)! lojaAtual=$lojaAtual, novaLoja=$novaLoja');
+          debugPrint('🔥 [Service] CONFLITO 409 (via exceção)! lojaAtual=$lojaAtual, novaLoja=$novaLoja');
 
           final conflito = CarrinhoConflito(
             acao: status['acao'] ?? 'limpar_carrinho',
@@ -107,7 +108,7 @@ class CarrinhoService {
         queryParameters: enderecoId != null ? {'endereco_id': enderecoId} : null,
       );
 
-      print('📥 [Service] carregarCarrinho - Status: ${response.statusCode}');
+      debugPrint('📥 [Service] carregarCarrinho - Status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         return CarrinhoResponse.fromJson(response.data['data']);
@@ -115,7 +116,7 @@ class CarrinhoService {
         throw Exception('Erro ao carregar carrinho');
       }
     } catch (e) {
-      print('❌ [Service] Erro ao carregar carrinho: $e');
+      debugPrint('❌ [Service] Erro ao carregar carrinho: $e');
       throw Exception('Erro ao carregar carrinho: $e');
     }
   }
@@ -124,9 +125,9 @@ class CarrinhoService {
   Future<void> limparCarrinho() async {
     try {
       await _apiClient.delete('/app/carrinho/limpar');
-      print('✅ [Service] Carrinho limpo com sucesso');
+      debugPrint('✅ [Service] Carrinho limpo com sucesso');
     } catch (e) {
-      print('❌ [Service] Erro ao limpar carrinho: $e');
+      debugPrint('❌ [Service] Erro ao limpar carrinho: $e');
       throw Exception('Erro ao limpar carrinho: $e');
     }
   }

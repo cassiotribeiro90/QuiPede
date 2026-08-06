@@ -29,12 +29,12 @@ class ResponsivePageScaffold extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           // 🔥 DETECTA SE É WEB E AJUSTA A LARGURA
-          final bool isWeb = kIsWeb;
+          const isWeb = kIsWeb;
           final bool isLargeScreen = constraints.maxWidth > 600;
 
           if (isLargeScreen) {
             // 🔥 WEB: 1200px | TABLET/DESKTOP: 820px
-            final double maxWidth = isWeb ? 1200.0 : 820.0;
+            const maxWidth = isWeb ? 1200.0 : 820.0;
 
             return Container(
               color: bgColor,

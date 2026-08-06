@@ -7,6 +7,7 @@ import '../modules/auth/views/otp_verification_page.dart';
 import '../modules/auth/views/splash_screen.dart';
 import '../modules/carrinho/views/carrinho_page.dart';
 import '../modules/home/bloc/home_cubit.dart';
+import '../modules/home/views/endereco_confirmacao_page.dart';
 import '../modules/home/views/home_screen.dart';
 import '../modules/home/views/onboarding_page.dart';
 import '../modules/loja_home/views/loja_detalhe_page.dart';
@@ -74,14 +75,14 @@ class AppRouter {
 
       case Routes.completarPerfil:
         final bool redirectToCheckout = settings.arguments as bool? ?? false;
-        print('🧭 [AppRouter] Abrindo CompletarPerfilPage (redirectToCheckout: $redirectToCheckout)');
+        debugPrint('🧭 [AppRouter] Abrindo CompletarPerfilPage (redirectToCheckout: $redirectToCheckout)');
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => CompletarPerfilPage(redirectToCheckout: redirectToCheckout),
         );
 
       case Routes.home:
-        print('🏠 [AppRouter] Montando MultiBlocProvider para HomeScreen');
+        debugPrint('🏠 [AppRouter] Montando MultiBlocProvider para HomeScreen');
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => MultiBlocProvider(
@@ -117,24 +118,24 @@ class AppRouter {
           telefone = authState.user?.telefone;
         }
 
-        print('🛡️ [AppRouter] Carrinho: nome=$nome, telefone=$telefone');
+        debugPrint('🛡️ [AppRouter] Carrinho: nome=$nome, telefone=$telefone');
 
         if (telefone == null || telefone.isEmpty) {
-          print('📱 [AppRouter] Sem telefone → phoneInput');
+          debugPrint('📱 [AppRouter] Sem telefone → phoneInput');
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => PhoneInputPage(redirectToCheckout: true),
+            builder: (_) => const PhoneInputPage(redirectToCheckout: true),
           );
         }
         if (nome == null || nome.isEmpty) {
-          print('📝 [AppRouter] Sem nome → completarPerfil');
+          debugPrint('📝 [AppRouter] Sem nome → completarPerfil');
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => CompletarPerfilPage(redirectToCheckout: true),
+            builder: (_) => const CompletarPerfilPage(redirectToCheckout: true),
           );
         }
 
-        print('✅ [AppRouter] Carrinho liberado');
+        debugPrint('✅ [AppRouter] Carrinho liberado');
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const CarrinhoPage(),
@@ -181,6 +182,24 @@ class AppRouter {
           builder: (_) => BlocProvider.value(
             value: getIt<EnderecoCubit>(),
             child: EnderecoEditView(endereco: endereco),
+          ),
+        );
+
+      case Routes.enderecoConfirmacao:
+        final args = settings.arguments as Map<String, dynamic>;
+        final enderecoMap = args['endereco'] as Map<String, dynamic>;
+        final latitude = args['latitude'] as double;
+        final longitude = args['longitude'] as double;
+
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<EnderecoCubit>(),
+            child: EnderecoConfirmacaoPage(
+              endereco: enderecoMap,
+              latitude: latitude,
+              longitude: longitude,
+            ),
           ),
         );
 

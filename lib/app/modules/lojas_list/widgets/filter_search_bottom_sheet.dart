@@ -157,7 +157,7 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
                   _selectedOrdenacao = selected ? ordenacao['value'] : null;
                 });
               },
-              selectedColor: Colors.orange.withOpacity(0.2),
+              selectedColor: Colors.orange.withValues(alpha: 0.2),
               backgroundColor: Colors.grey[100],
               labelStyle: TextStyle(
                 color: isSelected ? Colors.orange[700] : Colors.grey[700],
@@ -202,7 +202,7 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
                       _selectedCategoria = selected ? categoria.value : null;
                     });
                   },
-                  selectedColor: Colors.orange.withOpacity(0.2),
+                  selectedColor: Colors.orange.withValues(alpha: 0.2),
                   backgroundColor: Colors.grey[100],
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.orange[700] : Colors.grey[700],

@@ -7,7 +7,6 @@ import '../../home/bloc/localizacao_cubit.dart';
 import '../models/auth_response_model.dart';
 import '../models/usuario_model.dart';
 import '../services/auth_service.dart';
-import '../services/social_auth_service.dart';
 import 'auth_state.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
@@ -17,7 +16,6 @@ import '../../../services/navigation_service.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final ApiClient _apiClient;
-  final SocialAuthService _socialAuthService;
   final LocalizacaoCubit _localizacaoCubit;
   final AuthService _authService;
   final EnderecoCubit _enderecoCubit;
@@ -33,8 +31,7 @@ class AuthCubit extends Cubit<AuthState> {
       this._localizacaoCubit,
       this._enderecoCubit,
       this._prefs,
-      )   : _socialAuthService = SocialAuthService(_apiClient),
-        _authService = AuthService(_apiClient),
+      )   : _authService = AuthService(_apiClient),
         super(AuthInitial());
 
   UsuarioModel? get usuario => _usuario;
@@ -105,14 +102,14 @@ class AuthCubit extends Cubit<AuthState> {
   // ============ MÉTODOS OTP (TELEFONE) ============
 
   Future<void> enviarTelefone(String telefone) async {
-    print('🧭 [AuthCubit] enviarTelefone: $telefone');
+    debugPrint('🧭 [AuthCubit] enviarTelefone: $telefone');
     emit(AuthLoading()); // ✅ Garante mudança de estado para resetar listeners
     try {
       await _apiClient.post('/app/auth/phone', data: {'phone': telefone}, requiresAuth: false);
-      print('🧭 [AuthCubit] POST /app/auth/phone sucesso. Emitindo AuthPhoneEnviado.');
+      debugPrint('🧭 [AuthCubit] POST /app/auth/phone sucesso. Emitindo AuthPhoneEnviado.');
       emit(AuthPhoneEnviado(telefone: telefone));
     } catch (e) {
-      print('🧭 [AuthCubit] Erro no POST /app/auth/phone: $e');
+      debugPrint('🧭 [AuthCubit] Erro no POST /app/auth/phone: $e');
       emit(const AuthOtpErro('Erro ao enviar código. Tente novamente.'));
     }
   }
@@ -181,7 +178,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (e) {
       debugPrint('❌ [AuthCubit] Erro ao completar perfil: $e');
-      emit(AuthError('Erro ao salvar perfil. Tente novamente.'));
+      emit(const AuthError('Erro ao salvar perfil. Tente novamente.'));
     }
   }
 

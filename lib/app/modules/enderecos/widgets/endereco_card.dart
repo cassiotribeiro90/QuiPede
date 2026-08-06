@@ -2,17 +2,12 @@ import 'package:flutter/material.dart';
 import '../models/endereco_model.dart';
 
 class EnderecoCard extends StatelessWidget {
-  // 🔥 ENDERECO MODEL (para a lista)
   final EnderecoModel? endereco;
-
-  // 🔥 CAMPOS SIMPLES (para confirmação)
   final String? logradouro;
   final String? bairro;
   final String? cidade;
   final String? uf;
   final String? cep;
-
-  // 🔥 AÇÕES (apenas para a lista)
   final bool isPrincipal;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
@@ -32,7 +27,6 @@ class EnderecoCard extends StatelessWidget {
     this.onSetPrincipal,
   });
 
-  // 🔥 CONSTRUTOR PARA LISTA (recebe EnderecoModel)
   factory EnderecoCard.fromModel({
     required EnderecoModel endereco,
     required bool isPrincipal,
@@ -49,7 +43,6 @@ class EnderecoCard extends StatelessWidget {
     );
   }
 
-  // 🔥 CONSTRUTOR PARA CONFIRMAÇÃO (recebe campos simples)
   factory EnderecoCard.simples({
     required String logradouro,
     required String bairro,
@@ -69,26 +62,27 @@ class EnderecoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 DETERMINA SE É MODO LISTA OU CONFIRMAÇÃO
     final isListMode = endereco != null;
 
-    // 🔥 DADOS DO ENDEREÇO
     final displayLogradouro = isListMode ? endereco!.logradouro : (logradouro ?? '');
     final displayBairro = isListMode ? endereco!.bairro : (bairro ?? '');
     final displayCidade = isListMode ? endereco!.cidade : (cidade ?? '');
     final displayUf = isListMode ? endereco!.uf : (uf ?? '');
-    final displayCep = isListMode ? endereco!.cep : (cep ?? '');
-    final displayLabel = isListMode ? endereco!.label : null;
+    final displayLabel = isListMode ? (endereco!.label ?? 'Endereço') : 'Endereço';
     final displayPrincipal = isListMode ? isPrincipal : false;
-    final displayCompleto = isListMode
-        ? endereco!.enderecoCompleto
-        : '$displayLogradouro, $displayBairro, $displayCidade - $displayUf';
+
+    String displayCompleto;
+    if (isListMode) {
+      displayCompleto = endereco!.enderecoCompleto;
+    } else {
+      displayCompleto = '$displayLogradouro, $displayBairro, $displayCidade - $displayUf';
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: displayPrincipal
-            ? Theme.of(context).primaryColor.withOpacity(0.05)
+            ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
             : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
@@ -113,7 +107,7 @@ class EnderecoCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      displayLabel ?? 'Endereço',
+                      displayLabel,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -140,7 +134,6 @@ class EnderecoCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // 🔥 AÇÕES (APENAS NO MODO LISTA)
               if (isListMode && onEdit != null && onDelete != null) ...[
                 if (!displayPrincipal && onSetPrincipal != null)
                   TextButton(
@@ -155,15 +148,15 @@ class EnderecoCard extends StatelessWidget {
                   ),
                 IconButton(
                   onPressed: onEdit,
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.edit_outlined,
                     size: 20,
-                    color: Colors.grey.shade600,
+                    color: Colors.grey,
                   ),
                 ),
                 IconButton(
                   onPressed: onDelete,
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.delete_outline,
                     size: 20,
                     color: Colors.red,

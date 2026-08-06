@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../../app/routes/web_navigation_observer.dart';
 import '../../app/routes/app_routes.dart';
 
 /// Widget que captura o evento de voltar do navegador e redireciona para a navegação do app

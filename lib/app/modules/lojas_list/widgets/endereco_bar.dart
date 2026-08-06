@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quipede/app/modules/home/bloc/localizacao_cubit.dart';
-import 'package:quipede/app/modules/home/bloc/localizacao_state.dart';
-import 'package:quipede/app/routes/app_routes.dart';
-import 'package:quipede/app/core/theme/app_theme_extension.dart';
+import '../../home/bloc/localizacao_cubit.dart';
+import '../../home/bloc/localizacao_state.dart';
+import '../../../routes/app_routes.dart';
+import '../../../core/theme/app_theme_extension.dart';
 
 class EnderecoBar extends StatelessWidget {
   const EnderecoBar({super.key});
@@ -17,14 +17,13 @@ class EnderecoBar extends StatelessWidget {
         Color color = Colors.grey;
 
         if (state is LocalizacaoCarregada) {
-          label = state.enderecoFormatado ?? 'Endereço definido';
+          label = state.enderecoFormatado;
           icon = Icons.location_on_rounded;
           color = context.primaryColor;
         }
 
         return GestureDetector(
           onTap: () {
-            // Navega para onboarding para trocar endereço
             Navigator.pushNamed(context, Routes.onboarding);
           },
           child: Container(

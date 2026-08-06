@@ -29,7 +29,7 @@ class FakeLojaHomeRepository implements LojaHomeRepository {
     
     // Criar seções de exemplo
     final secoes = [
-      SecaoModel(
+      const SecaoModel(
         id: 1,
         nome: 'Pizzas Salgadas',
         icone: '🍕',
@@ -59,7 +59,7 @@ class FakeLojaHomeRepository implements LojaHomeRepository {
       totalPages: 1,
     );
     
-    final filterOptions = LojaFilterOptions(
+    const filterOptions = LojaFilterOptions(
       categorias: [
         CategoriaFilterModel(id: 1, nome: 'Pizzas Salgadas', icone: '🍕', totalProdutos: 1),
       ],

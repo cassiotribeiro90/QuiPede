@@ -21,7 +21,7 @@ class LojaResumo extends Equatable {
   final String? emoji;
   final LojaFilterOptions? filterOptions;
 
-  LojaResumo({
+  const LojaResumo({
     required this.id,
     required this.nome,
     this.logo,

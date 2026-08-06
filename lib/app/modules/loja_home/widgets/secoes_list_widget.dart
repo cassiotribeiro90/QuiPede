@@ -27,9 +27,9 @@ class SecoesListWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     _buildCount++;
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    print('📋 [SecoesListWidget] BUILD #$_buildCount');
-    print('📋 Recebeu: ${secoes.length} seções');
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('📋 [SecoesListWidget] BUILD #$_buildCount');
+    debugPrint('📋 Recebeu: ${secoes.length} seções');
 
     if (secoes.isEmpty) {
       return const SliverFillRemaining(
@@ -113,12 +113,12 @@ class SecoesListWidget extends StatelessWidget {
 
       // Divisor entre seções
       sliverChildren.add(
-        Divider(height: 1, thickness: 8, color: context.dividerColor.withOpacity(0.5)),
+        Divider(height: 1, thickness: 8, color: context.dividerColor.withValues(alpha: 0.5)),
       );
     }
 
-    print('📋 [SecoesListWidget] BUILD #$_buildCount FINALIZADO');
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('📋 [SecoesListWidget] BUILD #$_buildCount FINALIZADO');
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return SliverList(
       delegate: SliverChildListDelegate(sliverChildren),
