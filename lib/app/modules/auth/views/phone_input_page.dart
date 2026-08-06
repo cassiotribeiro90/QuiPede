@@ -5,6 +5,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../di/dependencies.dart';
+import '../../../routes/app_routes.dart';
 import '../../../services/navigation_service.dart';
 import '../../../core/widgets/app_text_field.dart';
 
@@ -14,8 +15,6 @@ class PhoneInputPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🧭 [PhoneInputPage] build() - canPop: ${ModalRoute.of(context)?.canPop}, isFirst: ${ModalRoute.of(context)?.isFirst}');
-    
     debugPrint('🔍 [LOG] PhoneInputPage foi construída');
     return BlocProvider.value(
       value: getIt<AuthCubit>(),
@@ -45,8 +44,6 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
   @override
   void initState() {
     super.initState();
-    final state = getIt<AuthCubit>().state;
-    print('🧭 [PhoneInputPage] Initial state: ${state.runtimeType}');
   }
 
   @override
@@ -57,7 +54,6 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
 
   void _enviar() {
     if (!_formKey.currentState!.validate()) return;
-    print('🧭 [PhoneInputPage] Clicou em Continuar. Enviando telefone...');
     setState(() => _isLoading = true);
     final telefone = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
     getIt<AuthCubit>().enviarTelefone(telefone);
@@ -68,24 +64,28 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
     return BlocListener<AuthCubit, AuthState>(
       bloc: getIt<AuthCubit>(),
       listener: (context, state) {
-        print('🧭 [PhoneInputPage] BlocListener recebeu: ${state.runtimeType}');
-
         if (state is AuthPhoneEnviado) {
-          print('🧭 [PhoneInputPage] AuthPhoneEnviado - navegando para OTP');
           setState(() => _isLoading = false);
-          getIt<NavigationService>().goToOtpVerify(
-            state.telefone,
-            redirectToCheckout: widget.redirectToCheckout,
-          );
+          getIt<NavigationService>().pushNamed(
+            Routes.otpVerify,
+            arguments: {
+              'telefone': state.telefone,
+              'redirectToCheckout': widget.redirectToCheckout,
+            },
+          ).then((result) {
+            if (result == true && mounted) {
+              print('🧭 [PhoneInputPage] OTP sucesso - substituindo esta tela pelo destino correto');
+              // ✅ Substitui PhoneInput pelo próximo passo (Carrinho ou CompletarPerfil)
+              // O AppRouter fará a validação síncrona
+              getIt<NavigationService>().pushReplacementNamed(Routes.carrinho);
+            }
+          });
         } else if (state is AuthOtpErro) {
           print('🧭 [PhoneInputPage] AuthOtpErro: ${state.mensagem}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),
           );
-        } else if (state is AuthAuthenticated) {
-          print('🧭 [PhoneInputPage] AuthAuthenticated - navegando pós login');
-          _navegarPosLogin();
         }
       },
       child: ResponsivePageScaffold(
@@ -163,13 +163,5 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
         ),
       ),
     );
-  }
-
-  void _navegarPosLogin() {
-    if (widget.redirectToCheckout) {
-      getIt<NavigationService>().goToCarrinhoAndRemoveAll();
-    } else {
-      getIt<NavigationService>().goToHomeAndRemoveAll();
-    }
   }
 }

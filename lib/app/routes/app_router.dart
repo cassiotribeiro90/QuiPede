@@ -108,7 +108,6 @@ class AppRouter {
         // ✅ Validação síncrona – sem loading, sem BlocBuilder
         final authCubit = getIt<AuthCubit>();
         final authState = authCubit.state;
-        print('🧭 [AppRouter] Processando /carrinho - authState=${authState.runtimeType}');
         
         String? nome;
         String? telefone;

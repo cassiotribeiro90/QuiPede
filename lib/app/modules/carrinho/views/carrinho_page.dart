@@ -61,9 +61,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('🧭 [CarrinhoPage] build() - canPop: ${ModalRoute.of(context)?.canPop}');
-    print('🧭 [CarrinhoPage] isFirst: ${ModalRoute.of(context)?.isFirst}');
-    
     const primaryColor = Color(0xFFF57C00);
 
     return AppScaffold(

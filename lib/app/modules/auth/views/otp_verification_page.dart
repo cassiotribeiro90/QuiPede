@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/services/navigation_service.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../../routes/app_routes.dart';
 import '../../../core/widgets/app_text_field.dart';
 
 class OtpVerificationPage extends StatelessWidget {
@@ -74,8 +71,6 @@ class _OtpBodyState extends State<_OtpBody> {
 
   @override
   Widget build(BuildContext context) {
-    print('🧭 [OtpVerificationPage] build() - canPop: ${ModalRoute.of(context)?.canPop}, isFirst: ${ModalRoute.of(context)?.isFirst}');
-    
     debugPrint('🔍 [LOG] OtpVerificationPage foi construída');
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
@@ -92,29 +87,9 @@ class _OtpBodyState extends State<_OtpBody> {
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),
           );
         } else if (state is AuthAuthenticated) {
-          print('🧭 [OtpVerificationPage] AuthAuthenticated - canPop: ${Navigator.canPop(context)}');
           _navigated = true;
-          
-          final user = getIt<AuthCubit>().usuario;
-          if (user != null && user.nome.isNotEmpty) {
-            // ✅ Usuário completo → volta limpando a pilha até Home/Loja e abre Carrinho
-            print('🧭 [OtpVerificationPage] Usuário completo - abrindo carrinho');
-            getIt<NavigationService>().pushNamedAndRemoveUntil(
-              Routes.carrinho,
-              (route) => route.settings.name == Routes.lojaHome || 
-                         route.settings.name == Routes.home || 
-                         route.isFirst,
-            );
-          } else {
-            // ✅ Usuário sem nome → volta limpando a pilha até Home/Loja e abre Carrinho
-            // O AppRouter processará o novo /carrinho e redirecionará para completarPerfil
-            print('🧭 [OtpVerificationPage] Usuário sem nome - redirecionando para completarPerfil via /carrinho');
-            getIt<NavigationService>().pushNamedAndRemoveUntil(
-              Routes.carrinho,
-              (route) => route.settings.name == Routes.lojaHome || 
-                         route.settings.name == Routes.home || 
-                         route.isFirst,
-            );
+          if (mounted) {
+            Navigator.pop(context, true);
           }
         }
       },

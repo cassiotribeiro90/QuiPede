@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/routes/app_routes.dart';
-import 'package:quipede/app/services/navigation_service.dart';
-import '../bloc/auth_cubit.dart';
-import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../bloc/auth_cubit.dart';
+import '../bloc/auth_state.dart';
 
 class CompletarPerfilPage extends StatelessWidget {
   final bool redirectToCheckout;
@@ -19,8 +16,6 @@ class CompletarPerfilPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🧭 [CompletarPerfilPage] build() - canPop: ${ModalRoute.of(context)?.canPop}, isFirst: ${ModalRoute.of(context)?.isFirst}');
-
     return BlocProvider.value(
       value: context.read<AuthCubit>(),
       child: _CompletarPerfilBody(redirectToCheckout: redirectToCheckout),
