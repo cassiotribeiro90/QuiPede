@@ -605,6 +605,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
     debugPrint('🔍 [CarrinhoPage] nome=$nome, telefone=$telefone');
 
+    // ✅ Segunda camada de segurança: se chegou aqui sem telefone/nome, redireciona
     if (telefone == null || telefone.isEmpty) {
       debugPrint('📱 [CarrinhoPage] Sem telefone → phoneInput');
       Navigator.pushNamed(context, Routes.phoneInput, arguments: true);

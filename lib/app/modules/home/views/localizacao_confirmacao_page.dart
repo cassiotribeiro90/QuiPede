@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/di/dependencies.dart';
+import 'package:quipede/app/routes/app_routes.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../bloc/localizacao_cubit.dart';
@@ -73,8 +74,8 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
           referencia: _referenciaController.text.trim().isEmpty ? null : _referenciaController.text.trim(),
         );
 
-        // 🔥 Volta com sucesso para recarregar a lista
-        Navigator.pop(context, true);
+        // ✅ Endereço salvo → vai direto para Home, limpando a pilha
+        Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
       }
     } catch (e) {
       if (mounted) {
@@ -101,7 +102,8 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context, true);
+          // ✅ Endereço criado → vai direto para Home, limpando a pilha
+          Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
         }
         if (state is EnderecoError) {
           setState(() => _isLoading = false);

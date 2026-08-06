@@ -13,6 +13,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  static bool _bootstrapped = false;
+
   @override
   void initState() {
     super.initState();
@@ -20,19 +22,19 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
+    // Evita executar duas vezes (hot restart reconstrói o widget)
+    if (_bootstrapped) return;
+    _bootstrapped = true;
+
     final authCubit = context.read<AuthCubit>();
     final localizacaoCubit = context.read<LocalizacaoCubit>();
 
-    // Inicializa autenticação (recupera sessão, endereços remotos etc.)
     await authCubit.inicializarApp();
 
-    // Carrega localização local se necessário (executa em paralelo se possível,
-    // mas aqui depende do authCubit ter terminado, então mantemos sequencial).
     if (localizacaoCubit.state is! LocalizacaoCarregada) {
       await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
     }
 
-    // Tempo mínimo para transição suave (evita flash)
     await Future.delayed(const Duration(milliseconds: 300));
 
     if (!mounted) return;
@@ -40,7 +42,13 @@ class _SplashScreenState extends State<SplashScreen> {
     final hasLocation = localizacaoCubit.state is LocalizacaoCarregada;
     final targetRoute = hasLocation ? Routes.home : Routes.onboarding;
 
-    // Navegação sem animação para dar percepção de velocidade
+    // ✅ Verifica se já está na rota de destino para evitar push duplicado
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    if (currentRoute == targetRoute) {
+      debugPrint('🛑 [SplashScreen] Já está na rota $targetRoute, ignorando navegação');
+      return;
+    }
+
     Navigator.of(context).pushNamedAndRemoveUntil(
       targetRoute,
           (route) => false,
@@ -55,7 +63,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Ícone simples, mas sugiro usar sua logo em PNG para qualidade
             Icon(Icons.storefront, size: 100, color: Colors.white),
             SizedBox(height: 24),
             Text(
@@ -67,9 +74,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 letterSpacing: 1.2,
               ),
             ),
-            // Removido o CircularProgressIndicator.
-            // Se quiser um feedback sutil, pode usar um pequeno ponto animado,
-            // mas não é necessário para um MVP.
             SizedBox(height: 48),
           ],
         ),

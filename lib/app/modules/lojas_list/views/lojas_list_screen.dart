@@ -90,7 +90,6 @@ class _LojasListScreenState extends State<LojasListScreen> {
 
   void _navegarParaEnderecos(BuildContext context) {
     final authState = context.read<AuthCubit>().state;
-    // 🔥 PERMITIR ACESSO PARA AuthAuthenticated OU AuthGuest
     if (authState is AuthAuthenticated || authState is AuthGuest) {
       Navigator.pushNamed(context, Routes.meusEnderecos);
     } else {
@@ -146,65 +145,56 @@ class _LojasListScreenState extends State<LojasListScreen> {
         providers: [
           BlocProvider.value(value: getIt<CarrinhoCubit>()),
         ],
-        child: BlocListener<LocalizacaoCubit, LocalizacaoState>(
-          listener: (context, state) {
-            print('📢 [LojasListScreen] Listener LocalizacaoState: ${state.runtimeType}');
-            if (state is LocalizacaoNaoEncontrada) {
-              print('⚠️ [LojasListScreen] Localização não encontrada no listener');
-              _navegarParaEnderecos(context);
-            }
-          },
-          child: BlocBuilder<LojasCubit, LojasState>(
-            builder: (context, state) {
-              print('📢 [LojasListScreen] BlocBuilder LojasState: ${state.runtimeType}');
-              try {
-                return ResponsivePageScaffold(
+        child: BlocBuilder<LojasCubit, LojasState>(
+          builder: (context, state) {
+            print('📢 [LojasListScreen] BlocBuilder LojasState: ${state.runtimeType}');
+            try {
+              return ResponsivePageScaffold(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                drawer: const AppDrawer(),
+                appBar: AppBar(
+                  title: _buildAppBarTitle(context),
+                  centerTitle: true,
+                  elevation: 0,
                   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  drawer: const AppDrawer(),
-                  appBar: AppBar(
-                    title: _buildAppBarTitle(context),
-                    centerTitle: true,
-                    elevation: 0,
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                    foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-                    leading: Builder(
-                      builder: (context) => IconButton(
-                        icon: const Icon(Icons.menu_rounded),
-                        onPressed: () => Scaffold.of(context).openDrawer(),
-                      ),
+                  foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                  leading: Builder(
+                    builder: (context) => IconButton(
+                      icon: const Icon(Icons.menu_rounded),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
                     ),
-                    actions: [
-                      IconButton(
-                        icon: const Icon(Icons.notifications_none_rounded),
-                        onPressed: () {},
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_none_rounded),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+                bottomNavigationBar: const CarrinhoBottomBar(),
+                body: RefreshIndicator(
+                  onRefresh: () => context.read<LojasCubit>().refreshList(),
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: _buildSearchTrigger(state),
                       ),
+                      _buildSliverBody(state),
                     ],
                   ),
-                  bottomNavigationBar: const CarrinhoBottomBar(),
-                  body: RefreshIndicator(
-                    onRefresh: () => context.read<LojasCubit>().refreshList(),
-                    child: CustomScrollView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: _buildSearchTrigger(state),
-                        ),
-                        _buildSliverBody(state),
-                      ],
-                    ),
-                  ),
-                );
-              } catch (e, stack) {
-                print('❌ [LojasListScreen] ERRO NO BUILDER: $e');
-                print(stack);
-                return Scaffold(
-                  appBar: AppBar(title: const Text('Erro')),
-                  body: Center(child: Text('Erro: $e')),
-                );
-              }
-            },
-          ),
+                ),
+              );
+            } catch (e, stack) {
+              print('❌ [LojasListScreen] ERRO NO BUILDER: $e');
+              print(stack);
+              return Scaffold(
+                appBar: AppBar(title: const Text('Erro')),
+                body: Center(child: Text('Erro: $e')),
+              );
+            }
+          },
         ),
       );
     } catch (e, stack) {

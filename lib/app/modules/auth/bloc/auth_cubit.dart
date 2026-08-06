@@ -52,7 +52,6 @@ class AuthCubit extends Cubit<AuthState> {
       final isGuest = _apiClient.tokenService.isGuest();
 
       if (token != null && token.isNotEmpty) {
-        // ✅ Sempre busca dados atualizados do backend
         try {
           final response = await _apiClient.get('app/auth/me', requiresAuth: true);
           if (response.statusCode == 200 && response.data['success'] == true) {
@@ -78,7 +77,6 @@ class AuthCubit extends Cubit<AuthState> {
           debugPrint('❌ [AuthCubit] Erro ao buscar /me, usando cache local: $e');
         }
 
-        // ✅ Fallback: se /me falhar, usa dados locais
         final userJson = _apiClient.tokenService.getUser();
         if (userJson != null) {
           _usuario = UsuarioModel.fromJson(userJson);
@@ -127,7 +125,6 @@ class AuthCubit extends Cubit<AuthState> {
 
       if (userJson != null) {
         final usuarioMap = Map<String, dynamic>.from(userJson);
-        // ✅ Salva apenas token, não os dados do usuário
         await _apiClient.tokenService.saveTokens(accessToken, null, isGuest: false);
         _usuario = UsuarioModel.fromJson(usuarioMap);
 
@@ -139,14 +136,7 @@ class AuthCubit extends Cubit<AuthState> {
         }
         await carregarEnderecoUsuario();
 
-        if (_usuario?.nome == null || _usuario!.nome.isEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ApiClient.navigatorKey.currentState?.pushReplacementNamed(
-              Routes.completarPerfil,
-              arguments: redirectToCheckout,
-            );
-          });
-        }
+        // ✅ Não navega mais daqui — o AppRouter cuida do redirecionamento
       } else {
         emit(const AuthOtpErro('Usuário não encontrado após verificação.'));
       }
@@ -160,7 +150,6 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> completarPerfil({
     required String nome,
     String? email,
-    String? voltarPara,
   }) async {
     debugPrint('📝 [AuthCubit] Completando perfil: nome=$nome, email=$email');
     emit(AuthLoading());
@@ -175,21 +164,12 @@ class AuthCubit extends Cubit<AuthState> {
 
       if (usuarioJson != null) {
         final usuarioMap = Map<String, dynamic>.from(usuarioJson);
-        // ✅ Não salva dados do usuário no SharedPreferences
         _usuario = UsuarioModel.fromJson(usuarioMap);
 
         debugPrint('✅ [AuthCubit] Perfil completado: ${_usuario?.nome}');
 
         emit(AuthPerfilCompleto(accessToken: token, user: _usuario!));
-
-        if (voltarPara != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final navigator = ApiClient.navigatorKey.currentState;
-            if (navigator != null) {
-              navigator.popUntil((route) => route.settings.name == voltarPara || route.isFirst);
-            }
-          });
-        }
+        // ✅ Não navega — o CompletarPerfilPage dá pop, AppRouter redireciona
       } else {
         debugPrint('❌ [AuthCubit] Resposta sem dados de usuário');
         emit(const AuthError('Erro ao salvar perfil. Tente novamente.'));
@@ -251,7 +231,6 @@ class AuthCubit extends Cubit<AuthState> {
     debugPrint('🔐 [AuthCubit] Definindo sessão de Convidado');
     _usuario = UsuarioModel.fromJson(usuarioJson);
 
-    // ✅ Salva apenas token, não dados do usuário
     await _apiClient.tokenService.saveTokens(token, null, expiresIn: 86400, isGuest: true);
 
     emit(AuthGuest(accessToken: token, user: _usuario));

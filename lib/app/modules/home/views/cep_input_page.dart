@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
+import 'package:quipede/app/routes/app_routes.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import 'endereco_confirmacao_page.dart';
@@ -73,7 +74,6 @@ class _CepInputBodyState extends State<_CepInputBody> {
   Widget build(BuildContext context) {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
-        // ✅ CEP carregado com sucesso
         if (state is EnderecoCepCarregado) {
           setState(() => _isLoading = false);
           final endereco = {
@@ -94,25 +94,24 @@ class _CepInputBodyState extends State<_CepInputBody> {
             ),
           ).then((result) {
             if (result == true && mounted) {
-              Navigator.pop(context, true);
+              // ✅ Endereço confirmado → vai direto para Home, limpando a pilha
+              Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
             }
           });
         }
-        // ✅ Endereço criado com sucesso (após confirmação)
         if (state is EnderecoCriado) {
           setState(() => _isLoading = false);
           if (mounted) {
-            Navigator.pop(context, true);
+            // ✅ Endereço criado → vai direto para Home, limpando a pilha
+            Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
           }
         }
-        // ✅ Erro
         if (state is EnderecoError) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
-        // ✅ Buscando CEP
         if (state is EnderecoCepBuscando) {
           setState(() => _isLoading = true);
         }

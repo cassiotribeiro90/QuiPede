@@ -5,7 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
+import 'package:quipede/app/core/theme/app_text_styles.dart';
+import 'package:quipede/app/routes/app_routes.dart';
 import '../models/endereco_sugestao.dart';
 import '../services/localizacao_service.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
@@ -149,9 +150,10 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
       listener: (context, state) {
         if (state is EnderecoCriado) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Endereço adicionado com sucesso!'), backgroundColor: Colors.green),
+            const SnackBar(content: Text('Endereço adicionado com sucesso!'), backgroundColor: Colors.green),
           );
-          Navigator.pop(context, true);
+          // ✅ Vai direto para Home, limpando toda a pilha (incluindo Onboarding)
+          Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
         }
       },
       child: ResponsivePageScaffold(
@@ -172,25 +174,20 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-
-              // 🔥 Título "Buscar Endereço"
               Text(
                 'Buscar Endereço',
-                style: AppTextStyles.titleMedium.copyWith( // 24px
+                style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
-
-              // 🔥 Subtítulo
               Text(
                 'Digite rua, bairro ou cidade para encontrar o local.',
-                style: AppTextStyles.bodyMedium.copyWith( // 18px
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: Colors.grey,
                 ),
               ),
               const SizedBox(height: 32),
-
               TextField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
@@ -234,10 +231,9 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
           children: [
             Icon(Icons.search, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
-            // 🔥 Texto "Digite pelo menos 3 caracteres..."
             Text(
               'Digite pelo menos 3 caracteres para buscar',
-              style: AppTextStyles.bodyLarge, // 20px
+              style: AppTextStyles.bodyLarge,
             ),
           ],
         ),
@@ -247,7 +243,7 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
       return Center(
         child: Text(
           'Nenhum endereço encontrado',
-          style: AppTextStyles.bodyLarge, // 20px
+          style: AppTextStyles.bodyLarge,
         ),
       );
     }
@@ -269,7 +265,8 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
               ),
             ).then((result) {
               if (result == true && mounted) {
-                Navigator.pop(context, true);
+                // ✅ Endereço confirmado → vai direto para Home, limpando a pilha
+                Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
               }
             });
           },

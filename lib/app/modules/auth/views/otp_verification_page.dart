@@ -39,6 +39,7 @@ class _OtpBodyState extends State<_OtpBody> {
   final _focusNode = FocusNode();
   bool _isLoading = false;
   bool _autoVerifying = false;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -54,7 +55,7 @@ class _OtpBodyState extends State<_OtpBody> {
       _autoVerifying = true;
       setState(() => _isLoading = true);
       context.read<AuthCubit>().verificarOTP(
-        widget.telefone, 
+        widget.telefone,
         _codeController.text,
         redirectToCheckout: widget.redirectToCheckout,
       );
@@ -74,6 +75,8 @@ class _OtpBodyState extends State<_OtpBody> {
     debugPrint('🔍 [LOG] OtpVerificationPage foi construída');
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
+        if (_navigated) return;
+
         if (state is AuthOtpErro) {
           setState(() {
             _isLoading = false;
@@ -85,14 +88,9 @@ class _OtpBodyState extends State<_OtpBody> {
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),
           );
         } else if (state is AuthAuthenticated) {
-          final user = context.read<AuthCubit>().usuario;
-          if (user != null && user.nome.isNotEmpty) {
-            if (widget.redirectToCheckout) {
-              Navigator.pushNamedAndRemoveUntil(context, Routes.carrinho, (route) => false);
-            } else {
-              Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
-            }
-          }
+          _navigated = true;
+          // Substitui OTP pelo carrinho — AppRouter fará a validação
+          Navigator.pushReplacementNamed(context, Routes.carrinho);
         }
       },
       child: ResponsivePageScaffold(

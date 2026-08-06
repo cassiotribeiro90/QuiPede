@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../../routes/app_routes.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/theme/app_text_styles.dart';
 
@@ -56,10 +55,10 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
 
     print('📝 [CompletarPerfil] Salvando perfil: nome=$nome, email=$email');
 
+    // ✅ Não passa voltarPara — o Cubit apenas salva e emite AuthPerfilCompleto
     context.read<AuthCubit>().completarPerfil(
       nome: nome,
       email: email.isNotEmpty ? email : null,
-      voltarPara: widget.redirectToCheckout ? Routes.carrinho : Routes.home,
     );
   }
 
@@ -71,15 +70,16 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
       },
       listener: (context, state) {
         if (state is AuthPerfilCompleto) {
-          print('✅ [CompletarPerfil] Perfil completado com sucesso');
+          print('✅ [CompletarPerfil] Perfil completado, voltando...');
+          // ✅ Simplesmente volta para a tela anterior (AppRouter que redirecionará para o carrinho)
+          if (mounted) {
+            Navigator.pop(context, true);
+          }
         } else if (state is AuthError) {
           print('❌ [CompletarPerfil] Erro: ${state.message}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
       },

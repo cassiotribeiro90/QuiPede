@@ -6,7 +6,7 @@ import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/routes/app_routes.dart';
 import 'package:quipede/app/core/utils/platform_utils.dart';
-import 'package:quipede/app/core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
+import 'package:quipede/app/core/theme/app_text_styles.dart';
 import '../services/localizacao_service.dart';
 import 'busca_endereco_page.dart';
 import 'cep_input_page.dart';
@@ -26,33 +26,9 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final _localizacaoService = LocalizacaoService(getIt<ApiClient>());
   bool _isLoading = false;
-  bool _isNavigating = false;
 
   void _setLoading(bool value) {
     if (mounted) setState(() => _isLoading = value);
-  }
-
-  void _navegarParaHome() {
-    if (_isNavigating) return;
-    _isNavigating = true;
-
-    print('🚀 [OnboardingPage] _navegarParaHome() INICIADO');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      try {
-        print('🚀 [OnboardingPage] Chamando pushNamedAndRemoveUntil(/home)');
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          Routes.home,
-              (route) => false,
-        );
-        print('✅ [OnboardingPage] pushNamedAndRemoveUntil executado sem exceção');
-      } catch (e, stack) {
-        _isNavigating = false;
-        print('❌ [OnboardingPage] ERRO NA NAVEGAÇÃO: $e');
-        print(stack);
-      }
-    });
   }
 
   void _irParaCepPage() {
@@ -65,18 +41,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           child: const CepInputPage(),
         ),
       ),
-    ).then((result) {
-      print('🔙 [OnboardingPage] result = $result');
-      if (result == true && mounted) {
-        print('✅ [OnboardingPage] Sucesso no CEP! Sincronizando endereço...');
-        context.read<AuthCubit>().carregarEnderecoUsuario();
-        Future.delayed(const Duration(milliseconds: 300), () {
-          _navegarParaHome();
-        });
-      }
-    }).catchError((e) {
-      print('❌ [OnboardingPage] Erro ao retornar do CepInputPage: $e');
-    });
+    );
   }
 
   void _irParaBuscaEndereco() {
@@ -89,16 +54,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           child: const BuscaEnderecoPage(),
         ),
       ),
-    ).then((result) {
-      print('🔙 [OnboardingPage] result = $result');
-      if (result == true && mounted) {
-        print('✅ [OnboardingPage] Sucesso na busca! Sincronizando endereço...');
-        context.read<AuthCubit>().carregarEnderecoUsuario();
-        Future.delayed(const Duration(milliseconds: 300), () {
-          _navegarParaHome();
-        });
-      }
-    });
+    );
   }
 
   void _usarLocalizacaoAtual() async {
@@ -127,16 +83,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
               ),
             ),
-          ).then((result) {
-            print('🔙 [OnboardingPage] result = $result');
-            if (result == true && mounted) {
-              print('✅ [OnboardingPage] Sucesso no GPS! Sincronizando endereço...');
-              context.read<AuthCubit>().carregarEnderecoUsuario();
-              Future.delayed(const Duration(milliseconds: 300), () {
-                _navegarParaHome();
-              });
-            }
-          });
+          );
         } else {
           _showError(response['message'] ?? 'Não foi possível identificar seu endereço.');
         }
@@ -152,9 +99,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   void _showError(String message) {
     print('⚠️ [OnboardingPage] Erro: $message');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.orange),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.orange),
+      );
+    }
   }
 
   @override
@@ -193,33 +142,27 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                   ),
                   const SizedBox(height: 40),
-
-                  // 🔥 Título "Como você quer começar?"
                   Text(
                     'Como você quer começar?',
-                    style: AppTextStyles.titleLarge.copyWith( // 28px
+                    style: AppTextStyles.titleLarge.copyWith(
                       color: const Color(0xFF1E1E1E),
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // 🔥 Subtítulo
                   Text(
                     'Escolha uma forma de definir seu endereço de entrega e encontre as melhores lojas.',
-                    style: AppTextStyles.bodyLarge.copyWith( // 20px
+                    style: AppTextStyles.bodyLarge.copyWith(
                       color: Colors.grey.shade600,
                       height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 40),
-
                   OnboardingOptionCard(
                     icon: Icons.markunread_mailbox_rounded,
                     title: 'Informar CEP',
                     subtitle: 'Rápido e preciso',
                     onTap: _irParaCepPage,
                   ),
-
                   if (PlatformUtils.isMobile)
                     OnboardingOptionCard(
                       icon: Icons.my_location_rounded,
@@ -227,7 +170,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       subtitle: 'Encontre lojas próximas',
                       onTap: _usarLocalizacaoAtual,
                     ),
-
                   OnboardingOptionCard(
                     icon: Icons.search_rounded,
                     title: 'Buscar endereço',
@@ -240,15 +182,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     subtitle: 'Entrar com seu número de telefone',
                     onTap: () => Navigator.pushNamed(context, Routes.phoneInput),
                   ),
-
                   const SizedBox(height: 40),
-
-                  // 🔥 Texto "Ao continuar, você concorda..."
                   Center(
                     child: Text(
                       'Ao continuar, você concorda com nossos Termos de Uso.',
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.bodySmall.copyWith( // 16px
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.grey.shade500,
                       ),
                     ),
