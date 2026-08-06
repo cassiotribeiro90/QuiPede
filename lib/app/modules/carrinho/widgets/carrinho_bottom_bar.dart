@@ -24,29 +24,6 @@ class CarrinhoBottomBar extends StatelessWidget {
   }
 
   void _abrirCarrinho(BuildContext context) {
-    final authCubit = context.read<AuthCubit>();
-    final authState = authCubit.state;
-
-    debugPrint('🛒 [CarrinhoBottomBar] Abrindo carrinho, auth=${authState.runtimeType}');
-
-    String? nome;
-
-    if (authState is AuthGuest) {
-      nome = authState.user?.nome;
-    } else if (authState is AuthAuthenticated) {
-      nome = authState.user?.nome;
-    }
-
-    debugPrint('🛒 [CarrinhoBottomBar] nome=$nome');
-
-    // ✅ Se não tem nome, redireciona para completar perfil
-    if (nome == null || nome.isEmpty) {
-      debugPrint('📝 [CarrinhoBottomBar] Sem nome → completarPerfil');
-      Navigator.pushNamed(context, Routes.completarPerfil, arguments: true);
-      return;
-    }
-
-    // ✅ Tem nome, abre o carrinho normalmente
     Navigator.pushNamed(context, Routes.carrinho);
   }
 

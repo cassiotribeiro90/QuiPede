@@ -4,6 +4,8 @@ import '../models/usuario_model.dart';
 abstract class AuthState extends Equatable {
   const AuthState();
 
+  UsuarioModel? get user => null;
+
   @override
   List<Object?> get props => [];
 }

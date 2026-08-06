@@ -32,7 +32,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _verificarUsuario();
         final cubit = context.read<CarrinhoCubit>();
         if (cubit.state is CarrinhoLoaded) {
           final state = cubit.state as CarrinhoLoaded;
@@ -42,74 +41,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         }
       }
     });
-  }
-
-  void _verificarUsuario() {
-    final authCubit = context.read<AuthCubit>();
-    final authState = authCubit.state;
-
-    debugPrint('🔍 [CarrinhoPage] Verificando: state=${authState.runtimeType}');
-
-    String? nome;
-    String? whatsapp;
-
-    // ✅ Extrai dados de qualquer estado que contenha usuário
-    if (authState is AuthGuest) {
-      nome = authState.user?.nome;
-      whatsapp = authState.user?.whatsapp;
-    } else if (authState is AuthAuthenticated) {
-      nome = authState.user?.nome;
-      whatsapp = authState.user?.whatsapp;
-    } else if (authState is AuthPerfilCompleto) {
-      // ✅ Perfil já foi completado, liberado
-      debugPrint('✅ [CarrinhoPage] AuthPerfilCompleto, liberado');
-      return;
-    } else if (authState is AuthInitial || authState is AuthLoading || authState is AuthChecking) {
-      // Aguardando inicialização, não faz nada
-      debugPrint('⏳ [CarrinhoPage] Auth ainda inicializando, aguardando...');
-      return;
-    } else {
-      // AuthUnauthenticated ou outros → onboarding
-      debugPrint('🔐 [CarrinhoPage] Não autenticado → onboarding');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
-        }
-      });
-      return;
-    }
-
-    debugPrint('🔍 [CarrinhoPage] nome=$nome, whatsapp=$whatsapp');
-
-    // ✅ Tem nome → liberado
-    if (nome != null && nome.isNotEmpty) {
-      debugPrint('✅ [CarrinhoPage] Usuário com nome, liberado');
-      return;
-    }
-
-    // ✅ Tem telefone mas não tem nome → completar perfil
-    if (whatsapp != null && whatsapp.isNotEmpty && (nome == null || nome.isEmpty)) {
-      debugPrint('📝 [CarrinhoPage] Tem telefone sem nome → completarPerfil');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.pushNamed(context, Routes.completarPerfil, arguments: true);
-        }
-      });
-      return;
-    }
-
-    // ✅ Não tem telefone → phoneInput
-    if (whatsapp == null || whatsapp.isEmpty) {
-      debugPrint('📱 [CarrinhoPage] Sem telefone → phoneInput');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.pushNamed(context, Routes.phoneInput, arguments: {'redirectToCheckout': true});
-        }
-      });
-      return;
-    }
-
-    debugPrint('✅ [CarrinhoPage] Usuário completo, liberado');
   }
 
   @override
@@ -160,11 +91,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
           if (authState is AuthPerfilCompleto) {
             debugPrint('🔄 [CarrinhoPage] Perfil completado, recarregando carrinho');
             context.read<CarrinhoCubit>().carregarCarrinho();
-          }
-
-          // ✅ Verifica para todos os estados relevantes
-          if (authState is AuthGuest || authState is AuthAuthenticated || authState is AuthPerfilCompleto) {
-            _verificarUsuario();
           }
         },
         child: MultiBlocListener(
@@ -667,21 +593,21 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     debugPrint('🛒 [CarrinhoPage] Finalizar pedido: authState=${authState.runtimeType}');
 
     String? nome;
-    String? whatsapp;
+    String? telefone;
 
     if (authState is AuthGuest) {
       nome = authState.user?.nome;
-      whatsapp = authState.user?.whatsapp;
+      telefone = authState.user?.telefone;
     } else if (authState is AuthAuthenticated) {
       nome = authState.user?.nome;
-      whatsapp = authState.user?.whatsapp;
+      telefone = authState.user?.telefone;
     }
 
-    debugPrint('🔍 [CarrinhoPage] nome=$nome, whatsapp=$whatsapp');
+    debugPrint('🔍 [CarrinhoPage] nome=$nome, telefone=$telefone');
 
-    if (whatsapp == null || whatsapp.isEmpty) {
+    if (telefone == null || telefone.isEmpty) {
       debugPrint('📱 [CarrinhoPage] Sem telefone → phoneInput');
-      Navigator.pushNamed(context, Routes.phoneInput, arguments: {'redirectToCheckout': true});
+      Navigator.pushNamed(context, Routes.phoneInput, arguments: true);
       return;
     }
 

@@ -65,11 +65,10 @@ class AuthService {
     }
   }
 
-  /// ✅ Atualizar perfil do usuário (nome, email, whatsapp)
+  /// Atualizar perfil do usuário (nome obrigatório, email opcional)
   Future<Map<String, dynamic>> atualizarPerfil({
     required String nome,
     String? email,
-    String? whatsapp,
   }) async {
     try {
       final data = <String, dynamic>{
@@ -77,9 +76,6 @@ class AuthService {
       };
       if (email != null && email.isNotEmpty) {
         data['email'] = email;
-      }
-      if (whatsapp != null && whatsapp.isNotEmpty) {
-        data['whatsapp'] = whatsapp;
       }
 
       print('📡 [AuthService] POST /app/auth/me com dados: $data');

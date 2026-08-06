@@ -2,15 +2,17 @@ class UsuarioModel {
   final int id;
   final String nome;
   final String? email;
-  final String? avatar;
+  final String? telefone;
   final String? whatsapp;
+  final String? avatar;
 
   UsuarioModel({
     required this.id,
     required this.nome,
     this.email,
-    this.avatar,
+    this.telefone,
     this.whatsapp,
+    this.avatar,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
@@ -18,8 +20,9 @@ class UsuarioModel {
       id: json['id'] is String ? int.parse(json['id']) : (json['id'] ?? 0),
       nome: json['nome'] ?? json['username'] ?? '',
       email: json['email'],
+      telefone: json['telefone']?.toString(),
+      whatsapp: json['whatsapp']?.toString(),
       avatar: json['avatar'],
-      whatsapp: json['whatsapp'],
     );
   }
 
@@ -28,8 +31,9 @@ class UsuarioModel {
       'id': id,
       'nome': nome,
       'email': email,
-      'avatar': avatar,
+      'telefone': telefone,
       'whatsapp': whatsapp,
+      'avatar': avatar,
     };
   }
 }

@@ -20,6 +20,7 @@ import '../modules/enderecos/views/endereco_edit_view.dart';
 import '../modules/enderecos/bloc/endereco_cubit.dart';
 import '../modules/home/bloc/localizacao_cubit.dart';
 import '../modules/auth/bloc/auth_cubit.dart';
+import '../modules/auth/bloc/auth_state.dart';
 import '../modules/carrinho/bloc/carrinho_cubit.dart';
 import '../modules/enderecos/models/endereco_model.dart';
 import 'app_routes.dart';
@@ -104,9 +105,44 @@ class AppRouter {
         );
 
       case Routes.carrinho:
+        // ✅ Validação centralizada: só abre carrinho se tiver telefone e nome
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const CarrinhoPage(),
+          builder: (context) {
+            final authCubit = context.read<AuthCubit>();
+            final authState = authCubit.state;
+            String? nome;
+            String? telefone;
+
+            if (authState is AuthGuest || authState is AuthAuthenticated || authState is AuthPerfilCompleto) {
+              nome = authState.user?.nome;
+              telefone = authState.user?.telefone;
+            }
+
+            debugPrint('🛡️ [AppRouter] Carrinho: nome=$nome, telefone=$telefone');
+
+            // Sem telefone → redireciona para phoneInput
+            if (telefone == null || telefone.isEmpty) {
+              debugPrint('📱 [AppRouter] Sem telefone → phoneInput');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacementNamed(context, Routes.phoneInput, arguments: true);
+              });
+              return const SizedBox.shrink();
+            }
+
+            // Tem telefone, sem nome → redireciona para completarPerfil
+            if (nome == null || nome.isEmpty) {
+              debugPrint('📝 [AppRouter] Sem nome → completarPerfil');
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacementNamed(context, Routes.completarPerfil, arguments: true);
+              });
+              return const SizedBox.shrink();
+            }
+
+            // Tudo certo → abre o carrinho
+            debugPrint('✅ [AppRouter] Carrinho liberado');
+            return const CarrinhoPage();
+          },
         );
 
       case Routes.pedidos:
