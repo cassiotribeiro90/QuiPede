@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/di/dependencies.dart';
+import 'package:quipede/app/routes/app_routes.dart';
 import 'package:quipede/app/services/navigation_service.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
@@ -72,10 +73,12 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
       },
       listener: (context, state) {
         if (state is AuthPerfilCompleto) {
-          print('✅ [CompletarPerfil] Perfil completado, voltando...');
-          // ✅ Simplesmente volta para a tela anterior (AppRouter que redirecionará para o carrinho)
-          if (mounted) {
-            getIt<NavigationService>().pop(true);
+          print('✅ [CompletarPerfil] Perfil completado');
+          // ✅ Substitui esta tela pelo destino correto para evitar tela branca caso não haja para onde voltar
+          if (widget.redirectToCheckout) {
+            getIt<NavigationService>().pushReplacementNamed(Routes.carrinho);
+          } else {
+            getIt<NavigationService>().pushReplacementNamed(Routes.home);
           }
         } else if (state is AuthError) {
           print('❌ [CompletarPerfil] Erro: ${state.message}');

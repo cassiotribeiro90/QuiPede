@@ -121,11 +121,9 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
             ),
           );
 
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.pop(context, true);
-            }
-          });
+          if (mounted) {
+            Navigator.pop(context, true);
+          }
         }
         // ✅ Erro ao criar
         else if (state is EnderecoError) {

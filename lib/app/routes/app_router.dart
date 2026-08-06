@@ -74,6 +74,7 @@ class AppRouter {
 
       case Routes.completarPerfil:
         final bool redirectToCheckout = settings.arguments as bool? ?? false;
+        print('🧭 [AppRouter] Abrindo CompletarPerfilPage (redirectToCheckout: $redirectToCheckout)');
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => CompletarPerfilPage(redirectToCheckout: redirectToCheckout),
@@ -107,6 +108,7 @@ class AppRouter {
       // ✅ Validação síncrona – sem loading, sem BlocBuilder
         final authCubit = getIt<AuthCubit>();
         final authState = authCubit.state;
+        print('🧭 [AppRouter] Carrinho: authState=${authState.runtimeType}');
         String? nome;
         String? telefone;
 

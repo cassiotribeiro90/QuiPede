@@ -9,6 +9,7 @@ import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/services/navigation_service.dart';
 import '../models/endereco_sugestao.dart';
 import '../services/localizacao_service.dart';
+import 'package:quipede/app/modules/auth/bloc/auth_cubit.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import 'endereco_confirmacao_page.dart';
@@ -147,15 +148,7 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<EnderecoCubit, EnderecoState>(
-      listener: (context, state) {
-        if (state is EnderecoCriado) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Endereço adicionado com sucesso!'), backgroundColor: Colors.green),
-          );
-          // ✅ Vai direto para Home, limpando toda a pilha (incluindo Onboarding)
-          getIt<NavigationService>().goToHomeAndRemoveAll();
-        }
-      },
+      listener: (context, state) {},
       child: ResponsivePageScaffold(
         appBar: AppBar(
           title: const Text('Buscar Endereço'),
@@ -251,6 +244,8 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
       itemCount: _sugestoes.length,
       itemBuilder: (context, index) {
         final item = _sugestoes[index];
+        final authCubit = context.read<AuthCubit>();
+        
         return EnderecoSugestaoTile(
           endereco: item,
           onTap: () {
@@ -265,8 +260,12 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
               ),
             ).then((result) {
               if (result == true && mounted) {
-                // ✅ Endereço confirmado → vai direto para Home, limpando a pilha
-                getIt<NavigationService>().goToHomeAndRemoveAll();
+                // ✅ Sincroniza o endereço com o LocalizacaoCubit antes de ir para Home
+                authCubit.carregarEnderecoUsuario().then((_) {
+                  if (mounted) {
+                    getIt<NavigationService>().goToHomeAndRemoveAll();
+                  }
+                });
               }
             });
           },

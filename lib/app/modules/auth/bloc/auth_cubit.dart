@@ -245,6 +245,7 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _enderecoCubit.carregarEnderecos();
       final state = _enderecoCubit.state;
+
       if (state is EnderecoLoaded && state.enderecoPrincipal != null) {
         _localizacaoCubit.definirEnderecoCompleto(state.enderecoPrincipal!, origem: 'endereco_padrao');
       }

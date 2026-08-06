@@ -63,20 +63,9 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
 
     setState(() => _isLoading = true);
 
+
     try {
       await getIt<EnderecoCubit>().criarEndereco(enderecoModel);
-
-      if (mounted) {
-        context.read<LocalizacaoCubit>().definirLocalizacaoManual(
-          latitude: widget.latitude,
-          longitude: widget.longitude,
-          enderecoFormatado: '${widget.endereco['logradouro']}, ${_numeroController.text}',
-          referencia: _referenciaController.text.trim().isEmpty ? null : _referenciaController.text.trim(),
-        );
-
-        // ✅ Endereço salvo → vai direto para Home, limpando a pilha
-        getIt<NavigationService>().goToHomeAndRemoveAll();
-      }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -96,6 +85,10 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
       listener: (context, state) {
         if (state is EnderecoCriado) {
           setState(() => _isLoading = false);
+
+          // ✅ Sincroniza o endereço completo (incluindo ID) com o LocalizacaoCubit
+          context.read<LocalizacaoCubit>().definirEnderecoCompleto(state.endereco, origem: 'manual');
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Endereço adicionado com sucesso!'),

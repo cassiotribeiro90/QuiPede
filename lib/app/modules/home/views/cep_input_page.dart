@@ -4,6 +4,7 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/services/navigation_service.dart';
+import 'package:quipede/app/modules/auth/bloc/auth_cubit.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import 'endereco_confirmacao_page.dart';
@@ -83,6 +84,8 @@ class _CepInputBodyState extends State<_CepInputBody> {
             'uf': state.dadosCep['uf'] ?? '',
             'cep': state.dadosCep['cep'] ?? '',
           };
+          final authCubit = context.read<AuthCubit>();
+          
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -94,17 +97,13 @@ class _CepInputBodyState extends State<_CepInputBody> {
             ),
           ).then((result) {
             if (result == true && mounted) {
-              // ✅ Endereço confirmado → vai direto para Home, limpando a pilha
-              getIt<NavigationService>().goToHomeAndRemoveAll();
+              authCubit.carregarEnderecoUsuario().then((_) {
+                if (mounted) {
+                  getIt<NavigationService>().goToHomeAndRemoveAll();
+                }
+              });
             }
           });
-        }
-        if (state is EnderecoCriado) {
-          setState(() => _isLoading = false);
-          if (mounted) {
-            // ✅ Endereço criado → vai direto para Home, limpando a pilha
-            getIt<NavigationService>().goToHomeAndRemoveAll();
-          }
         }
         if (state is EnderecoError) {
           setState(() => _isLoading = false);
