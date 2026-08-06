@@ -105,10 +105,11 @@ class AppRouter {
         );
 
       case Routes.carrinho:
-      // ✅ Validação síncrona – sem loading, sem BlocBuilder
+        // ✅ Validação síncrona – sem loading, sem BlocBuilder
         final authCubit = getIt<AuthCubit>();
         final authState = authCubit.state;
-        print('🧭 [AppRouter] Carrinho: authState=${authState.runtimeType}');
+        print('🧭 [AppRouter] Processando /carrinho - authState=${authState.runtimeType}');
+        
         String? nome;
         String? telefone;
 
@@ -117,24 +118,24 @@ class AppRouter {
           telefone = authState.user?.telefone;
         }
 
-        debugPrint('🛡️ [AppRouter] Carrinho: nome=$nome, telefone=$telefone');
+        print('🛡️ [AppRouter] Carrinho: nome=$nome, telefone=$telefone');
 
         if (telefone == null || telefone.isEmpty) {
-          debugPrint('📱 [AppRouter] Sem telefone → phoneInput');
+          print('📱 [AppRouter] Sem telefone → phoneInput');
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => PhoneInputPage(redirectToCheckout: true),
           );
         }
         if (nome == null || nome.isEmpty) {
-          debugPrint('📝 [AppRouter] Sem nome → completarPerfil');
+          print('📝 [AppRouter] Sem nome → completarPerfil');
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => CompletarPerfilPage(redirectToCheckout: true),
           );
         }
 
-        debugPrint('✅ [AppRouter] Carrinho liberado');
+        print('✅ [AppRouter] Carrinho liberado');
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const CarrinhoPage(),

@@ -19,6 +19,8 @@ class CompletarPerfilPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🧭 [CompletarPerfilPage] build() - canPop: ${ModalRoute.of(context)?.canPop}, isFirst: ${ModalRoute.of(context)?.isFirst}');
+
     return BlocProvider.value(
       value: context.read<AuthCubit>(),
       child: _CompletarPerfilBody(redirectToCheckout: redirectToCheckout),
@@ -73,12 +75,10 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
       },
       listener: (context, state) {
         if (state is AuthPerfilCompleto) {
-          print('✅ [CompletarPerfil] Perfil completado');
-          // ✅ Substitui esta tela pelo destino correto para evitar tela branca caso não haja para onde voltar
-          if (widget.redirectToCheckout) {
-            getIt<NavigationService>().pushReplacementNamed(Routes.carrinho);
-          } else {
-            getIt<NavigationService>().pushReplacementNamed(Routes.home);
+          print('✅ [CompletarPerfil] Perfil completado - fechando tela');
+          // ✅ Apenas fecha esta tela. O AppRouter validará na próxima vez que abrir o carrinho.
+          if (mounted) {
+            Navigator.pop(context);
           }
         } else if (state is AuthError) {
           print('❌ [CompletarPerfil] Erro: ${state.message}');

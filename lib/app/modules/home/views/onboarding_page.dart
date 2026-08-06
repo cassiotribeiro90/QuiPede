@@ -83,7 +83,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
               ),
             ),
-          );
+          ).then((result) {
+            if (result == true && mounted) {
+              getIt<NavigationService>().goToHomeAndRemoveAll();
+            }
+          });
         } else {
           _showError(response['message'] ?? 'Não foi possível identificar seu endereço.');
         }

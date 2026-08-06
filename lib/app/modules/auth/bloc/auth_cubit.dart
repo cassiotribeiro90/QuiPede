@@ -105,10 +105,14 @@ class AuthCubit extends Cubit<AuthState> {
   // ============ MÉTODOS OTP (TELEFONE) ============
 
   Future<void> enviarTelefone(String telefone) async {
-    emit(AuthPhoneEnviado(telefone: telefone));
+    print('🧭 [AuthCubit] enviarTelefone: $telefone');
+    emit(AuthLoading()); // ✅ Garante mudança de estado para resetar listeners
     try {
       await _apiClient.post('/app/auth/phone', data: {'phone': telefone}, requiresAuth: false);
+      print('🧭 [AuthCubit] POST /app/auth/phone sucesso. Emitindo AuthPhoneEnviado.');
+      emit(AuthPhoneEnviado(telefone: telefone));
     } catch (e) {
+      print('🧭 [AuthCubit] Erro no POST /app/auth/phone: $e');
       emit(const AuthOtpErro('Erro ao enviar código. Tente novamente.'));
     }
   }

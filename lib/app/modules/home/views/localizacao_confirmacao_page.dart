@@ -95,8 +95,10 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
               backgroundColor: Colors.green,
             ),
           );
-          // ✅ Endereço criado → vai direto para Home, limpando a pilha
-          getIt<NavigationService>().goToHomeAndRemoveAll();
+          // ✅ APENAS fecha. A tela pai (OnboardingPage ou outra) cuidará da navegação para Home
+          if (mounted) {
+            Navigator.pop(context, true);
+          }
         }
         if (state is EnderecoError) {
           setState(() => _isLoading = false);

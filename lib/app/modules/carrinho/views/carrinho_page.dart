@@ -61,6 +61,9 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('🧭 [CarrinhoPage] build() - canPop: ${ModalRoute.of(context)?.canPop}');
+    print('🧭 [CarrinhoPage] isFirst: ${ModalRoute.of(context)?.isFirst}');
+    
     const primaryColor = Color(0xFFF57C00);
 
     return AppScaffold(
@@ -69,6 +72,10 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         backgroundColor: context.surfaceColor,
         foregroundColor: context.textPrimary,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => getIt<NavigationService>().pop(),
+        ),
         actions: [
           BlocBuilder<CarrinhoCubit, CarrinhoState>(
             builder: (context, state) {

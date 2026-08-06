@@ -74,6 +74,8 @@ class _OtpBodyState extends State<_OtpBody> {
 
   @override
   Widget build(BuildContext context) {
+    print('🧭 [OtpVerificationPage] build() - canPop: ${ModalRoute.of(context)?.canPop}, isFirst: ${ModalRoute.of(context)?.isFirst}');
+    
     debugPrint('🔍 [LOG] OtpVerificationPage foi construída');
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
@@ -90,9 +92,30 @@ class _OtpBodyState extends State<_OtpBody> {
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),
           );
         } else if (state is AuthAuthenticated) {
+          print('🧭 [OtpVerificationPage] AuthAuthenticated - canPop: ${Navigator.canPop(context)}');
           _navigated = true;
-          // Substitui OTP pelo carrinho — AppRouter fará a validação
-          getIt<NavigationService>().pushReplacementNamed(Routes.carrinho);
+          
+          final user = getIt<AuthCubit>().usuario;
+          if (user != null && user.nome.isNotEmpty) {
+            // ✅ Usuário completo → volta limpando a pilha até Home/Loja e abre Carrinho
+            print('🧭 [OtpVerificationPage] Usuário completo - abrindo carrinho');
+            getIt<NavigationService>().pushNamedAndRemoveUntil(
+              Routes.carrinho,
+              (route) => route.settings.name == Routes.lojaHome || 
+                         route.settings.name == Routes.home || 
+                         route.isFirst,
+            );
+          } else {
+            // ✅ Usuário sem nome → volta limpando a pilha até Home/Loja e abre Carrinho
+            // O AppRouter processará o novo /carrinho e redirecionará para completarPerfil
+            print('🧭 [OtpVerificationPage] Usuário sem nome - redirecionando para completarPerfil via /carrinho');
+            getIt<NavigationService>().pushNamedAndRemoveUntil(
+              Routes.carrinho,
+              (route) => route.settings.name == Routes.lojaHome || 
+                         route.settings.name == Routes.home || 
+                         route.isFirst,
+            );
+          }
         }
       },
       child: ResponsivePageScaffold(

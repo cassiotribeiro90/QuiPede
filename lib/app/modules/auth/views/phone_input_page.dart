@@ -14,9 +14,11 @@ class PhoneInputPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🧭 [PhoneInputPage] build() - canPop: ${ModalRoute.of(context)?.canPop}, isFirst: ${ModalRoute.of(context)?.isFirst}');
+    
     debugPrint('🔍 [LOG] PhoneInputPage foi construída');
     return BlocProvider.value(
-      value: context.read<AuthCubit>(),
+      value: getIt<AuthCubit>(),
       child: _PhoneInputBody(redirectToCheckout: redirectToCheckout),
     );
   }
@@ -41,6 +43,13 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    final state = getIt<AuthCubit>().state;
+    print('🧭 [PhoneInputPage] Initial state: ${state.runtimeType}');
+  }
+
+  @override
   void dispose() {
     _phoneController.dispose();
     super.dispose();
@@ -48,27 +57,34 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
 
   void _enviar() {
     if (!_formKey.currentState!.validate()) return;
+    print('🧭 [PhoneInputPage] Clicou em Continuar. Enviando telefone...');
     setState(() => _isLoading = true);
     final telefone = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    context.read<AuthCubit>().enviarTelefone(telefone);
+    getIt<AuthCubit>().enviarTelefone(telefone);
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
+      bloc: getIt<AuthCubit>(),
       listener: (context, state) {
+        print('🧭 [PhoneInputPage] BlocListener recebeu: ${state.runtimeType}');
+
         if (state is AuthPhoneEnviado) {
+          print('🧭 [PhoneInputPage] AuthPhoneEnviado - navegando para OTP');
           setState(() => _isLoading = false);
           getIt<NavigationService>().goToOtpVerify(
             state.telefone,
             redirectToCheckout: widget.redirectToCheckout,
           );
         } else if (state is AuthOtpErro) {
+          print('🧭 [PhoneInputPage] AuthOtpErro: ${state.mensagem}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.mensagem), backgroundColor: Colors.red),
           );
         } else if (state is AuthAuthenticated) {
+          print('🧭 [PhoneInputPage] AuthAuthenticated - navegando pós login');
           _navegarPosLogin();
         }
       },

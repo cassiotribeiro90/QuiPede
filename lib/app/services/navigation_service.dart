@@ -49,7 +49,19 @@ class NavigationService {
   }
 
   Future<T?> pushNamedAndRemoveAll<T>(String route) {
-    return navigatorKey.currentState!.pushNamedAndRemoveUntil<T>(route, (r) => false);
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return Future.value(null);
+    
+    // ✅ Proteção contra pilha vazia ou navegação duplicada que limpa a pilha
+    if (!navigator.canPop()) {
+      return navigator.pushNamed<T>(route);
+    }
+    
+    return navigator.pushNamedAndRemoveUntil<T>(route, (r) => false);
+  }
+
+  Future<T?> pushNamedAndRemoveUntil<T>(String route, RoutePredicate predicate, {dynamic arguments}) {
+    return navigatorKey.currentState!.pushNamedAndRemoveUntil<T>(route, predicate, arguments: arguments);
   }
 
   void pop<T>([T? result]) {
