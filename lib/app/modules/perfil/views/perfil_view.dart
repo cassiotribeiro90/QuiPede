@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 import '../../auth/bloc/auth_cubit.dart';
 
 class PerfilView extends StatelessWidget {
@@ -15,12 +17,12 @@ class PerfilView extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.location_on_outlined),
             title: const Text('Meus Endereços'),
-            onTap: () => Navigator.pushNamed(context, Routes.meusEnderecos),
+            onTap: () => getIt<NavigationService>().goToMeusEnderecos(),
           ),
           ListTile(
             leading: const Icon(Icons.receipt_long_outlined),
             title: const Text('Meus Pedidos'),
-            onTap: () => Navigator.pushNamed(context, Routes.pedidos),
+            onTap: () => getIt<NavigationService>().pushNamed(Routes.pedidos),
           ),
           const Divider(),
           ListTile(
@@ -54,13 +56,6 @@ class PerfilView extends StatelessWidget {
 
     if (confirmado == true && context.mounted) {
       await context.read<AuthCubit>().logout();
-      if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          Routes.onboarding,
-          (route) => false,
-        );
-      }
     }
   }
 }

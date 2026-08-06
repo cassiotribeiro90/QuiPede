@@ -12,7 +12,8 @@ import 'auth_state.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
-import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final ApiClient _apiClient;
@@ -276,12 +277,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(AuthUnauthenticated());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        Routes.onboarding,
-            (route) => false,
-      );
-    });
+    getIt<NavigationService>().goToOnboarding();
   }
 
   Future<void> logout() async {
@@ -306,11 +302,6 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(AuthUnauthenticated());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        Routes.onboarding,
-            (route) => false,
-      );
-    });
+    getIt<NavigationService>().goToOnboarding();
   }
 }

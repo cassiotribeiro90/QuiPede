@@ -12,7 +12,7 @@ import '../../carrinho/widgets/carrinho_bottom_bar.dart';
 import '../../produtos/widgets/produto_simples_bottom_sheet.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
-import '../../../routes/app_routes.dart';
+import '../../../services/navigation_service.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
 class LojaDetalhePage extends StatefulWidget {
@@ -85,7 +85,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
           duration: Duration(seconds: 3),
         ),
       );
-      Navigator.pushNamed(context, Routes.onboarding);
+      getIt<NavigationService>().goToOnboarding();
     }
   }
 
@@ -213,7 +213,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> {
           return CarrinhoBottomBar(
             lojaNome: lojaNome,
             isLoading: isLoading,
-            onTap: () => Navigator.pushNamed(context, Routes.carrinho),
+            onTap: () => getIt<NavigationService>().goToCarrinho(),
           );
         }
         return const SizedBox(height: 0, width: 0);

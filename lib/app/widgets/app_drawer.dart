@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../modules/auth/bloc/auth_cubit.dart';
 import '../modules/auth/bloc/auth_state.dart';
 import '../routes/app_routes.dart';
+import '../di/dependencies.dart';
+import '../services/navigation_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -131,8 +133,8 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _navigateAndClose(BuildContext context, String route) {
-    Navigator.pop(context); // Fecha o drawer
-    Navigator.pushNamed(context, route);
+    getIt<NavigationService>().pop(); // Fecha o drawer
+    getIt<NavigationService>().pushNamed(route);
   }
 
   void _confirmarLogout(BuildContext context) async {
@@ -156,12 +158,8 @@ class AppDrawer extends StatelessWidget {
 
     if (confirm == true) {
       if (context.mounted) {
-        Navigator.pop(context); // Fecha o drawer
+        getIt<NavigationService>().pop(); // Fecha o drawer
         await context.read<AuthCubit>().logout();
-        if (context.mounted) {
-          // ✅ Redireciona para onboarding e limpa a pilha
-          Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
-        }
       }
     }
   }
@@ -187,12 +185,8 @@ class AppDrawer extends StatelessWidget {
 
     if (confirm == true) {
       if (context.mounted) {
-        Navigator.pop(context); // Fecha o drawer
+        getIt<NavigationService>().pop(); // Fecha o drawer
         await context.read<AuthCubit>().sairConvidado();
-        if (context.mounted) {
-          // ✅ Redireciona para onboarding e limpa a pilha
-          Navigator.pushNamedAndRemoveUntil(context, Routes.onboarding, (route) => false);
-        }
       }
     }
   }

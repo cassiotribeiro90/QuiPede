@@ -5,9 +5,9 @@ import '../bloc/lojas_state.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import '../widgets/loja_item.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
-import '../../../routes/app_routes.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
+import '../../../services/navigation_service.dart';
 import '../../carrinho/widgets/carrinho_bottom_bar.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../home/bloc/localizacao_cubit.dart';
@@ -91,9 +91,9 @@ class _LojasListScreenState extends State<LojasListScreen> {
   void _navegarParaEnderecos(BuildContext context) {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAuthenticated || authState is AuthGuest) {
-      Navigator.pushNamed(context, Routes.meusEnderecos);
+      getIt<NavigationService>().goToMeusEnderecos();
     } else {
-      Navigator.pushNamed(context, Routes.login);
+      getIt<NavigationService>().goToLogin();
     }
   }
 
@@ -322,7 +322,7 @@ class _LojasListScreenState extends State<LojasListScreen> {
               children: [
                 LojaItem(
                   loja: loja,
-                  onTap: () => Navigator.pushNamed(context, Routes.lojaHome, arguments: loja.id),
+                  onTap: () => getIt<NavigationService>().goToLojaHome(loja.id),
                 ),
                 if (index < lojas.length - 1)
                   Divider(

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_theme_extension.dart';
-import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 import '../../pedido/bloc/pedido_cubit.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
@@ -40,10 +41,10 @@ class _PedidosViewState extends State<PedidosView> {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
+                if (getIt<NavigationService>().canPop()) {
+                  getIt<NavigationService>().pop();
                 } else {
-                  Navigator.pushReplacementNamed(context, Routes.home);
+                  getIt<NavigationService>().goToHomeAndRemoveAll();
                 }
               },
             ),
@@ -74,7 +75,7 @@ class _PedidosViewState extends State<PedidosView> {
               child: const Text('Tentar novamente'),
             ),
             OutlinedButton(
-              onPressed: () => Navigator.pushReplacementNamed(context, Routes.home),
+              onPressed: () => getIt<NavigationService>().goToHomeAndRemoveAll(),
               child: const Text('Voltar para o início'),
             ),
           ],
@@ -93,7 +94,7 @@ class _PedidosViewState extends State<PedidosView> {
               Text('Você ainda não fez nenhum pedido', style: context.bodyLarge),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, Routes.home),
+                onPressed: () => getIt<NavigationService>().goToHomeAndRemoveAll(),
                 child: const Text('Ir às compras'),
               ),
             ],
@@ -120,7 +121,7 @@ class _PedidosViewState extends State<PedidosView> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: () => Navigator.pushReplacementNamed(context, Routes.home),
+              onPressed: () => getIt<NavigationService>().goToHomeAndRemoveAll(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.primaryColor,
                 foregroundColor: Colors.white,
@@ -140,11 +141,7 @@ class _PedidosViewState extends State<PedidosView> {
   // 🔥 ITEM DA LISTA COM LOGO E PREÇO CENTRALIZADOS
   Widget _buildPedidoItem(BuildContext context, dynamic pedido) {
     return InkWell(
-      onTap: () => Navigator.pushNamed(
-        context,
-        Routes.pedidoDetalhe,
-        arguments: pedido.id,
-      ),
+      onTap: () => getIt<NavigationService>().goToPedidoDetalhe(pedido.id),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(

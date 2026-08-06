@@ -4,6 +4,8 @@ import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../bloc/auth_cubit.dart';
 import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -49,10 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      targetRoute,
-          (route) => false,
-    );
+    getIt<NavigationService>().pushNamedAndRemoveAll(targetRoute);
   }
 
   @override

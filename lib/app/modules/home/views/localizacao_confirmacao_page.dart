@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/routes/app_routes.dart';
+import 'package:quipede/app/services/navigation_service.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../bloc/localizacao_cubit.dart';
@@ -75,7 +75,7 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
         );
 
         // ✅ Endereço salvo → vai direto para Home, limpando a pilha
-        Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+        getIt<NavigationService>().goToHomeAndRemoveAll();
       }
     } catch (e) {
       if (mounted) {
@@ -103,7 +103,7 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
             ),
           );
           // ✅ Endereço criado → vai direto para Home, limpando a pilha
-          Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+          getIt<NavigationService>().goToHomeAndRemoveAll();
         }
         if (state is EnderecoError) {
           setState(() => _isLoading = false);
@@ -126,7 +126,7 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => getIt<NavigationService>().pop(),
           ),
         ),
         backgroundColor: Colors.white,
@@ -220,7 +220,7 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
                 ),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => getIt<NavigationService>().pop(),
                   child: const Text('Tentar outra forma'),
                 ),
               ],

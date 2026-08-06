@@ -11,6 +11,8 @@ import '../../home/bloc/localizacao_state.dart';
 import '../../../../shared/widgets/endereco_selecionado_widget.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../../core/theme/input_styles.dart';
@@ -108,8 +110,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
               listener: (context, state) {
                 if (state is PedidoCriado) {
                   context.read<CarrinhoCubit>().limparCarrinho();
-                  Navigator.pushReplacementNamed(
-                    context,
+                  getIt<NavigationService>().pushReplacementNamed(
                     Routes.pedidoDetalhe,
                     arguments: state.pedidoId,
                   );
@@ -141,7 +142,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => getIt<NavigationService>().pop(),
                           child: const Text('Continuar Comprando'),
                         ),
                       ],
@@ -608,13 +609,13 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     // ✅ Segunda camada de segurança: se chegou aqui sem telefone/nome, redireciona
     if (telefone == null || telefone.isEmpty) {
       debugPrint('📱 [CarrinhoPage] Sem telefone → phoneInput');
-      Navigator.pushNamed(context, Routes.phoneInput, arguments: true);
+      getIt<NavigationService>().goToPhoneInput(redirectToCheckout: true);
       return;
     }
 
     if (nome == null || nome.isEmpty) {
       debugPrint('📝 [CarrinhoPage] Sem nome → completarPerfil');
-      Navigator.pushNamed(context, Routes.completarPerfil, arguments: true);
+      getIt<NavigationService>().goToCompletarPerfil(redirectToCheckout: true);
       return;
     }
 

@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
-import 'package:quipede/app/routes/app_routes.dart';
+import 'package:quipede/app/services/navigation_service.dart';
 import '../models/endereco_sugestao.dart';
 import '../services/localizacao_service.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
@@ -153,7 +153,7 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
             const SnackBar(content: Text('Endereço adicionado com sucesso!'), backgroundColor: Colors.green),
           );
           // ✅ Vai direto para Home, limpando toda a pilha (incluindo Onboarding)
-          Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+          getIt<NavigationService>().goToHomeAndRemoveAll();
         }
       },
       child: ResponsivePageScaffold(
@@ -164,7 +164,7 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => getIt<NavigationService>().pop(),
           ),
         ),
         backgroundColor: Colors.white,
@@ -266,7 +266,7 @@ class _BuscaEnderecoBodyState extends State<_BuscaEnderecoBody> {
             ).then((result) {
               if (result == true && mounted) {
                 // ✅ Endereço confirmado → vai direto para Home, limpando a pilha
-                Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+                getIt<NavigationService>().goToHomeAndRemoveAll();
               }
             });
           },

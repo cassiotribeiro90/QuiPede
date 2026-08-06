@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
-import 'otp_verification_page.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 import '../../../core/widgets/app_text_field.dart';
 
 class PhoneInputPage extends StatelessWidget {
@@ -59,13 +59,9 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
       listener: (context, state) {
         if (state is AuthPhoneEnviado) {
           setState(() => _isLoading = false);
-          Navigator.pushNamed(
-            context,
-            Routes.otpVerify,
-            arguments: {
-              'telefone': state.telefone,
-              'redirectToCheckout': widget.redirectToCheckout,
-            },
+          getIt<NavigationService>().goToOtpVerify(
+            state.telefone,
+            redirectToCheckout: widget.redirectToCheckout,
           );
         } else if (state is AuthOtpErro) {
           setState(() => _isLoading = false);
@@ -155,9 +151,9 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
 
   void _navegarPosLogin() {
     if (widget.redirectToCheckout) {
-      Navigator.pushNamedAndRemoveUntil(context, Routes.carrinho, (route) => false);
+      getIt<NavigationService>().goToCarrinhoAndRemoveAll();
     } else {
-      Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+      getIt<NavigationService>().goToHomeAndRemoveAll();
     }
   }
 }

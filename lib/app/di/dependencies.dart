@@ -23,6 +23,7 @@ import '../modules/pedido/bloc/pedido_cubit.dart';
 import '../modules/enderecos/bloc/endereco_cubit.dart';
 import '../modules/enderecos/repositories/endereco_repository.dart';
 import '../modules/enderecos/services/endereco_service.dart';
+import 'package:quipede/app/services/navigation_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -36,6 +37,10 @@ Future<void> setupDependencies() async {
 
   // ✅ 2. Navigator Key
   getIt.registerSingleton<GlobalKey<NavigatorState>>(ApiClient.navigatorKey);
+
+  getIt.registerLazySingleton<NavigationService>(
+    () => NavigationService(getIt<GlobalKey<NavigatorState>>()),
+  );
 
   // ✅ 3. ApiClient (baixo nível)
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());

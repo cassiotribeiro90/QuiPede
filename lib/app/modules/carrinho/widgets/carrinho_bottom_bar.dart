@@ -3,9 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/carrinho_cubit.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
-import '../../../routes/app_routes.dart';
-import '../../auth/bloc/auth_cubit.dart';
-import '../../auth/bloc/auth_state.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 
 class CarrinhoBottomBar extends StatelessWidget {
   final VoidCallback? onTap;
@@ -24,7 +23,7 @@ class CarrinhoBottomBar extends StatelessWidget {
   }
 
   void _abrirCarrinho(BuildContext context) {
-    Navigator.pushNamed(context, Routes.carrinho);
+    getIt<NavigationService>().goToCarrinho();
   }
 
   @override

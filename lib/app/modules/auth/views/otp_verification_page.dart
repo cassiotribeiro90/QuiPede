@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quipede/app/di/dependencies.dart';
+import 'package:quipede/app/services/navigation_service.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
@@ -90,7 +92,7 @@ class _OtpBodyState extends State<_OtpBody> {
         } else if (state is AuthAuthenticated) {
           _navigated = true;
           // Substitui OTP pelo carrinho — AppRouter fará a validação
-          Navigator.pushReplacementNamed(context, Routes.carrinho);
+          getIt<NavigationService>().pushReplacementNamed(Routes.carrinho);
         }
       },
       child: ResponsivePageScaffold(

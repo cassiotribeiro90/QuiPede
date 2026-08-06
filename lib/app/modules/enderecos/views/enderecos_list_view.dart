@@ -7,6 +7,8 @@ import '../models/endereco_model.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 
@@ -103,10 +105,10 @@ class _EnderecosListViewState extends State<EnderecosListView> {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
+                if (getIt<NavigationService>().canPop()) {
+                  getIt<NavigationService>().pop();
                 } else {
-                  Navigator.pushReplacementNamed(context, Routes.home);
+                  getIt<NavigationService>().goToHomeAndRemoveAll();
                 }
               },
             ),
@@ -209,8 +211,7 @@ class _EnderecosListViewState extends State<EnderecosListView> {
                             onPressed: () {
                               print('✏️ [EnderecosListView] Editando endereço ID ${endereco.id}');
                               // ✅ Recarrega a lista ao voltar da edição
-                              Navigator.pushNamed(
-                                context,
+                              getIt<NavigationService>().pushNamed(
                                 Routes.enderecoEdit,
                                 arguments: endereco,
                               ).then((_) {

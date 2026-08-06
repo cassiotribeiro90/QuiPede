@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/loja_resumo_model.dart';
-import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 
 class LojaItemWidget extends StatelessWidget {
   final LojaResumo loja;
@@ -12,11 +13,7 @@ class LojaItemWidget extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: ListTile(
-        onTap: () => Navigator.pushNamed(
-          context, 
-          Routes.lojaHome,
-          arguments: loja.id
-        ),
+        onTap: () => getIt<NavigationService>().goToLojaHome(loja.id),
         leading: CircleAvatar(
           backgroundImage: NetworkImage(loja.logo ?? ''),
         ),

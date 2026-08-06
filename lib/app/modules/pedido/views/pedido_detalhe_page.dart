@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../routes/app_routes.dart';
+import '../../../di/dependencies.dart';
+import '../../../services/navigation_service.dart';
 import '../bloc/pedido_cubit.dart';
 import '../widgets/pedido_status_timeline.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
@@ -70,10 +72,10 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
+                if (getIt<NavigationService>().canPop()) {
+                  getIt<NavigationService>().pop();
                 } else {
-                  Navigator.pushReplacementNamed(context, Routes.pedidos);
+                  getIt<NavigationService>().pushReplacementNamed(Routes.pedidos);
                 }
               },
             ),
@@ -216,10 +218,10 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
+                if (getIt<NavigationService>().canPop()) {
+                  getIt<NavigationService>().pop();
                 } else {
-                  Navigator.pushReplacementNamed(context, Routes.pedidos);
+                  getIt<NavigationService>().pushReplacementNamed(Routes.pedidos);
                 }
               },
               style: OutlinedButton.styleFrom(
@@ -231,7 +233,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+                getIt<NavigationService>().goToHomeAndRemoveAll();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.primaryColor,

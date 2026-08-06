@@ -4,9 +4,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/routes/app_routes.dart';
 import 'package:quipede/app/core/utils/platform_utils.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
+import 'package:quipede/app/services/navigation_service.dart';
 import '../services/localizacao_service.dart';
 import 'busca_endereco_page.dart';
 import 'cep_input_page.dart';
@@ -180,7 +180,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     icon: Icons.person_outline_rounded,
                     title: 'Já tenho uma conta',
                     subtitle: 'Entrar com seu número de telefone',
-                    onTap: () => Navigator.pushNamed(context, Routes.phoneInput),
+                    onTap: () => getIt<NavigationService>().goToPhoneInput(),
                   ),
                   const SizedBox(height: 40),
                   Center(
