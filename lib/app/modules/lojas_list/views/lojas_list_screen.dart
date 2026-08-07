@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../main.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -8,6 +9,7 @@ import '../../../../shared/widgets/loading_skeleton.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
 import '../../../services/navigation_service.dart';
+import '../../../routes/app_routes.dart';
 import '../../carrinho/widgets/carrinho_bottom_bar.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../home/bloc/localizacao_cubit.dart';
@@ -24,26 +26,91 @@ class LojasListScreen extends StatefulWidget {
   State<LojasListScreen> createState() => _LojasListScreenState();
 }
 
-class _LojasListScreenState extends State<LojasListScreen> {
+class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingObserver, RouteAware {
   final _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _initialized = false;
+  bool _firstLoad = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     debugPrint('🟢 [LojasListScreen] initState()');
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('🟢 [LojasListScreen] PostFrameCallback - carregando lojas');
+      _subscribeToRoute();
       context.read<LojasCubit>().fetchLojas(perPage: 10);
+      _firstLoad = false;
     });
+
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() => _initialized = true);
+        _verificarEndereco();
+      }
+    });
+  }
+
+  void _subscribeToRoute() {
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    routeObserver.unsubscribe(this);
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('🔄 [LojasListScreen] App resumed - verificando endereço');
+      _onScreenVisible();
+    }
+  }
+
+  @override
+  void didPopNext() {
+    debugPrint('🔄 [LojasListScreen] didPopNext - tela voltou a ser visível');
+    _onScreenVisible();
+  }
+
+  void _onScreenVisible() {
+    if (_firstLoad) return;
+    debugPrint('🔄 [LojasListScreen] Tela visível - recarregando lojas e verificando endereço');
+    context.read<LojasCubit>().fetchLojas(perPage: 10);
+    _verificarEndereco();
+  }
+
+  void _verificarEndereco() {
+    if (!_initialized) return;
+
+    final locState = context.read<LocalizacaoCubit>().state;
+    final authState = context.read<AuthCubit>().state;
+
+    debugPrint('🔍 [LojasListScreen] _verificarEndereco: locState=${locState.runtimeType}, authState=${authState.runtimeType}');
+
+    if (locState is LocalizacaoNaoEncontrada) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        if (authState is AuthGuest || authState is AuthAuthenticated) {
+          debugPrint('📂 [LojasListScreen] Sem endereço + logado → MeusEnderecos');
+          getIt<NavigationService>().pushReplacementNamed(Routes.meusEnderecos);
+        } else {
+          debugPrint('🚀 [LojasListScreen] Sem endereço + deslogado → Onboarding');
+          getIt<NavigationService>().pushNamedAndRemoveAll(Routes.onboarding);
+        }
+      });
+    }
   }
 
   void _onScroll() {
@@ -91,7 +158,9 @@ class _LojasListScreenState extends State<LojasListScreen> {
   void _navegarParaEnderecos(BuildContext context) {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAuthenticated || authState is AuthGuest) {
-      getIt<NavigationService>().goToMeusEnderecos();
+      getIt<NavigationService>().pushNamed(Routes.meusEnderecos).then((_) {
+        _verificarEndereco();
+      });
     } else {
       getIt<NavigationService>().goToLogin();
     }
@@ -140,71 +209,60 @@ class _LojasListScreenState extends State<LojasListScreen> {
   @override
   Widget build(BuildContext context) {
     debugPrint('🏗️ [LojasListScreen] build() iniciado');
-    try {
-      return MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: getIt<CarrinhoCubit>()),
-        ],
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: getIt<CarrinhoCubit>()),
+      ],
+      child: BlocListener<LocalizacaoCubit, LocalizacaoState>(
+        listener: (context, state) {
+          if (_initialized && state is LocalizacaoNaoEncontrada) {
+            _verificarEndereco();
+          }
+        },
         child: BlocBuilder<LojasCubit, LojasState>(
           builder: (context, state) {
             debugPrint('📢 [LojasListScreen] BlocBuilder LojasState: ${state.runtimeType}');
-            try {
-              return ResponsivePageScaffold(
+            return ResponsivePageScaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              drawer: const AppDrawer(),
+              appBar: AppBar(
+                title: _buildAppBarTitle(context),
+                centerTitle: true,
+                elevation: 0,
                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                drawer: const AppDrawer(),
-                appBar: AppBar(
-                  title: _buildAppBarTitle(context),
-                  centerTitle: true,
-                  elevation: 0,
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-                  leading: Builder(
-                    builder: (context) => IconButton(
-                      icon: const Icon(Icons.menu_rounded),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
+                foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                leading: Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu_rounded),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
                   ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none_rounded),
-                      onPressed: () {},
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_none_rounded),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+              bottomNavigationBar: const CarrinhoBottomBar(),
+              body: RefreshIndicator(
+                onRefresh: () => context.read<LojasCubit>().refreshList(),
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: _buildSearchTrigger(state),
                     ),
+                    _buildSliverBody(state),
                   ],
                 ),
-                bottomNavigationBar: const CarrinhoBottomBar(),
-                body: RefreshIndicator(
-                  onRefresh: () => context.read<LojasCubit>().refreshList(),
-                  child: CustomScrollView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: _buildSearchTrigger(state),
-                      ),
-                      _buildSliverBody(state),
-                    ],
-                  ),
-                ),
-              );
-            } catch (e, stack) {
-              debugPrint('❌ [LojasListScreen] ERRO NO BUILDER: $e');
-              debugPrint(stack.toString());
-              return Scaffold(
-                appBar: AppBar(title: const Text('Erro')),
-                body: Center(child: Text('Erro: $e')),
-              );
-            }
+              ),
+            );
           },
         ),
-      );
-    } catch (e, stack) {
-      debugPrint('❌ [LojasListScreen] ERRO NO BUILD PRINCIPAL: $e');
-      debugPrint(stack.toString());
-      return Scaffold(
-        appBar: AppBar(title: const Text('Erro')),
-        body: Center(child: Text('Erro: $e')),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildSearchTrigger(LojasState state) {
@@ -272,9 +330,9 @@ class _LojasListScreenState extends State<LojasListScreen> {
                     _searchController.clear();
                     context.read<LojasCubit>().clearAllFilters();
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Icon(Icons.close, size: 20, color: primaryColor),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Icon(Icons.close, size: 20, color: Colors.orange),
                   ),
                 ),
             ],

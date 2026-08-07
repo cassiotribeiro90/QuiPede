@@ -4,6 +4,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../routes/app_routes.dart';
 
 class OtpVerificationPage extends StatelessWidget {
   final String telefone;
@@ -71,7 +72,7 @@ class _OtpBodyState extends State<_OtpBody> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔍 [LOG] OtpVerificationPage foi construída');
+    debugPrint('🔍 [LOG] OtpVerificationPage foi construída. redirectToCheckout=${widget.redirectToCheckout}');
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (_navigated) return;
@@ -88,8 +89,27 @@ class _OtpBodyState extends State<_OtpBody> {
           );
         } else if (state is AuthAuthenticated) {
           _navigated = true;
-          if (mounted) {
-            Navigator.pop(context, true);
+          final user = context.read<AuthCubit>().usuario;
+
+          if (widget.redirectToCheckout) {
+            // ✅ Fluxo do Carrinho: redireciona para carrinho (AppRouter validará)
+            debugPrint('🧭 [OtpVerificationPage] Fluxo Carrinho → pushReplacementNamed /carrinho');
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, Routes.carrinho);
+            }
+          } else {
+            // ✅ Fluxo do Onboarding: redireciona para Home ou CompletarPerfil
+            if (user != null && user.nome.isNotEmpty) {
+              debugPrint('🧭 [OtpVerificationPage] Fluxo Onboarding (com nome) → Home');
+              if (mounted) {
+                Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+              }
+            } else {
+              debugPrint('🧭 [OtpVerificationPage] Fluxo Onboarding (sem nome) → CompletarPerfil');
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, Routes.completarPerfil, arguments: false);
+              }
+            }
           }
         }
       },

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,9 +24,8 @@ class TokenService {
   Future<void> saveTokens(
     String accessToken, 
     String? refreshToken, {
-    int expiresIn = 900,
+    int expiresIn = 7200,
     bool isGuest = false,
-    Map<String, dynamic>? userJson,
   }) async {
     if (isGuest) {
       await _prefs.setString(guestTokenKey, accessToken);
@@ -37,10 +35,6 @@ class TokenService {
       await _prefs.remove(guestTokenKey);
     }
     
-    if (userJson != null) {
-      await saveUser(userJson);
-    }
-
     if (refreshToken != null) {
       await _prefs.setString(refreshTokenKey, refreshToken);
     } else {
@@ -50,20 +44,6 @@ class TokenService {
     await _prefs.setBool(isGuestKey, isGuest);
     final expiresAt = DateTime.now().millisecondsSinceEpoch + (expiresIn * 1000);
     await _prefs.setString(tokenExpiresKey, expiresAt.toString());
-  }
-
-  Future<void> saveUser(Map<String, dynamic> userJson) async {
-    await _prefs.setString(userKey, jsonEncode(userJson));
-  }
-
-  Map<String, dynamic>? getUser() {
-    final data = _prefs.getString(userKey);
-    if (data == null || data.isEmpty) return null;
-    try {
-      return jsonDecode(data);
-    } catch (e) {
-      return null;
-    }
   }
 
   /// Retorna o token disponível, priorizando o de usuário autenticado

@@ -9,15 +9,23 @@ import 'app/modules/home/bloc/localizacao_cubit.dart';
 import 'app/modules/lojas_list/bloc/lojas_cubit.dart';
 import 'app/modules/carrinho/bloc/carrinho_cubit.dart';
 import 'app/modules/pedido/bloc/pedido_cubit.dart';
+import 'app/modules/enderecos/bloc/endereco_cubit.dart';
 import 'app/routes/app_router.dart';
 import 'app/routes/app_routes.dart';
 import 'app/routes/web_navigation_observer.dart';
 import 'app/theme/theme_cubit.dart';
 import 'shared/auth/auth_observer.dart';
 
-Future<void> main() async {
+// ✅ Definição global do RouteObserver para uso com RouteAware
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
+Future<void> setupApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupDependencies();
+}
+
+Future<void> main() async {
+  await setupApp();
   runApp(const QuiPedeApp());
 }
 
@@ -33,6 +41,7 @@ class QuiPedeApp extends StatelessWidget {
         BlocProvider<AddressCubit>(create: (_) => getIt<AddressCubit>()),
         BlocProvider<LojasCubit>(create: (_) => getIt<LojasCubit>()),
         BlocProvider<CarrinhoCubit>(create: (_) => getIt<CarrinhoCubit>()),
+        BlocProvider<EnderecoCubit>(create: (_) => getIt<EnderecoCubit>()),
         BlocProvider<LocalizacaoCubit>(create: (_) => getIt<LocalizacaoCubit>()),
         BlocProvider<PedidoCubit>(create: (_) => getIt<PedidoCubit>()),
       ],
@@ -49,6 +58,7 @@ class QuiPedeApp extends StatelessWidget {
             navigatorObservers: [
               AuthObserver(),
               if (kIsWeb) WebNavigationObserver(),
+              routeObserver, // ✅ Adicionado observer para RouteAware
             ],
             builder: (context, child) {
               return child!;

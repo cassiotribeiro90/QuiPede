@@ -28,8 +28,8 @@ class FakeLojaHomeRepository implements LojaHomeRepository {
     }
     
     // Criar seções de exemplo
-    final secoes = [
-      const SecaoModel(
+    const secoes = [
+      SecaoModel(
         id: 1,
         nome: 'Pizzas Salgadas',
         icone: '🍕',
@@ -140,7 +140,7 @@ void main() {
       act: (cubit) => cubit.applyFilters(search: 'pizza'),
       expect: () => [
         isA<LojaHomeLoading>(),
-        isA<LojaHomeLoaded>().having((s) => (s).searchQuery, 'searchQuery', 'pizza'),
+        isA<LojaHomeLoaded>().having((s) => s.searchQuery, 'searchQuery', 'pizza'),
       ],
     );
   });

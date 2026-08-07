@@ -59,21 +59,21 @@ Future<void> setupDependencies() async {
   // ✅ 6. ThemeCubit (independente)
   getIt.registerSingleton<ThemeCubit>(ThemeCubit(getIt<SharedPreferences>()));
 
-  // ✅ 7. LocalizacaoCubit
-  getIt.registerSingleton<LocalizacaoCubit>(LocalizacaoCubit(getIt<SharedPreferences>()));
-
-  // 🔥 8. ENDERECOCUBIT (MOVER PARA ANTES DO AUTH)
+  // 🔥 7. ENDERECOCUBIT (Deve ser registrado ANTES do LocalizacaoCubit pois este o ouve no construtor)
   getIt.registerLazySingleton<EnderecoCubit>(
         () => EnderecoCubit(getIt<EnderecoRepository>()),
   );
 
-  // ✅ 9. AuthCubit (AGORA O EnderecoCubit JÁ EXISTE)
+  // ✅ 8. LocalizacaoCubit
+  getIt.registerSingleton<LocalizacaoCubit>(LocalizacaoCubit());
+
+  // ✅ 9. AuthCubit
   getIt.registerSingleton<AuthCubit>(
     AuthCubit(
       getIt<ApiClient>(),
       getIt<LocalizacaoCubit>(),
       getIt<EnderecoCubit>(),
-      getIt<SharedPreferences>(), // ✅ Injetado
+      getIt<SharedPreferences>(),
     ),
   );
 

@@ -3,9 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../di/dependencies.dart';
 import '../../../models/carrinho_item.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
+import '../../home/bloc/localizacao_cubit.dart';
+import '../../home/bloc/localizacao_state.dart';
 import '../services/carrinho_service.dart';
 
 // ============ ESTADOS ============
@@ -222,7 +225,8 @@ class CarrinhoCubit extends Cubit<CarrinhoState> {
     }
 
     try {
-      final enderecoId = _prefs.getInt('endereco_padrao_id');
+      final locState = getIt<LocalizacaoCubit>().state;
+      final enderecoId = locState is LocalizacaoCarregada ? locState.endereco.id : null;
       final response = await _service.carregarCarrinho(enderecoId: enderecoId);
       
       _itensMap = {for (var item in response.itens) item.id: item};

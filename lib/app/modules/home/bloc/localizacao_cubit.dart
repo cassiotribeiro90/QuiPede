@@ -1,16 +1,36 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../di/dependencies.dart';
+import '../../enderecos/bloc/endereco_cubit.dart';
+import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
 import 'localizacao_state.dart';
 
 class LocalizacaoCubit extends Cubit<LocalizacaoState> {
-  final SharedPreferences _prefs;
+  StreamSubscription? _enderecoSubscription;
 
-  LocalizacaoCubit(this._prefs) : super(LocalizacaoInitial()) {
-    carregarLocalizacaoDoEnderecoPadrao(); // ✅ Carregar ao iniciar
+  LocalizacaoCubit() : super(LocalizacaoInitial()) {
+    carregarLocalizacaoDoEnderecoPadrao();
+    _ouvirEnderecos();
+  }
+
+  void _ouvirEnderecos() {
+    final enderecoCubit = getIt<EnderecoCubit>();
+    _enderecoSubscription = enderecoCubit.stream.listen((enderecoState) {
+      if (enderecoState is EnderecoLoaded) {
+        if (enderecoState.enderecos.isEmpty) {
+          debugPrint('🔔 [LocalizacaoCubit] Lista de endereços vazia → emitindo LocalizacaoNaoEncontrada');
+          if (!isClosed && state is! LocalizacaoNaoEncontrada) {
+            emit(LocalizacaoNaoEncontrada());
+          }
+        } else if (state is LocalizacaoNaoEncontrada && enderecoState.enderecoPrincipal != null) {
+          // ✅ Se encontrou endereço e estávamos em "Não Encontrada", define o principal
+          definirEnderecoCompleto(enderecoState.enderecoPrincipal!, origem: 'endereco_padrao');
+        }
+      }
+    });
   }
 
   /// Atualiza a posição atual (vinda do GPS)
@@ -26,40 +46,27 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
       longitude: posicao.longitude,
     );
 
-    final estado = LocalizacaoCarregada(
+    emit(LocalizacaoCarregada(
       endereco: endereco,
       origem: 'gps',
-    );
-    _salvarLocalizacao(estado);
-    emit(estado);
+    ));
   }
 
-  /// Carrega localização a partir do endereço padrão salvo
+  /// Carrega localização a partir do endereço padrão do backend
   Future<void> carregarLocalizacaoDoEnderecoPadrao() async {
-    final enderecoJson = _prefs.getString('endereco_padrao');
-    debugPrint('🔍 [LocalizacaoCubit] Carregando endereço salvo: $enderecoJson');
-    
-    if (enderecoJson != null) {
-      try {
-        final Map<String, dynamic> data = jsonDecode(enderecoJson);
-        final endereco = EnderecoModel.fromJson(data);
-        debugPrint('🔍 [LocalizacaoCubit] Endereço carregado: ${endereco.resumido}');
-        
-        // Sincronizar ID separado se existir no modelo
-        if (endereco.id != null) {
-          await _prefs.setInt('endereco_padrao_id', endereco.id!);
-        }
-
-        emit(LocalizacaoCarregada(
-          endereco: endereco,
-          origem: data['origem'] ?? 'endereco_padrao',
-        ));
-      } catch (e) {
-        debugPrint('❌ [LocalizacaoCubit] Erro ao decodificar endereço: $e');
+    debugPrint('🔍 [LocalizacaoCubit] Carregando endereço padrão do backend...');
+    try {
+      final enderecoCubit = getIt<EnderecoCubit>();
+      await enderecoCubit.carregarEnderecos();
+      final enderecoState = enderecoCubit.state;
+      
+      if (enderecoState is EnderecoLoaded && enderecoState.enderecoPrincipal != null) {
+        definirEnderecoCompleto(enderecoState.enderecoPrincipal!, origem: 'endereco_padrao');
+      } else {
         emit(LocalizacaoNaoEncontrada());
       }
-    } else {
-      debugPrint('🔍 [LocalizacaoCubit] Nenhum endereço salvo encontrado');
+    } catch (e) {
+      debugPrint('❌ [LocalizacaoCubit] Erro ao carregar endereços: $e');
       emit(LocalizacaoNaoEncontrada());
     }
   }
@@ -85,52 +92,31 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
 
     debugPrint('🔍 [LocalizacaoCubit] definirLocalizacaoManual: ${endereco.resumido}');
 
-    final estado = LocalizacaoCarregada(
+    emit(LocalizacaoCarregada(
       endereco: endereco,
       origem: 'manual',
-    );
-    
-    _salvarLocalizacao(estado);
-    emit(estado);
-    debugPrint('✅ [LocalizacaoCubit] Cubit atualizado e salvo: ${endereco.resumido}');
+    ));
+    debugPrint('✅ [LocalizacaoCubit] Cubit atualizado em memória: ${endereco.resumido}');
   }
 
   /// Define a localização a partir de um modelo completo (após confirmação da API)
   void definirEnderecoCompleto(EnderecoModel endereco, {String origem = 'manual'}) {
     debugPrint('🔍 [LocalizacaoCubit] definirEnderecoCompleto: ${endereco.resumido}');
-    final estado = LocalizacaoCarregada(
+    emit(LocalizacaoCarregada(
       endereco: endereco,
       origem: origem,
-    );
-    _salvarLocalizacao(estado);
-    emit(estado);
-    debugPrint('✅ [LocalizacaoCubit] Endereço completo definido e salvo: ${endereco.resumido}');
-  }
-
-  Future<void> _salvarLocalizacao(LocalizacaoCarregada estado) async {
-    try {
-      final data = estado.endereco.toJson();
-      data['origem'] = estado.origem;
-      final json = jsonEncode(data);
-      await _prefs.setString('endereco_padrao', json);
-      
-      if (estado.endereco.id != null) {
-        await _prefs.setInt('endereco_padrao_id', estado.endereco.id!);
-        debugPrint('✅ [LocalizacaoCubit] ID do endereço salvo: ${estado.endereco.id}');
-      } else {
-        await _prefs.remove('endereco_padrao_id');
-      }
-
-      debugPrint('✅ [LocalizacaoCubit] Dados persistidos no SharedPreferences: $json');
-    } catch (e) {
-      debugPrint('❌ [LocalizacaoCubit] Erro ao persistir endereço: $e');
-    }
+    ));
+    debugPrint('✅ [LocalizacaoCubit] Endereço completo definido em memória: ${endereco.resumido}');
   }
 
   Future<void> limparLocalizacao() async {
-    await _prefs.remove('endereco_padrao');
-    await _prefs.remove('endereco_padrao_id');
-    debugPrint('🗑️ [LocalizacaoCubit] Endereço removido do SharedPreferences');
+    debugPrint('🗑️ [LocalizacaoCubit] Limpando localização da memória');
     emit(LocalizacaoNaoEncontrada());
+  }
+
+  @override
+  Future<void> close() {
+    _enderecoSubscription?.cancel();
+    return super.close();
   }
 }

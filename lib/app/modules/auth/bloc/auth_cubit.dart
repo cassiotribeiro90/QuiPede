@@ -72,22 +72,8 @@ class AuthCubit extends Cubit<AuthState> {
             return;
           }
         } catch (e) {
-          debugPrint('❌ [AuthCubit] Erro ao buscar /me, usando cache local: $e');
+          debugPrint('❌ [AuthCubit] Erro ao buscar /me: $e');
         }
-
-        final userJson = _apiClient.tokenService.getUser();
-        if (userJson != null) {
-          _usuario = UsuarioModel.fromJson(userJson);
-        }
-
-        if (isGuest) {
-          emit(AuthGuest(accessToken: token, user: _usuario));
-        } else {
-          emit(AuthAuthenticated(accessToken: token, user: _usuario));
-        }
-        await carregarEnderecoUsuario();
-        _isProcessing = false;
-        return;
       }
 
       emit(AuthUnauthenticated());
@@ -233,7 +219,7 @@ class AuthCubit extends Cubit<AuthState> {
     debugPrint('🔐 [AuthCubit] Definindo sessão de Convidado');
     _usuario = UsuarioModel.fromJson(usuarioJson);
 
-    await _apiClient.tokenService.saveTokens(token, null, expiresIn: 86400, isGuest: true);
+    await _apiClient.tokenService.saveTokens(token, null, isGuest: true);
 
     emit(AuthGuest(accessToken: token, user: _usuario));
     await carregarEnderecoUsuario();
@@ -258,24 +244,12 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> sairConvidado() async {
     debugPrint('🔐 [AuthCubit] Saindo do modo convidado...');
 
-    try {
-      final enderecoId = _prefs.getInt('endereco_convidado_id');
-      if (enderecoId != null) {
-        await _apiClient.delete('/app/enderecos/$enderecoId', requiresAuth: true);
-      }
-    } catch (e) {
-      debugPrint('⚠️ [AuthCubit] Erro ao remover endereço (ignorado): $e');
-    }
-
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
     await _localizacaoCubit.limparLocalizacao();
 
     await _prefs.remove('guest_token');
     await _prefs.remove('is_guest');
-    await _prefs.remove('endereco_padrao_id');
-    await _prefs.remove('endereco_padrao_json');
-    await _prefs.remove('endereco_convidado_id');
 
     emit(AuthUnauthenticated());
 
@@ -298,9 +272,6 @@ class AuthCubit extends Cubit<AuthState> {
     await _prefs.remove('guest_token');
     await _prefs.remove('access_token');
     await _prefs.remove('is_guest');
-    await _prefs.remove('endereco_padrao_id');
-    await _prefs.remove('endereco_padrao_json');
-    await _prefs.remove('endereco_convidado_id');
 
     emit(AuthUnauthenticated());
 

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../routes/app_routes.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 
@@ -53,9 +54,8 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
     final nome = _nomeController.text.trim();
     final email = _emailController.text.trim();
 
-    debugPrint('📝 [CompletarPerfil] Salvando perfil: nome=$nome, email=$email');
+    debugPrint('📝 [CompletarPerfil] Salvando perfil: nome=$nome, email=$email, redirectToCheckout=${widget.redirectToCheckout}');
 
-    // ✅ Não passa voltarPara — o Cubit apenas salva e emite AuthPerfilCompleto
     context.read<AuthCubit>().completarPerfil(
       nome: nome,
       email: email.isNotEmpty ? email : null,
@@ -64,16 +64,27 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🔍 [LOG] CompletarPerfilPage foi construída. redirectToCheckout=${widget.redirectToCheckout}');
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) {
         return current is AuthPerfilCompleto || current is AuthError;
       },
       listener: (context, state) {
         if (state is AuthPerfilCompleto) {
-          debugPrint('✅ [CompletarPerfil] Perfil completado - fechando tela');
-          // ✅ Apenas fecha esta tela. O AppRouter validará na próxima vez que abrir o carrinho.
-          if (mounted) {
-            Navigator.pop(context);
+          debugPrint('✅ [CompletarPerfil] Perfil completado');
+          
+          if (widget.redirectToCheckout) {
+            // ✅ Fluxo do Carrinho: apenas fecha a tela
+            debugPrint('🧭 [CompletarPerfil] Fluxo Carrinho → pop');
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          } else {
+            // ✅ Fluxo do Onboarding: redireciona para Home e limpa pilha
+            debugPrint('🧭 [CompletarPerfil] Fluxo Onboarding → Home');
+            if (mounted) {
+              Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+            }
           }
         } else if (state is AuthError) {
           debugPrint('❌ [CompletarPerfil] Erro: ${state.message}');

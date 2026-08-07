@@ -124,7 +124,7 @@ class LojaHomeLoaded extends LojaHomeState {
 
   @override
   List<Object?> get props => [
-        loja,
+        super.loja,
         secoes,
         pagination,
         filterOptions,
