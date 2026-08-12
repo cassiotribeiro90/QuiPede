@@ -13,10 +13,12 @@ import 'cep_input_page.dart';
 import 'localizacao_confirmacao_page.dart';
 import 'widgets/onboarding_option_card.dart';
 import '../../../widgets/app_scaffold.dart';
+import '../../../core/constants/navigation_origins.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 
 class OnboardingPage extends StatefulWidget {
-  const OnboardingPage({super.key});
+  final String? origem;
+  const OnboardingPage({super.key, this.origem});
 
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
@@ -183,7 +185,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     icon: Icons.person_outline_rounded,
                     title: 'Já tenho uma conta',
                     subtitle: 'Entrar com seu número de telefone',
-                    onTap: () => getIt<NavigationService>().goToPhoneInput(),
+                    onTap: () => getIt<NavigationService>().goToPhoneInput(
+                      origem: widget.origem ?? NavigationOrigins.onboarding,
+                    ),
                   ),
                   const SizedBox(height: 40),
                   Center(

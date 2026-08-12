@@ -31,8 +31,9 @@ class ApiClient {
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       validateStatus: (status) {
-        // ✅ Aceita 409 como resposta válida (não lança exceção automaticamente)
-        return status != null && (status < 500 || status == 409);
+        // ✅ Deixa o RefreshInterceptor tratar o 401 (lançando exceção)
+        // ✅ Aceita 409 como resposta de negócio válida
+        return status != null && ((status >= 200 && status < 300) || status == 409);
       },
       headers: {
         'Content-Type': 'application/json',

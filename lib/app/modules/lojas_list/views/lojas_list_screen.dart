@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../main.dart';
+import '../../auth/bloc/auth_state.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -10,12 +11,12 @@ import '../../../widgets/app_drawer.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
 import '../../../services/navigation_service.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/constants/navigation_origins.dart';
 import '../../carrinho/widgets/carrinho_bottom_bar.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../../auth/bloc/auth_cubit.dart';
-import '../../auth/bloc/auth_state.dart';
 import '../../../di/dependencies.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
@@ -31,6 +32,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   final ScrollController _scrollController = ScrollController();
   bool _initialized = false;
   bool _firstLoad = true;
+  bool _enderecoCarregado = false;
 
   @override
   void initState() {
@@ -99,15 +101,22 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
     debugPrint('🔍 [LojasListScreen] _verificarEndereco: locState=${locState.runtimeType}, authState=${authState.runtimeType}');
 
     if (locState is LocalizacaoNaoEncontrada) {
+      // ✅ Só redireciona se já houve uma tentativa de carregamento
+      if (!_enderecoCarregado) return;
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
-        if (authState is AuthGuest || authState is AuthAuthenticated) {
+        if (authState is AuthAuthenticated || authState is AuthGuest || authState is AuthPerfilCompleto) {
           debugPrint('📂 [LojasListScreen] Sem endereço + logado → MeusEnderecos');
           getIt<NavigationService>().pushReplacementNamed(Routes.meusEnderecos);
         } else {
           debugPrint('🚀 [LojasListScreen] Sem endereço + deslogado → Onboarding');
-          getIt<NavigationService>().pushNamedAndRemoveAll(Routes.onboarding);
+          getIt<NavigationService>().pushNamedAndRemoveUntil(
+            Routes.onboarding,
+            (route) => false,
+            arguments: {'origem': NavigationOrigins.home},
+          );
         }
       });
     }
@@ -157,12 +166,14 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
 
   void _navegarParaEnderecos(BuildContext context) {
     final authState = context.read<AuthCubit>().state;
-    if (authState is AuthAuthenticated || authState is AuthGuest) {
+    final String? status = authState.user?.status;
+
+    if (status == 'ativo' || status == 'pendente' || status == 'convidado') {
       getIt<NavigationService>().pushNamed(Routes.meusEnderecos).then((_) {
         _verificarEndereco();
       });
     } else {
-      getIt<NavigationService>().goToLogin();
+      getIt<NavigationService>().goToLogin(origem: NavigationOrigins.home);
     }
   }
 
@@ -215,8 +226,15 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
       ],
       child: BlocListener<LocalizacaoCubit, LocalizacaoState>(
         listener: (context, state) {
+          if (state is LocalizacaoCarregada) {
+            _enderecoCarregado = true;
+          }
+
           if (_initialized && state is LocalizacaoNaoEncontrada) {
-            _verificarEndereco();
+            // ✅ Só redireciona se já houve uma tentativa de carregamento
+            if (_enderecoCarregado) {
+              _verificarEndereco();
+            }
           }
         },
         child: BlocBuilder<LojasCubit, LojasState>(

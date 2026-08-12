@@ -23,13 +23,14 @@ class RefreshInterceptor extends Interceptor {
 
     if (requiresAuth) {
       final token = tokenService.getAccessToken();
-      debugPrint('🔐 [RefreshInterceptor] Token encontrado: ${token != null ? "SIM (${token.substring(0, 10)}...)" : "NÃO"}');
+      final tokenResumo = (token != null && token.length > 5) ? token.substring(0, 5) : (token ?? "null");
+      debugPrint('🔐 [RefreshInterceptor] Token em cache: ${token != null ? "SIM ($tokenResumo...)" : "NÃO"}');
 
       if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';
-        debugPrint('🔐 [RefreshInterceptor] Header Authorization adicionado');
+        debugPrint('🔐 [RefreshInterceptor] Header Authorization adicionado: Bearer ${token.substring(0, 5)}...');
       } else {
-        debugPrint('🔐 [RefreshInterceptor] NENHUM TOKEN DISPONÍVEL!');
+        debugPrint('🔐 [RefreshInterceptor] NENHUM TOKEN DISPONÍVEL para requisição que requer auth!');
       }
     } else {
       options.headers.remove('Authorization');

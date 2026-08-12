@@ -594,32 +594,25 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   Future<void> _finalizarPedido(BuildContext context, CarrinhoLoaded state) async {
     final authCubit = context.read<AuthCubit>();
     final authState = authCubit.state;
+    final String? status = authState.user?.status;
 
-    debugPrint('🛒 [CarrinhoPage] Finalizar pedido: authState=${authState.runtimeType}');
+    debugPrint('🛒 [CarrinhoPage] Finalizar pedido: status=$status');
 
-    String? nome;
-    String? telefone;
-
-    if (authState is AuthGuest) {
-      nome = authState.user?.nome;
-      telefone = authState.user?.telefone;
-    } else if (authState is AuthAuthenticated) {
-      nome = authState.user?.nome;
-      telefone = authState.user?.telefone;
-    }
-
-    debugPrint('🔍 [CarrinhoPage] nome=$nome, telefone=$telefone');
-
-    // ✅ Segunda camada de segurança: se chegou aqui sem telefone/nome, redireciona
-    if (telefone == null || telefone.isEmpty) {
-      debugPrint('📱 [CarrinhoPage] Sem telefone → phoneInput');
+    if (status == 'convidado') {
+      debugPrint('📱 [CarrinhoPage] Usuário convidado → phoneInput');
       getIt<NavigationService>().goToPhoneInput(redirectToCheckout: true);
       return;
     }
 
-    if (nome == null || nome.isEmpty) {
-      debugPrint('📝 [CarrinhoPage] Sem nome → completarPerfil');
+    if (status == 'pendente') {
+      debugPrint('📝 [CarrinhoPage] Usuário pendente → completarPerfil');
       getIt<NavigationService>().goToCompletarPerfil(redirectToCheckout: true);
+      return;
+    }
+
+    if (status != 'ativo') {
+      debugPrint('🚀 [CarrinhoPage] Não autenticado → onboarding');
+      getIt<NavigationService>().goToOnboarding();
       return;
     }
 

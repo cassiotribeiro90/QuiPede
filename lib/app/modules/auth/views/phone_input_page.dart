@@ -11,21 +11,23 @@ import '../../../core/widgets/app_text_field.dart';
 
 class PhoneInputPage extends StatelessWidget {
   final bool redirectToCheckout;
-  const PhoneInputPage({super.key, this.redirectToCheckout = false});
+  final String? origem;
+  const PhoneInputPage({super.key, this.redirectToCheckout = false, this.origem});
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🔍 [LOG] PhoneInputPage foi construída');
+    debugPrint('🔍 [LOG] PhoneInputPage foi construída. origem: $origem');
     return BlocProvider.value(
       value: getIt<AuthCubit>(),
-      child: _PhoneInputBody(redirectToCheckout: redirectToCheckout),
+      child: _PhoneInputBody(redirectToCheckout: redirectToCheckout, origem: origem),
     );
   }
 }
 
 class _PhoneInputBody extends StatefulWidget {
   final bool redirectToCheckout;
-  const _PhoneInputBody({required this.redirectToCheckout});
+  final String? origem;
+  const _PhoneInputBody({required this.redirectToCheckout, this.origem});
 
   @override
   State<_PhoneInputBody> createState() => _PhoneInputBodyState();
@@ -71,13 +73,16 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
             arguments: {
               'telefone': state.telefone,
               'redirectToCheckout': widget.redirectToCheckout,
+              'origem': widget.origem,
             },
           ).then((result) {
             if (result == true && mounted) {
-              debugPrint('🧭 [PhoneInputPage] OTP sucesso - substituindo esta tela pelo destino correto');
-              // ✅ Substitui PhoneInput pelo próximo passo (Carrinho ou CompletarPerfil)
-              // O AppRouter fará a validação síncrona
-              getIt<NavigationService>().pushReplacementNamed(Routes.carrinho);
+              debugPrint('🧭 [PhoneInputPage] OTP sucesso - substituindo esta tela pelo destino correto. origem: ${widget.origem}');
+              // ✅ Se veio do carrinho, o AppRouter validará o novo /carrinho
+              // Se veio do onboarding, o AppRouter validará /carrinho e mandará para completarPerfil se necessário
+              getIt<NavigationService>().pushReplacementNamed(Routes.carrinho, arguments: {
+                'origem': widget.origem,
+              });
             }
           });
         } else if (state is AuthOtpErro) {

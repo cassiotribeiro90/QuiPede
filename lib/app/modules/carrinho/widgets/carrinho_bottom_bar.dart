@@ -5,6 +5,8 @@ import '../../../core/theme/app_theme_extension.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
 import '../../../di/dependencies.dart';
 import '../../../services/navigation_service.dart';
+import '../../auth/bloc/auth_cubit.dart';
+import '../../../core/constants/navigation_origins.dart';
 
 class CarrinhoBottomBar extends StatelessWidget {
   final VoidCallback? onTap;
@@ -23,7 +25,24 @@ class CarrinhoBottomBar extends StatelessWidget {
   }
 
   void _abrirCarrinho(BuildContext context) {
-    getIt<NavigationService>().goToCarrinho();
+    final authState = context.read<AuthCubit>().state;
+    final String? status = authState.user?.status;
+
+    if (status == 'ativo') {
+      getIt<NavigationService>().goToCarrinho(origem: NavigationOrigins.lojaHome);
+    } else if (status == 'pendente') {
+      getIt<NavigationService>().goToCompletarPerfil(
+        redirectToCheckout: true,
+        origem: NavigationOrigins.carrinho,
+      );
+    } else if (status == 'convidado') {
+      getIt<NavigationService>().goToPhoneInput(
+        redirectToCheckout: true,
+        origem: NavigationOrigins.carrinho,
+      );
+    } else {
+      getIt<NavigationService>().goToOnboarding(origem: NavigationOrigins.lojaHome);
+    }
   }
 
   @override

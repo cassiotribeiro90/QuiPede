@@ -57,6 +57,11 @@ class AuthCubit extends Cubit<AuthState> {
             final authResponse = AuthResponse.fromJson(data);
             _usuario = authResponse.user;
 
+            // ✅ Sincroniza cache local
+            if (_usuario != null) {
+              await _apiClient.tokenService.saveUser(_usuario!.toJson());
+            }
+
             if (authResponse.endereco != null) {
               _localizacaoCubit.definirEnderecoCompleto(authResponse.endereco!, origem: 'endereco_padrao');
             }
@@ -72,8 +77,23 @@ class AuthCubit extends Cubit<AuthState> {
             return;
           }
         } catch (e) {
-          debugPrint('❌ [AuthCubit] Erro ao buscar /me: $e');
+          debugPrint('❌ [AuthCubit] Erro ao buscar /me, usando cache local: $e');
         }
+
+        // ✅ Fallback para cache local
+        final userJson = _apiClient.tokenService.getUser();
+        if (userJson != null) {
+          _usuario = UsuarioModel.fromJson(userJson);
+        }
+
+        if (isGuest) {
+          emit(AuthGuest(accessToken: token, user: _usuario));
+        } else {
+          emit(AuthAuthenticated(accessToken: token, user: _usuario));
+        }
+        await carregarEnderecoUsuario();
+        _isProcessing = false;
+        return;
       }
 
       emit(AuthUnauthenticated());
@@ -113,8 +133,34 @@ class AuthCubit extends Cubit<AuthState> {
 
       if (userJson != null) {
         final usuarioMap = Map<String, dynamic>.from(userJson);
+        
+        // ✅ Salva tokens IMEDIATAMENTE
         await _apiClient.tokenService.saveTokens(accessToken, null, isGuest: false);
-        _usuario = UsuarioModel.fromJson(usuarioMap);
+        debugPrint('🔑 [AuthCubit] Access token salvo após OTP: ${accessToken.substring(0, 10)}...');
+
+        var user = UsuarioModel.fromJson(usuarioMap);
+
+        // 🔥 Se o status não veio do backend, defina com base nos dados disponíveis
+        if (user.status == null) {
+          final nome = user.nome;
+          final telefone = user.telefone ?? '';
+          
+          if (nome.isNotEmpty) {
+            user = user.copyWith(status: 'ativo');
+          } else if (telefone.isNotEmpty) {
+            user = user.copyWith(status: 'pendente');
+          } else {
+            user = user.copyWith(status: 'convidado');
+          }
+        }
+
+        _usuario = user;
+
+        // ✅ Salva cache local atualizado (inclui status forçado se necessário)
+        await _apiClient.tokenService.saveUser(_usuario!.toJson());
+        
+        debugPrint('🔐 [AuthCubit] Estado emitido: AuthAuthenticated');
+        debugPrint('🔐 [AuthCubit] Dados do usuário: status=${_usuario!.status}, telefone=${_usuario!.telefone}, nome=${_usuario!.nome}');
 
         emit(AuthAuthenticated(accessToken: accessToken, user: _usuario));
 
@@ -143,7 +189,12 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
 
     try {
-      final token = _apiClient.tokenService.getAccessToken() ?? '';
+      final token = _apiClient.tokenService.getAccessToken();
+      debugPrint('🔑 [AuthCubit] Token para completarPerfil: $token');
+
+      if (token == null || token.isEmpty) {
+        debugPrint('⚠️ [AuthCubit] Tentando recuperar token do SharedPreferences manual...');
+      }
 
       final response = await _authService.atualizarPerfil(nome: nome, email: email);
 
@@ -153,10 +204,11 @@ class AuthCubit extends Cubit<AuthState> {
       if (usuarioJson != null) {
         final usuarioMap = Map<String, dynamic>.from(usuarioJson);
         _usuario = UsuarioModel.fromJson(usuarioMap);
+        await _apiClient.tokenService.saveUser(usuarioMap);
 
         debugPrint('✅ [AuthCubit] Perfil completado: ${_usuario?.nome}');
 
-        emit(AuthPerfilCompleto(accessToken: token, user: _usuario!));
+        emit(AuthPerfilCompleto(accessToken: token ?? '', user: _usuario!));
         // ✅ Não navega — o CompletarPerfilPage dá pop, AppRouter redireciona
       } else {
         debugPrint('❌ [AuthCubit] Resposta sem dados de usuário');
@@ -220,6 +272,7 @@ class AuthCubit extends Cubit<AuthState> {
     _usuario = UsuarioModel.fromJson(usuarioJson);
 
     await _apiClient.tokenService.saveTokens(token, null, isGuest: true);
+    await _apiClient.tokenService.saveUser(usuarioJson);
 
     emit(AuthGuest(accessToken: token, user: _usuario));
     await carregarEnderecoUsuario();

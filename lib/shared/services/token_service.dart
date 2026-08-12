@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenService {
@@ -27,6 +30,7 @@ class TokenService {
     int expiresIn = 7200,
     bool isGuest = false,
   }) async {
+    debugPrint('🔐 [TokenService] saveTokens chamado. accessToken: ${accessToken.substring(0, 5)}..., isGuest: $isGuest');
     if (isGuest) {
       await _prefs.setString(guestTokenKey, accessToken);
       await _prefs.remove(accessTokenKey);
@@ -46,9 +50,27 @@ class TokenService {
     await _prefs.setString(tokenExpiresKey, expiresAt.toString());
   }
 
+  Future<void> saveUser(Map<String, dynamic> userJson) async {
+    await _prefs.setString(userKey, jsonEncode(userJson));
+  }
+
+  Map<String, dynamic>? getUser() {
+    final data = _prefs.getString(userKey);
+    if (data == null || data.isEmpty) return null;
+    try {
+      return jsonDecode(data) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Retorna o token disponível, priorizando o de usuário autenticado
   String? getAccessToken() {
-    return _prefs.getString(accessTokenKey) ?? _prefs.getString(guestTokenKey);
+    final token = _prefs.getString(accessTokenKey) ?? _prefs.getString(guestTokenKey);
+    final isGuest = _prefs.getBool(isGuestKey) ?? false;
+    final tokenResumo = (token != null && token.length > 5) ? token.substring(0, 5) : (token ?? "null");
+    debugPrint('🔐 [TokenService] getAccessToken: $tokenResumo... (isGuest: $isGuest)');
+    return token;
   }
 
   String? getRefreshToken() => _prefs.getString(refreshTokenKey);

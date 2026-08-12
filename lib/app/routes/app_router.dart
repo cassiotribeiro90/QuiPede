@@ -24,6 +24,7 @@ import '../modules/auth/bloc/auth_cubit.dart';
 import '../modules/auth/bloc/auth_state.dart';
 import '../modules/carrinho/bloc/carrinho_cubit.dart';
 import '../modules/enderecos/models/endereco_model.dart';
+import '../core/constants/navigation_origins.dart';
 import 'app_routes.dart';
 
 class AppRouter {
@@ -36,34 +37,45 @@ class AppRouter {
         );
 
       case Routes.onboarding:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final String? origem = args?['origem'];
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const OnboardingPage(),
+          builder: (_) => OnboardingPage(origem: origem),
         );
 
       case Routes.login:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final String? origem = args?['origem'];
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const PhoneInputPage(),
+          builder: (_) => PhoneInputPage(origem: origem),
         );
 
       case Routes.phoneInput:
-        final bool redirectToCheckout = settings.arguments as bool? ?? false;
+        final args = settings.arguments as Map<String, dynamic>?;
+        final bool redirectToCheckout = args?['redirectToCheckout'] as bool? ?? false;
+        final String? origem = args?['origem'];
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => PhoneInputPage(redirectToCheckout: redirectToCheckout),
+          builder: (_) => PhoneInputPage(
+            redirectToCheckout: redirectToCheckout,
+            origem: origem,
+          ),
         );
 
       case Routes.otpVerify:
         final args = settings.arguments as Map<String, dynamic>;
         final String phone = args['telefone'] as String;
         final bool redirectToCheckout = args['redirectToCheckout'] as bool? ?? false;
+        final String? origem = args['origem'];
 
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => OtpVerificationPage(
             telefone: phone,
             redirectToCheckout: redirectToCheckout,
+            origem: origem,
           ),
         );
 
@@ -74,11 +86,16 @@ class AppRouter {
         );
 
       case Routes.completarPerfil:
-        final bool redirectToCheckout = settings.arguments as bool? ?? false;
-        debugPrint('🧭 [AppRouter] Abrindo CompletarPerfilPage (redirectToCheckout: $redirectToCheckout)');
+        final args = settings.arguments as Map<String, dynamic>?;
+        final bool redirectToCheckout = args?['redirectToCheckout'] as bool? ?? false;
+        final String? origem = args?['origem'];
+        debugPrint('🧭 [AppRouter] Abrindo CompletarPerfilPage (redirectToCheckout: $redirectToCheckout, origem: $origem)');
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => CompletarPerfilPage(redirectToCheckout: redirectToCheckout),
+          builder: (_) => CompletarPerfilPage(
+            redirectToCheckout: redirectToCheckout,
+            origem: origem,
+          ),
         );
 
       case Routes.home:
@@ -106,36 +123,92 @@ class AppRouter {
         );
 
       case Routes.carrinho:
-        // ✅ Validação síncrona – sem loading, sem BlocBuilder
+        // ✅ Validação síncrona baseada no status do usuário
         final authCubit = getIt<AuthCubit>();
         final authState = authCubit.state;
+        final user = authState.user;
+        final args = settings.arguments as Map<String, dynamic>?;
+        final String? origem = args?['origem'];
+
+        debugPrint('🛡️ [AppRouter] processando /carrinho');
+        debugPrint('🛡️ [AppRouter] authState = ${authState.runtimeType}');
+        debugPrint('🛡️ [AppRouter] status = ${user?.status}');
+        debugPrint('🛡️ [AppRouter] telefone = ${user?.telefone}');
+        debugPrint('🛡️ [AppRouter] nome = ${user?.nome}');
+
+        // Se não há sessão alguma, aí sim mandamos para onboarding
+        if (authState is! AuthAuthenticated && authState is! AuthGuest && authState is! AuthPerfilCompleto) {
+          debugPrint('🚀 [AppRouter] Sem sessão ativa → onboarding');
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => OnboardingPage(origem: origem),
+          );
+        }
+
+        final String? status = user?.status;
+
+        // 1. Convidado (sem telefone) → pedir telefone
+        if (status == 'convidado') {
+          debugPrint('🛡️ [AppRouter] → PhoneInput (convidado)');
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => PhoneInputPage(
+              redirectToCheckout: true,
+              origem: origem ?? NavigationOrigins.carrinho,
+            ),
+          );
+        }
+
+        // 2. Pendente (tem telefone, falta nome) → completar perfil
+        if (status == 'pendente') {
+          debugPrint('🛡️ [AppRouter] → CompletarPerfil (pendente)');
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => CompletarPerfilPage(
+              redirectToCheckout: true,
+              origem: origem ?? NavigationOrigins.carrinho,
+            ),
+          );
+        }
+
+        // 3. Ativo → carrinho liberado
+        if (status == 'ativo') {
+          debugPrint('🛡️ [AppRouter] → CarrinhoPage (ativo)');
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => const CarrinhoPage(),
+          );
+        }
+
+        // 🔥 Fallback seguro para usuários autenticados mas sem status definido:
+        // Verificamos telefone e nome, mas NUNCA redirecionamos para Onboarding.
+        debugPrint('🛡️ [AppRouter] ⚠️ Status desconhecido ou nulo ($status). Fallback para telefone/nome.');
         
-        String? nome;
-        String? telefone;
+        final String telefone = user?.telefone ?? '';
+        final String nome = user?.nome ?? '';
 
-        if (authState is AuthGuest || authState is AuthAuthenticated || authState is AuthPerfilCompleto) {
-          nome = authState.user?.nome;
-          telefone = authState.user?.telefone;
-        }
-
-        debugPrint('🛡️ [AppRouter] Carrinho: nome=$nome, telefone=$telefone');
-
-        if (telefone == null || telefone.isEmpty) {
-          debugPrint('📱 [AppRouter] Sem telefone → phoneInput');
+        if (telefone.isEmpty) {
+          debugPrint('🛡️ [AppRouter] Fallback → phoneInput');
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => const PhoneInputPage(redirectToCheckout: true),
+            builder: (_) => PhoneInputPage(
+              redirectToCheckout: true,
+              origem: origem ?? NavigationOrigins.carrinho,
+            ),
           );
         }
-        if (nome == null || nome.isEmpty) {
-          debugPrint('📝 [AppRouter] Sem nome → completarPerfil');
+        if (nome.isEmpty) {
+          debugPrint('🛡️ [AppRouter] Fallback → completarPerfil');
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => const CompletarPerfilPage(redirectToCheckout: true),
+            builder: (_) => CompletarPerfilPage(
+              redirectToCheckout: true,
+              origem: origem ?? NavigationOrigins.carrinho,
+            ),
           );
         }
 
-        debugPrint('✅ [AppRouter] Carrinho liberado');
+        debugPrint('✅ [AppRouter] Fallback → CarrinhoPage');
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const CarrinhoPage(),

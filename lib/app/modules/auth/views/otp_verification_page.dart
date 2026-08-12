@@ -9,18 +9,20 @@ import '../../../routes/app_routes.dart';
 class OtpVerificationPage extends StatelessWidget {
   final String telefone;
   final bool redirectToCheckout;
+  final String? origem;
 
   const OtpVerificationPage({
     super.key,
     required this.telefone,
     this.redirectToCheckout = false,
+    this.origem,
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: context.read<AuthCubit>(),
-      child: _OtpBody(telefone: telefone, redirectToCheckout: redirectToCheckout),
+      child: _OtpBody(telefone: telefone, redirectToCheckout: redirectToCheckout, origem: origem),
     );
   }
 }
@@ -28,7 +30,8 @@ class OtpVerificationPage extends StatelessWidget {
 class _OtpBody extends StatefulWidget {
   final String telefone;
   final bool redirectToCheckout;
-  const _OtpBody({required this.telefone, required this.redirectToCheckout});
+  final String? origem;
+  const _OtpBody({required this.telefone, required this.redirectToCheckout, this.origem});
 
   @override
   State<_OtpBody> createState() => _OtpBodyState();
@@ -89,27 +92,23 @@ class _OtpBodyState extends State<_OtpBody> {
           );
         } else if (state is AuthAuthenticated) {
           _navigated = true;
-          final user = context.read<AuthCubit>().usuario;
-
-          if (widget.redirectToCheckout) {
-            // ✅ Fluxo do Carrinho: redireciona para carrinho (AppRouter validará)
-            debugPrint('🧭 [OtpVerificationPage] Fluxo Carrinho → pushReplacementNamed /carrinho');
-            if (mounted) {
-              Navigator.pushReplacementNamed(context, Routes.carrinho);
-            }
-          } else {
-            // ✅ Fluxo do Onboarding: redireciona para Home ou CompletarPerfil
-            if (user != null && user.nome.isNotEmpty) {
-              debugPrint('🧭 [OtpVerificationPage] Fluxo Onboarding (com nome) → Home');
-              if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
-              }
-            } else {
-              debugPrint('🧭 [OtpVerificationPage] Fluxo Onboarding (sem nome) → CompletarPerfil');
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, Routes.completarPerfil, arguments: false);
-              }
-            }
+          final destino = widget.redirectToCheckout ? Routes.carrinho : Routes.home;
+          
+          debugPrint('🚦 [OTP] AuthAuthenticated disparado');
+          debugPrint('🚦 [OTP] redirectToCheckout = ${widget.redirectToCheckout}');
+          debugPrint('🚦 [OTP] canPop (antes de navegar) = ${Navigator.canPop(context)}');
+          debugPrint('🚦 [OTP] Rota atual = ${ModalRoute.of(context)?.settings.name}');
+          debugPrint('🧭 [OtpVerificationPage] Destino: $destino. Removendo apenas telas de autenticação.');
+          
+          if (mounted) {
+            // ✅ Preserva Home e Loja na pilha, removendo apenas OTP e PhoneInput
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              destino,
+              (route) => route.settings.name == Routes.home ||
+                         route.settings.name == Routes.lojaHome ||
+                         route.isFirst,
+              arguments: widget.redirectToCheckout ? {'origem': widget.origem} : null,
+            );
           }
         }
       },

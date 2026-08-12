@@ -5,28 +5,32 @@ import '../../../core/widgets/app_text_field.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../routes/app_routes.dart';
 import '../bloc/auth_cubit.dart';
+import '../../../core/constants/navigation_origins.dart';
 import '../bloc/auth_state.dart';
 
 class CompletarPerfilPage extends StatelessWidget {
   final bool redirectToCheckout;
+  final String? origem;
 
   const CompletarPerfilPage({
     super.key,
     this.redirectToCheckout = false,
+    this.origem,
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: context.read<AuthCubit>(),
-      child: _CompletarPerfilBody(redirectToCheckout: redirectToCheckout),
+      child: _CompletarPerfilBody(redirectToCheckout: redirectToCheckout, origem: origem),
     );
   }
 }
 
 class _CompletarPerfilBody extends StatefulWidget {
   final bool redirectToCheckout;
-  const _CompletarPerfilBody({required this.redirectToCheckout});
+  final String? origem;
+  const _CompletarPerfilBody({required this.redirectToCheckout, this.origem});
 
   @override
   State<_CompletarPerfilBody> createState() => _CompletarPerfilBodyState();
@@ -71,9 +75,9 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
       },
       listener: (context, state) {
         if (state is AuthPerfilCompleto) {
-          debugPrint('✅ [CompletarPerfil] Perfil completado');
+          debugPrint('✅ [CompletarPerfil] Perfil completado. origem: ${widget.origem}');
           
-          if (widget.redirectToCheckout) {
+          if (widget.redirectToCheckout || widget.origem == NavigationOrigins.carrinho) {
             // ✅ Fluxo do Carrinho: apenas fecha a tela
             debugPrint('🧭 [CompletarPerfil] Fluxo Carrinho → pop');
             if (mounted) {
