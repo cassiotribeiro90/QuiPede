@@ -63,7 +63,6 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
 
     setState(() => _isLoading = true);
 
-
     try {
       await getIt<EnderecoCubit>().criarEndereco(enderecoModel);
     } catch (e) {
@@ -84,30 +83,35 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
         if (state is EnderecoCriado) {
+          final locCubit = context.read<LocalizacaoCubit>();
+          
+          if (!context.mounted) return;
+          final messenger = ScaffoldMessenger.of(context);
+          
           setState(() => _isLoading = false);
 
           // ✅ Sincroniza o endereço completo (incluindo ID) com o LocalizacaoCubit
-          context.read<LocalizacaoCubit>().definirEnderecoCompleto(state.endereco, origem: 'manual');
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Endereço adicionado com sucesso!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          // ✅ APENAS fecha. A tela pai (OnboardingPage ou outra) cuidará da navegação para Home
-          if (mounted) {
-            Navigator.pop(context, true);
-          }
+          locCubit.definirEnderecoCompleto(state.endereco, origem: 'manual').then((_) {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Endereço adicionado com sucesso!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // ✅ APENAS fecha. A tela pai (OnboardingPage ou outra) cuidará da navegação para Home
+            Navigator.of(context).pop(true);
+          });
         }
         if (state is EnderecoError) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
         if (state is EnderecoLoading) {
           setState(() => _isLoading = true);
@@ -125,100 +129,104 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
           ),
         ),
         backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Center(
-                  child: Icon(Icons.location_on, size: 64, color: Colors.orange),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Encontramos este endereço:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                EnderecoCard(
-                  logradouro: widget.endereco['logradouro'] ?? '',
-                  bairro: widget.endereco['bairro'] ?? '',
-                  cidade: widget.endereco['cidade'] ?? '',
-                  uf: converterEstadoParaSigla(widget.endereco['uf'] ?? ''),
-                  cep: widget.endereco['cep'] ?? '',
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: AppTextField(
-                        controller: _numeroController,
-                        label: 'Número',
-                        isRequired: true,
-                        hint: '123',
-                        keyboardType: TextInputType.number,
-                        validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
+        body: Align(
+          alignment: Alignment.topCenter,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Center(
+                    child: Icon(Icons.location_on, size: 64, color: Colors.orange),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Encontramos este endereço:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  EnderecoCard(
+                    logradouro: widget.endereco['logradouro'] ?? '',
+                    bairro: widget.endereco['bairro'] ?? '',
+                    cidade: widget.endereco['cidade'] ?? '',
+                    uf: converterEstadoParaSigla(widget.endereco['uf'] ?? ''),
+                    cep: widget.endereco['cep'] ?? '',
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: AppTextField(
+                          controller: _numeroController,
+                          label: 'Número',
+                          isRequired: true,
+                          hint: '123',
+                          keyboardType: TextInputType.number,
+                          validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: AppTextField(
-                        controller: _complementoController,
-                        label: 'Complemento',
-                        hint: 'Apto, Bloco, etc.',
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: AppTextField(
+                          controller: _complementoController,
+                          label: 'Complemento',
+                          hint: 'Apto, Bloco, etc.',
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _referenciaController,
-                  label: 'Ponto de referência',
-                  hint: 'Ex: portão verde, próximo ao mercado',
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _confirmar,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _referenciaController,
+                    label: 'Ponto de referência',
+                    hint: 'Ex: portão verde, próximo ao mercado',
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _confirmar,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                        : const Text(
-                      'Confirmar Endereço',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Confirmar Endereço',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => getIt<NavigationService>().pop(),
-                  child: const Text('Tentar outra forma'),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => getIt<NavigationService>().pop(),
+                    child: const Text('Tentar outra forma'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

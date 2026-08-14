@@ -122,7 +122,7 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
           );
 
           if (mounted) {
-            Navigator.pop(context, true);
+            Navigator.of(context).pop(true);
           }
         }
         // ✅ Erro ao criar
@@ -146,92 +146,100 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.pop(context);
+              }
+            },
           ),
         ),
         backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
-                EnderecoCard(
-                  logradouro: widget.endereco['logradouro'] ?? widget.endereco['descricao'] ?? '',
-                  bairro: widget.endereco['bairro'] ?? '',
-                  cidade: widget.endereco['cidade'] ?? '',
-                  uf: converterEstadoParaSigla(widget.endereco['uf'] ?? ''),
-                  cep: widget.endereco['cep'] ?? '',
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: AppTextField(
-                        controller: _numeroController,
-                        label: 'Número',
-                        isRequired: true,
-                        hint: '123',
-                        keyboardType: TextInputType.number,
-                        validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
+        body: Align(
+          alignment: Alignment.topCenter,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  EnderecoCard(
+                    logradouro: widget.endereco['logradouro'] ?? widget.endereco['descricao'] ?? '',
+                    bairro: widget.endereco['bairro'] ?? '',
+                    cidade: widget.endereco['cidade'] ?? '',
+                    uf: converterEstadoParaSigla(widget.endereco['uf'] ?? ''),
+                    cep: widget.endereco['cep'] ?? '',
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: AppTextField(
+                          controller: _numeroController,
+                          label: 'Número',
+                          isRequired: true,
+                          hint: '123',
+                          keyboardType: TextInputType.number,
+                          validator: (value) => (value == null || value.isEmpty) ? 'Obrigatório' : null,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: AppTextField(
-                        controller: _complementoController,
-                        label: 'Complemento',
-                        hint: 'Apto, Bloco, etc.',
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: AppTextField(
+                          controller: _complementoController,
+                          label: 'Complemento',
+                          hint: 'Apto, Bloco, etc.',
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _referenciaController,
-                  label: 'Ponto de referência',
-                  hint: 'Ex: portão verde, próximo ao mercado',
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _confirmar,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    controller: _referenciaController,
+                    label: 'Ponto de referência',
+                    hint: 'Ex: portão verde, próximo ao mercado',
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _confirmar,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                        : const Text(
-                      'Confirmar Endereço',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Confirmar Endereço',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-              ],
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,61 +1,168 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../routes/app_routes.dart';
-import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
 import '../../auth/bloc/auth_cubit.dart';
+import '../../auth/bloc/auth_state.dart';
+import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
-class PerfilView extends StatelessWidget {
+class PerfilView extends StatefulWidget {
   const PerfilView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
-      body: ListView(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.location_on_outlined),
-            title: const Text('Meus Endereços'),
-            onTap: () => getIt<NavigationService>().goToMeusEnderecos(),
-          ),
-          ListTile(
-            leading: const Icon(Icons.receipt_long_outlined),
-            title: const Text('Meus Pedidos'),
-            onTap: () => getIt<NavigationService>().pushNamed(Routes.pedidos),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sair', style: TextStyle(color: Colors.red)),
-            onTap: () => _confirmarLogout(context),
-          ),
-        ],
-      ),
-    );
+  State<PerfilView> createState() => _PerfilViewState();
+}
+
+class _PerfilViewState extends State<PerfilView> {
+  late final TextEditingController _nomeController;
+  late final TextEditingController _emailController;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nomeController = TextEditingController();
+    _emailController = TextEditingController();
+
+    debugPrint('🧭 [PerfilView] initState');
+    
+    // Tenta carregar dados iniciais se já estiverem no Cubit
+    final user = context.read<AuthCubit>().usuario;
+    if (user != null && user.nome.isNotEmpty) {
+      _nomeController.text = user.nome;
+      _emailController.text = user.email ?? '';
+      _isInitialized = true;
+    }
   }
 
-  void _confirmarLogout(BuildContext context) async {
-    final confirmado = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Sair'),
-        content: const Text('Deseja realmente sair da sua conta?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sair', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
-    if (confirmado == true && context.mounted) {
-      await context.read<AuthCubit>().logout();
-    }
+  void _salvar() {
+    context.read<AuthCubit>().atualizarPerfil(
+          nome: _nomeController.text.trim(),
+          email: _emailController.text.trim().isEmpty
+              ? null
+              : _emailController.text.trim(),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is AuthAuthenticated || state is AuthPerfilCompleto) {
+          final user = context.read<AuthCubit>().usuario;
+          if (user != null) {
+            // Se houve uma mudança externa ou confirmação de salvamento, atualiza
+            if (_nomeController.text != user.nome) {
+              _nomeController.text = user.nome;
+            }
+            if (_emailController.text != (user.email ?? '')) {
+              _emailController.text = user.email ?? '';
+            }
+            _isInitialized = true;
+          }
+          
+          // Mostra snackbar apenas se não for o carregamento inicial silencioso
+          if (state is AuthAuthenticated && !_isInitialized) {
+             // Silencioso
+          } else {
+             // Opcional: mostrar sucesso
+          }
+        } else if (state is AuthError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        }
+      },
+      builder: (context, state) {
+        final user = context.read<AuthCubit>().usuario;
+        
+        // Preenchimento reativo inicial (caso o Cubit carregue depois do initState)
+        if (!_isInitialized && user != null && user.nome.isNotEmpty) {
+           _nomeController.text = user.nome;
+           _emailController.text = user.email ?? '';
+           _isInitialized = true;
+        }
+
+        return ResponsivePageScaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Meu Perfil',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Meus dados',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Você pode alterar seus dados pessoais.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                ),
+                const SizedBox(height: 24),
+                // 🔹 Nome
+                TextField(
+                  controller: _nomeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 🔹 Email
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'E-mail',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // 🔹 Botão salvar
+                ElevatedButton(
+                  onPressed: state is AuthLoading ? null : _salvar,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: state is AuthLoading 
+                    ? const SizedBox(
+                        height: 20, 
+                        width: 20, 
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                      )
+                    : const Text('Salvar alterações'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

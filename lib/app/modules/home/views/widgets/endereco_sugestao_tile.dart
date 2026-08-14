@@ -15,7 +15,7 @@ class EnderecoSugestaoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),

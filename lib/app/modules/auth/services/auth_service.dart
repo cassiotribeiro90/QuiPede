@@ -95,6 +95,32 @@ class AuthService {
     }
   }
 
+  /// Inicia atualização de telefone (gera OTP)
+  Future<Map<String, dynamic>> iniciarAtualizacaoTelefone(String telefone) async {
+    final response = await _apiClient.post(
+      'app/auth/update-telefone',
+      data: {'telefone': telefone},
+      requiresAuth: true,
+    );
+    return response.data;
+  }
+
+  /// Confirma atualização de telefone com OTP
+  Future<Map<String, dynamic>> confirmarAtualizacaoTelefone({
+    required String telefone,
+    required String codigo,
+  }) async {
+    final response = await _apiClient.post(
+      'app/auth/confirm-update-telefone',
+      data: {
+        'telefone': telefone,
+        'code': codigo,
+      },
+      requiresAuth: true,
+    );
+    return response.data;
+  }
+
   /// Logout
   Future<void> logout() async {
     try {

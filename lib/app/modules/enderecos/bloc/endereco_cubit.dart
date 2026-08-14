@@ -36,7 +36,11 @@ class EnderecoCubit extends Cubit<EnderecoState> {
           principal = enderecos.isNotEmpty ? enderecos.first : null;
         }
 
-        debugPrint('🔍 [EnderecoCubit] Endereços carregados: ${enderecos.length}');
+        debugPrint('📦 [EnderecoCubit] Endereços carregados: ${enderecos.length}');
+        for (var e in enderecos) {
+          debugPrint('📦 [EnderecoCubit] Endereço: ${e.logradouro}, ${e.numero}, principal=${e.principal}');
+        }
+
         emit(EnderecoLoaded(enderecos, enderecoPrincipal: principal));
       }
     } catch (e) {
@@ -60,7 +64,7 @@ class EnderecoCubit extends Cubit<EnderecoState> {
         final usuarioJson = result['usuario'];
 
         if (token != null && usuarioJson != null) {
-          debugPrint('🔑 [EnderecoCubit] Token de convidado detectado. Atualizando AuthCubit...');
+          debugPrint('🔑 [EnderecoCubit] Token de convidado detectado. Notificando AuthCubit...');
           getIt<AuthCubit>().onEnderecoCriadoComToken(token, usuarioJson);
         }
 
@@ -231,6 +235,19 @@ class EnderecoCubit extends Cubit<EnderecoState> {
         emit(EnderecoError(e.toString()));
       }
     }
+  }
+
+  void substituirEnderecos(List<EnderecoModel> novosEnderecos) {
+    if (isClosed) return;
+    
+    EnderecoModel? principal;
+    try {
+      principal = novosEnderecos.firstWhere((e) => e.principal == true);
+    } catch (_) {
+      principal = novosEnderecos.isNotEmpty ? novosEnderecos.first : null;
+    }
+    
+    emit(EnderecoLoaded(novosEnderecos, enderecoPrincipal: principal));
   }
 
   void resetStatus() {

@@ -30,23 +30,34 @@ class LocalizacaoService {
     double? latitude,
     double? longitude,
   }) async {
+    debugPrint('🚨🚨🚨 [LocalizacaoService] INICIANDO BUSCA DE ENDEREÇO');
+    debugPrint('🚨🚨🚨 [LocalizacaoService] URL base: ${_apiClient.dio.options.baseUrl}');
+    debugPrint('🚨🚨🚨 [LocalizacaoService] Path: ${AppConfig.buscarEndereco}');
+    debugPrint('🚨🚨🚨 [LocalizacaoService] Query params: {q: $query, lat: $latitude, lng: $longitude}');
+
     try {
+      debugPrint('🚨🚨🚨 [LocalizacaoService] Chamando _apiClient.get(...)');
       final response = await _apiClient.get(
         AppConfig.buscarEndereco,
         queryParameters: {
-          'query': query,
-          if (latitude != null) 'latitude': latitude,
-          if (longitude != null) 'longitude': longitude,
+          'q': query,
+          if (latitude != null) 'lat': latitude,
+          if (longitude != null) 'lng': longitude,
         },
         requiresAuth: false,
       );
       
+      debugPrint('🚨🚨🚨 [LocalizacaoService] Resposta recebida. Status: ${response.statusCode}');
+      debugPrint('🚨🚨🚨 [LocalizacaoService] Body: ${response.data}');
+
       if (response.data['success'] == true) {
-        final List data = response.data['data'] ?? [];
-        return data.map((json) => EnderecoSugestao.fromJson(json)).toList();
+        final data = response.data['data'];
+        final items = data['items'] as List? ?? [];
+        return items.map((json) => EnderecoSugestao.fromJson(json)).toList();
       }
       return [];
     } catch (e) {
+      debugPrint('🚨🚨🚨 [LocalizacaoService] ERRO: $e');
       debugPrint('❌ [LocalizacaoService] Erro ao buscar endereço: $e');
       return [];
     }

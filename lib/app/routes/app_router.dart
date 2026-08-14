@@ -20,6 +20,7 @@ import '../modules/enderecos/views/enderecos_list_view.dart';
 import '../modules/enderecos/views/endereco_edit_view.dart';
 import '../modules/enderecos/bloc/endereco_cubit.dart';
 import '../modules/home/bloc/localizacao_cubit.dart';
+import '../modules/home/bloc/localizacao_state.dart';
 import '../modules/auth/bloc/auth_cubit.dart';
 import '../modules/auth/bloc/auth_state.dart';
 import '../modules/carrinho/bloc/carrinho_cubit.dart';
@@ -99,6 +100,32 @@ class AppRouter {
         );
 
       case Routes.home:
+        final locCubit = getIt<LocalizacaoCubit>();
+        final authCubit = getIt<AuthCubit>();
+        final locState = locCubit.state;
+        
+        debugPrint('🏠 [AppRouter] Acessando Home. Localização: ${locState.runtimeType}');
+
+        if (locState is LocalizacaoNaoEncontrada) {
+          final authState = authCubit.state;
+          if (authState is AuthAuthenticated || authState is AuthGuest || authState is AuthPerfilCompleto) {
+             debugPrint('🏠 [AppRouter] Sem endereço + logado → MeusEnderecos');
+             return MaterialPageRoute(
+               settings: settings,
+               builder: (_) => BlocProvider.value(
+                 value: getIt<EnderecoCubit>(),
+                 child: const EnderecosListView(),
+               ),
+             );
+          } else {
+            debugPrint('🏠 [AppRouter] Sem endereço + deslogado → Onboarding');
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => const OnboardingPage(origem: NavigationOrigins.home),
+            );
+          }
+        }
+
         debugPrint('🏠 [AppRouter] Montando MultiBlocProvider para HomeScreen');
         return MaterialPageRoute(
           settings: settings,

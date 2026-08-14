@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../main.dart';
 import '../../auth/bloc/auth_state.dart';
+import '../../enderecos/bloc/endereco_cubit.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -33,6 +35,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   bool _initialized = false;
   bool _firstLoad = true;
   bool _enderecoCarregado = false;
+  StreamSubscription? _localizacaoSubscription;
 
   @override
   void initState() {
@@ -40,17 +43,25 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
     WidgetsBinding.instance.addObserver(this);
     debugPrint('🟢 [LojasListScreen] initState()');
     _scrollController.addListener(_onScroll);
+
+    // ✅ Escuta mudanças de localização para carregar lojas quando endereço ficar disponível
+    _localizacaoSubscription = context.read<LocalizacaoCubit>().stream.listen((locState) {
+      if (locState is LocalizacaoCarregada && _initialized) {
+        debugPrint('🔄 [LojasListScreen] Localização mudou para Carregada - disparando fetchLojas');
+        context.read<LojasCubit>().fetchLojas(perPage: 10);
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('🟢 [LojasListScreen] PostFrameCallback - carregando lojas');
+      debugPrint('🟢 [LojasListScreen] PostFrameCallback');
       _subscribeToRoute();
-      context.read<LojasCubit>().fetchLojas(perPage: 10);
+      _verificarEnderecoELojas();
       _firstLoad = false;
     });
 
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() => _initialized = true);
-        _verificarEndereco();
       }
     });
   }
@@ -66,6 +77,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     routeObserver.unsubscribe(this);
+    _localizacaoSubscription?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -87,25 +99,62 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
 
   void _onScreenVisible() {
     if (_firstLoad) return;
-    debugPrint('🔄 [LojasListScreen] Tela visível - recarregando lojas e verificando endereço');
-    context.read<LojasCubit>().fetchLojas(perPage: 10);
-    _verificarEndereco();
+    debugPrint('🔄 [LojasListScreen] Tela visível - verificando endereço e lojas');
+    _verificarEnderecoELojas();
+  }
+
+  Future<void> _verificarEnderecoELojas() async {
+    if (!mounted) return;
+    
+    final locCubit = context.read<LocalizacaoCubit>();
+    final lojasCubit = context.read<LojasCubit>();
+    final authCubit = context.read<AuthCubit>();
+
+    debugPrint('🏠 [LojasListScreen] _verificarEnderecoELojas: locState=${locCubit.state.runtimeType}');
+
+    if (locCubit.state is LocalizacaoCarregada) {
+      debugPrint('🏠 [LojasListScreen] Endereço carregado, carregando lojas');
+      lojasCubit.fetchLojas(perPage: 10);
+      authCubit.recarregarUsuario();
+    } else {
+      debugPrint('🔁 [LojasListScreen] Sem endereço, tentando recarregar...');
+      // Tenta recarregar endereços do backend se estiver logado
+      final authState = authCubit.state;
+      if (authState is AuthAuthenticated || authState is AuthGuest) {
+        await context.read<EnderecoCubit>().carregarEnderecos(mostrarLoading: false);
+      }
+      
+      if (mounted) {
+        if (locCubit.state is LocalizacaoNaoEncontrada) {
+          _verificarEndereco();
+        } else if (locCubit.state is LocalizacaoCarregada) {
+          lojasCubit.fetchLojas(perPage: 10);
+        }
+      }
+    }
   }
 
   void _verificarEndereco() {
-    if (!_initialized) return;
-
+    if (!_initialized) {
+      debugPrint('⏳ [LojasListScreen] _verificarEndereco ignorado: app ainda inicializando');
+      return;
+    }
+    
     final locState = context.read<LocalizacaoCubit>().state;
     final authState = context.read<AuthCubit>().state;
 
     debugPrint('🔍 [LojasListScreen] _verificarEndereco: locState=${locState.runtimeType}, authState=${authState.runtimeType}');
 
     if (locState is LocalizacaoNaoEncontrada) {
-      // ✅ Só redireciona se já houve uma tentativa de carregamento
-      if (!_enderecoCarregado) return;
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+
+        // ✅ Evita navegação duplicada se já estiver na tela de endereços
+        final currentRoute = ModalRoute.of(context)?.settings.name;
+        if (currentRoute == Routes.meusEnderecos) {
+          debugPrint('🛑 [LojasListScreen] Já está em MeusEnderecos, não redireciona');
+          return;
+        }
 
         if (authState is AuthAuthenticated || authState is AuthGuest || authState is AuthPerfilCompleto) {
           debugPrint('📂 [LojasListScreen] Sem endereço + logado → MeusEnderecos');

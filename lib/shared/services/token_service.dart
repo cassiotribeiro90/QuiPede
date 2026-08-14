@@ -51,12 +51,16 @@ class TokenService {
   }
 
   Future<void> saveUser(Map<String, dynamic> userJson) async {
+    debugPrint('💾 [TokenService] saveUser chamado com: $userJson');
     await _prefs.setString(userKey, jsonEncode(userJson));
+    debugPrint('💾 [TokenService] saveUser: $userJson');
   }
 
   Map<String, dynamic>? getUser() {
     final data = _prefs.getString(userKey);
+    debugPrint('💾 [TokenService] getUser retornou: $data');
     if (data == null || data.isEmpty) return null;
+    debugPrint('💾 [TokenService] getUser: $data');
     try {
       return jsonDecode(data) as Map<String, dynamic>;
     } catch (e) {

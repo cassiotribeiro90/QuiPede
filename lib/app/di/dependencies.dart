@@ -56,16 +56,16 @@ Future<void> setupDependencies() async {
   getIt.registerLazySingleton<LojaHomeRepository>(() => LojaHomeRepository(getIt<ApiClient>()));
   getIt.registerLazySingleton<EnderecoRepository>(() => EnderecoRepository(getIt<EnderecoService>()));
 
-  // ✅ 6. ThemeCubit (independente)
+  // ✅ 6. ThemeCubit
   getIt.registerSingleton<ThemeCubit>(ThemeCubit(getIt<SharedPreferences>()));
 
-  // 🔥 7. ENDERECOCUBIT (Deve ser registrado ANTES do LocalizacaoCubit pois este o ouve no construtor)
+  // 🔥 7. ENDERECOCUBIT
   getIt.registerLazySingleton<EnderecoCubit>(
-        () => EnderecoCubit(getIt<EnderecoRepository>()),
+    () => EnderecoCubit(getIt<EnderecoRepository>()),
   );
 
   // ✅ 8. LocalizacaoCubit
-  getIt.registerSingleton<LocalizacaoCubit>(LocalizacaoCubit());
+  getIt.registerSingleton<LocalizacaoCubit>(LocalizacaoCubit(getIt<SharedPreferences>()));
 
   // ✅ 9. AuthCubit
   getIt.registerSingleton<AuthCubit>(
@@ -99,7 +99,7 @@ Future<void> setupDependencies() async {
   ));
 
   getIt.registerFactoryParam<LojaHomeCubit, int, void>(
-        (lojaId, _) => LojaHomeCubit(getIt<LojaHomeRepository>(), lojaId),
+    (lojaId, _) => LojaHomeCubit(getIt<LojaHomeRepository>(), lojaId),
   );
 
   debugPrint('✅ [DI] setupDependencies concluído');

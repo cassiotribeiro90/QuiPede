@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:quipede/app/modules/auth/bloc/auth_cubit.dart';
 import 'package:quipede/app/modules/auth/bloc/auth_state.dart';
 import 'package:quipede/app/modules/enderecos/bloc/endereco_cubit.dart';
@@ -13,9 +12,10 @@ import 'package:quipede/app/modules/home/services/localizacao_service.dart';
 import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
-import 'package:quipede/app/services/navigation_service.dart';
-import '../../../routes/app_routes.dart';
+import 'package:quipede/app/core/utils/location_permission_service.dart';
+import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import 'widgets/endereco_sugestao_tile.dart';
+import 'endereco_confirmacao_page.dart';
 
 class BuscaEnderecoPage extends StatefulWidget {
   const BuscaEnderecoPage({super.key});
@@ -32,26 +32,60 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
   Timer? _debounce;
   double? _userLat;
   double? _userLng;
-  bool _gpsAtivo = false;
+  bool _bloquearBusca = false;
 
   @override
   void initState() {
     super.initState();
-    _checkGps();
+    _verificarLocalizacao();
   }
 
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _checkGps() async {
-    final status = await Permission.locationWhenInUse.status;
-    if (status.isGranted) {
-      _obterCoordenadas(silencioso: true);
+  Future<void> _verificarLocalizacao() async {
+    final temPermissao = await LocationPermissionService.hasPermission();
+    if (!temPermissao) {
+      final concedida = await LocationPermissionService.requestPermission();
+      if (!concedida) {
+        if (mounted) {
+          setState(() {
+            _bloquearBusca = true;
+          });
+          _mostrarDialogoPermissao();
+        }
+      } else {
+        await _obterCoordenadas(silencioso: true);
+        if (mounted) {
+          setState(() => _bloquearBusca = false);
+        }
+      }
+    } else {
+      await _obterCoordenadas(silencioso: true);
     }
+  }
+
+  void _mostrarDialogoPermissao() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Precisamos da sua localização'),
+        content: const Text(
+          'Para buscar endereços próximos e garantir a entrega, permita o acesso à sua localização.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await LocationPermissionService.goToSettings();
+            },
+            child: const Text('Configurações'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _obterCoordenadas({bool silencioso = false}) async {
@@ -61,12 +95,15 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
         setState(() {
           _userLat = position.latitude;
           _userLng = position.longitude;
-          _gpsAtivo = true;
+          _bloquearBusca = false;
         });
       }
     } catch (e) {
       if (!silencioso) {
         debugPrint('Erro ao obter coordenadas: $e');
+        if (mounted) {
+          setState(() => _bloquearBusca = true);
+        }
       }
     }
   }
@@ -83,6 +120,12 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
   }
 
   Future<void> _buscar(String query) async {
+    if (_bloquearBusca) {
+      _mostrarDialogoPermissao();
+      return;
+    }
+    debugPrint('🚨 [BuscaEnderecoPage] Buscando: $query');
+    debugPrint('🔍 [BuscaEndereco] Buscando: $query');
     setState(() => _isLoading = true);
     try {
       final resultados = await _localizacaoService.buscarEndereco(
@@ -103,59 +146,59 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listener: (context, state) {
         if (state is EnderecoCriado) {
-          getIt<NavigationService>().goToHomeAndRemoveAll();
+          if (mounted && Navigator.canPop(context)) {
+            Navigator.pop(context, true);
+          }
         }
       },
-      child: Scaffold(
+      child: ResponsivePageScaffold(
         appBar: AppBar(
           title: const Text('Buscar endereço'),
-          actions: [
-            _buildGpsIcon(),
-          ],
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Digite rua, bairro ou cidade',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _sugestoes = []);
-                    },
-                  )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+        backgroundColor: Colors.white,
+        body: Align(
+          alignment: Alignment.topCenter,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Digite rua, bairro ou cidade',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _sugestoes = []);
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                _buildContent(),
+              ],
             ),
-            Expanded(child: _buildContent()),
-          ],
+          ),
         ),
       ),
-    );
-  }
-
-  Widget _buildGpsIcon() {
-    if (!_gpsAtivo) {
-      return IconButton(
-        icon: const Icon(Icons.gps_not_fixed),
-        onPressed: () => _obterCoordenadas(),
-      );
-    }
-    return IconButton(
-      icon: const Icon(Icons.gps_fixed, color: Colors.green),
-      onPressed: () => _obterCoordenadas(),
     );
   }
 
@@ -170,6 +213,7 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
             SizedBox(height: 16),
             Text(
               'Digite pelo menos 3 caracteres para buscar',
+              textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge,
             ),
           ],
@@ -185,26 +229,36 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
       );
     }
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: _sugestoes.length,
       itemBuilder: (context, index) {
         final item = _sugestoes[index];
         final authCubit = context.read<AuthCubit>();
-        
+
         return EnderecoSugestaoTile(
           endereco: item,
-          onTap: () {
+          onTap: () async {
             final isLogged = authCubit.state is AuthAuthenticated;
             if (isLogged) {
               context.read<EnderecoCubit>().criarEndereco(_toEnderecoModel(item));
             } else {
-              getIt<NavigationService>().pushNamed(
-                Routes.enderecoConfirmacao,
-                arguments: {
-                  'endereco': item.toMap(),
-                  'latitude': item.latitude ?? 0,
-                  'longitude': item.longitude ?? 0,
-                },
+              final navigator = Navigator.of(context);
+              final result = await navigator.push<bool>(
+                MaterialPageRoute(
+                  builder: (_) => EnderecoConfirmacaoPage(
+                    endereco: item.toMap(),
+                    latitude: item.latitude ?? 0,
+                    longitude: item.longitude ?? 0,
+                  ),
+                ),
               );
+
+              if (result == true && mounted) {
+                if (navigator.canPop()) {
+                  navigator.pop(true);
+                }
+              }
             }
           },
         );

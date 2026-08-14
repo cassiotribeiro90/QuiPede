@@ -42,7 +42,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
           child: const CepInputPage(),
         ),
       ),
-    );
+    ).then((result) {
+      if (result == true && mounted) {
+        _irParaHome();
+      }
+    });
   }
 
   void _irParaBuscaEndereco() {
@@ -55,7 +59,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
           child: const BuscaEnderecoPage(),
         ),
       ),
-    );
+    ).then((result) {
+      if (result == true && mounted) {
+        _irParaHome();
+      }
+    });
+  }
+
+  void _irParaHome() {
+    debugPrint('🚀 [OnboardingPage] Navegando para Home e limpando pilha');
+    getIt<NavigationService>().goToHomeAndRemoveAll();
   }
 
   void _usarLocalizacaoAtual() async {
@@ -86,7 +99,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ).then((result) {
             if (result == true && mounted) {
-              getIt<NavigationService>().goToHomeAndRemoveAll();
+              _irParaHome();
             }
           });
         } else {

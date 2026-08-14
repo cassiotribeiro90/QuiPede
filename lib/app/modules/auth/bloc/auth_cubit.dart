@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/api/api_client.dart';
 import '../../home/bloc/localizacao_cubit.dart';
+import '../../home/bloc/localizacao_state.dart';
 import '../models/auth_response_model.dart';
 import '../models/usuario_model.dart';
 import '../services/auth_service.dart';
@@ -11,8 +12,7 @@ import 'auth_state.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
-import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
+import '../../../routes/app_routes.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final ApiClient _apiClient;
@@ -54,17 +54,26 @@ class AuthCubit extends Cubit<AuthState> {
           final response = await _apiClient.get('app/auth/me', requiresAuth: true);
           if (response.statusCode == 200 && response.data['success'] == true) {
             final data = response.data['data'];
+            
+            debugPrint('🔍 [AuthCubit] inicializarApp - Dados recebidos:');
+            debugPrint('🔍 [AuthCubit] usuario: ${data['usuario'] ?? data['user']}');
+            debugPrint('🔍 [AuthCubit] endereco: ${data['endereco']}');
+            debugPrint('🔍 [AuthCubit] enderecos: ${data['enderecos']}');
+
             final authResponse = AuthResponse.fromJson(data);
             _usuario = authResponse.user;
+
+            debugPrint('🔐 [AuthCubit] inicializarApp: _usuario definido: nome=${_usuario?.nome}, email=${_usuario?.email}, status=${_usuario?.status}, telefone=${_usuario?.telefone}');
 
             // ✅ Sincroniza cache local
             if (_usuario != null) {
               await _apiClient.tokenService.saveUser(_usuario!.toJson());
+              debugPrint('💾 [AuthCubit] inicializarApp: usuário salvo: ${_usuario?.nome}');
             }
 
-            if (authResponse.endereco != null) {
-              _localizacaoCubit.definirEnderecoCompleto(authResponse.endereco!, origem: 'endereco_padrao');
-            }
+            final enderecosJson = data['enderecos'];
+            final enderecoPrincipalJson = data['endereco'];
+            await _sincronizarEnderecos(enderecosJson, enderecoPrincipalJson);
 
             if (isGuest) {
               emit(AuthGuest(accessToken: token, user: _usuario));
@@ -105,6 +114,36 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> recarregarUsuario() async {
+    try {
+      final token = _apiClient.tokenService.getAccessToken();
+      if (token == null || token.isEmpty) return;
+      
+      final isGuest = _apiClient.tokenService.isGuest();
+
+      final response = await _apiClient.get('app/auth/me', requiresAuth: true);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
+        final usuarioJson = data['usuario'] ?? data['user'];
+
+        if (usuarioJson != null) {
+          _usuario = UsuarioModel.fromJson(Map<String, dynamic>.from(usuarioJson));
+          await _apiClient.tokenService.saveUser(_usuario!.toJson());
+          
+          if (isGuest) {
+            emit(AuthGuest(accessToken: token, user: _usuario));
+          } else {
+            emit(AuthAuthenticated(accessToken: token, user: _usuario));
+          }
+          
+          debugPrint('🔄 [AuthCubit] Usuário recarregado: ${_usuario?.nome} (isGuest: $isGuest)');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ [AuthCubit] Erro ao recarregar usuário: $e');
+    }
+  }
+
   // ============ MÉTODOS OTP (TELEFONE) ============
 
   Future<void> enviarTelefone(String telefone) async {
@@ -127,6 +166,12 @@ class AuthCubit extends Cubit<AuthState> {
           data: {'phone': telefone, 'code': codigo}, requiresAuth: false);
 
       final data = response.data['data'];
+
+      debugPrint('🔍 [AuthCubit] verificarOTP - Dados recebidos:');
+      debugPrint('🔍 [AuthCubit] usuario: ${data['usuario'] ?? data['user']}');
+      debugPrint('🔍 [AuthCubit] endereco: ${data['endereco']}');
+      debugPrint('🔍 [AuthCubit] enderecos: ${data['enderecos']}');
+
       final accessToken = data['access_token'] ?? data['token'];
       final userJson = data['usuario'] ?? data['user'];
       final enderecoJson = data['endereco'];
@@ -155,9 +200,16 @@ class AuthCubit extends Cubit<AuthState> {
         }
 
         _usuario = user;
+        debugPrint('🔐 [AuthCubit] verificarOTP: _usuario definido: nome=${_usuario?.nome}, email=${_usuario?.email}, status=${_usuario?.status}, telefone=${_usuario?.telefone}');
+
+        await _sincronizarEnderecos(
+          data['enderecos'],
+          data['endereco'],
+        );
 
         // ✅ Salva cache local atualizado (inclui status forçado se necessário)
         await _apiClient.tokenService.saveUser(_usuario!.toJson());
+        debugPrint('💾 [AuthCubit] verificarOTP: usuário salvo: ${_usuario?.nome}');
         
         debugPrint('🔐 [AuthCubit] Estado emitido: AuthAuthenticated');
         debugPrint('🔐 [AuthCubit] Dados do usuário: status=${_usuario!.status}, telefone=${_usuario!.telefone}, nome=${_usuario!.nome}');
@@ -179,23 +231,28 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // ============ COMPLETAR PERFIL ============
+  // ============ ATUALIZAÇÃO DE PERFIL ============
 
   Future<void> completarPerfil({
     required String nome,
     String? email,
+  }) async => _salvarPerfil(nome: nome, email: email, isInitialCompletion: true);
+
+  Future<void> atualizarPerfil({
+    required String nome,
+    String? email,
+  }) async => _salvarPerfil(nome: nome, email: email, isInitialCompletion: false);
+
+  Future<void> _salvarPerfil({
+    required String nome,
+    String? email,
+    required bool isInitialCompletion,
   }) async {
-    debugPrint('📝 [AuthCubit] Completando perfil: nome=$nome, email=$email');
+    debugPrint('📝 [AuthCubit] Salvando perfil: nome=$nome, email=$email, inicial=$isInitialCompletion');
     emit(AuthLoading());
 
     try {
       final token = _apiClient.tokenService.getAccessToken();
-      debugPrint('🔑 [AuthCubit] Token para completarPerfil: $token');
-
-      if (token == null || token.isEmpty) {
-        debugPrint('⚠️ [AuthCubit] Tentando recuperar token do SharedPreferences manual...');
-      }
-
       final response = await _authService.atualizarPerfil(nome: nome, email: email);
 
       final data = response['data'];
@@ -205,18 +262,93 @@ class AuthCubit extends Cubit<AuthState> {
         final usuarioMap = Map<String, dynamic>.from(usuarioJson);
         _usuario = UsuarioModel.fromJson(usuarioMap);
         await _apiClient.tokenService.saveUser(usuarioMap);
+        debugPrint('💾 [AuthCubit] _salvarPerfil: usuário salvo: ${_usuario?.nome}');
 
-        debugPrint('✅ [AuthCubit] Perfil completado: ${_usuario?.nome}');
+        await _sincronizarEnderecos(data['enderecos'], data['endereco']);
 
-        emit(AuthPerfilCompleto(accessToken: token ?? '', user: _usuario!));
-        // ✅ Não navega — o CompletarPerfilPage dá pop, AppRouter redireciona
+        debugPrint('🔐 [AuthCubit] _salvarPerfil: _usuario definido: nome=${_usuario?.nome}, email=${_usuario?.email}, status=${_usuario?.status}');
+
+        if (isInitialCompletion) {
+          emit(AuthPerfilCompleto(accessToken: token ?? '', user: _usuario!));
+        } else {
+          emit(AuthAuthenticated(accessToken: token ?? '', user: _usuario));
+        }
       } else {
-        debugPrint('❌ [AuthCubit] Resposta sem dados de usuário');
         emit(const AuthError('Erro ao salvar perfil. Tente novamente.'));
       }
     } catch (e) {
-      debugPrint('❌ [AuthCubit] Erro ao completar perfil: $e');
+      debugPrint('❌ [AuthCubit] Erro ao salvar perfil: $e');
       emit(const AuthError('Erro ao salvar perfil. Tente novamente.'));
+    }
+  }
+
+  Future<void> iniciarAtualizacaoTelefone(String telefone) async {
+    emit(AuthLoading());
+    try {
+      final response = await _authService.iniciarAtualizacaoTelefone(telefone);
+      if (response['success'] == true) {
+        // Emitimos um estado que indica que o código foi enviado para o NOVO telefone
+        emit(AuthPhoneEnviado(telefone: telefone));
+      } else {
+        emit(AuthError(response['message'] ?? 'Erro ao iniciar atualização de telefone'));
+      }
+    } catch (e) {
+      emit(const AuthError('Erro ao iniciar atualização de telefone'));
+    }
+  }
+
+  Future<void> confirmarAtualizacaoTelefone({
+    required String telefone,
+    required String codigo,
+  }) async {
+    emit(AuthLoading());
+    try {
+      final response = await _authService.confirmarAtualizacaoTelefone(
+        telefone: telefone,
+        codigo: codigo,
+      );
+
+      final data = response['data'];
+      final usuarioJson = data['usuario'] ?? data['user'];
+
+      if (usuarioJson != null) {
+        final usuarioMap = Map<String, dynamic>.from(usuarioJson);
+        _usuario = UsuarioModel.fromJson(usuarioMap);
+        await _apiClient.tokenService.saveUser(usuarioMap);
+
+        await _sincronizarEnderecos(data['enderecos'], data['endereco']);
+
+        emit(AuthAuthenticated(
+          accessToken: _apiClient.tokenService.getAccessToken() ?? '',
+          user: _usuario,
+        ));
+      } else {
+        emit(const AuthError('Erro ao confirmar atualização de telefone'));
+      }
+    } catch (e) {
+      emit(const AuthError('Erro ao confirmar atualização de telefone'));
+    }
+  }
+
+  Future<void> _sincronizarEnderecos(dynamic enderecosJson, dynamic enderecoPrincipalJson) async {
+    debugPrint('🔁 [AuthCubit] _sincronizarEnderecos chamado');
+    debugPrint('🔁 [AuthCubit] Principal: $enderecoPrincipalJson');
+    debugPrint('🔁 [AuthCubit] Lista: $enderecosJson');
+    
+    debugPrint('🔄 [AuthCubit] Sincronizando endereços...');
+
+    // 1. Sincronizar o endereço principal no LocalizacaoCubit
+    if (enderecoPrincipalJson != null) {
+      final endereco = EnderecoModel.fromJson(Map<String, dynamic>.from(enderecoPrincipalJson));
+      await _localizacaoCubit.definirEnderecoCompleto(endereco, origem: 'auth');
+    }
+
+    // 2. Sincronizar a lista completa de endereços no EnderecoCubit
+    if (enderecosJson is List && enderecosJson.isNotEmpty) {
+      final enderecos = enderecosJson
+          .map((json) => EnderecoModel.fromJson(Map<String, dynamic>.from(json)))
+          .toList();
+      _enderecoCubit.substituirEnderecos(enderecos);
     }
   }
 
@@ -273,13 +405,21 @@ class AuthCubit extends Cubit<AuthState> {
 
     await _apiClient.tokenService.saveTokens(token, null, isGuest: true);
     await _apiClient.tokenService.saveUser(usuarioJson);
+    debugPrint('💾 [AuthCubit] setConvidado: usuário salvo: ${_usuario?.nome}');
+
+    final enderecosJson = usuarioJson['enderecos'];
+    final enderecoPrincipalJson = usuarioJson['endereco'];
+    await _sincronizarEnderecos(enderecosJson, enderecoPrincipalJson);
 
     emit(AuthGuest(accessToken: token, user: _usuario));
     await carregarEnderecoUsuario();
   }
 
-  Future<void> onEnderecoCriadoComToken(String token, Map<String, dynamic> usuarioJson) =>
-      setConvidado(token, usuarioJson);
+  Future<void> onEnderecoCriadoComToken(String token, Map<String, dynamic> usuarioJson) async {
+    debugPrint('🔐 [AuthCubit] onEnderecoCriadoComToken chamado');
+    await setConvidado(token, usuarioJson);
+    debugPrint('🔐 [AuthCubit] AuthGuest deve ter sido emitido via setConvidado');
+  }
 
   Future<void> carregarEnderecoUsuario() async {
     try {
@@ -287,7 +427,7 @@ class AuthCubit extends Cubit<AuthState> {
       final state = _enderecoCubit.state;
 
       if (state is EnderecoLoaded && state.enderecoPrincipal != null) {
-        _localizacaoCubit.definirEnderecoCompleto(state.enderecoPrincipal!, origem: 'endereco_padrao');
+        await _localizacaoCubit.definirEnderecoCompleto(state.enderecoPrincipal!, origem: 'endereco_padrao');
       }
     } catch (e) {
       debugPrint('⚠️ [AuthCubit] Erro ao carregar endereço: $e');
@@ -297,37 +437,86 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> sairConvidado() async {
     debugPrint('🔐 [AuthCubit] Saindo do modo convidado...');
 
+    // 1. Excluir endereço do backend (se houver)
+    final locState = _localizacaoCubit.state;
+    if (locState is LocalizacaoCarregada && locState.endereco.id != null) {
+      try {
+        await _apiClient.delete(
+          '/app/enderecos/${locState.endereco.id}',
+          requiresAuth: true,
+        );
+        debugPrint('🗑️ [AuthCubit] Endereço ${locState.endereco.id} excluído');
+      } catch (e) {
+        debugPrint('⚠️ [AuthCubit] Erro ao excluir endereço: $e');
+      }
+    }
+
+    // 2. Limpar sessão
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
     await _localizacaoCubit.limparLocalizacao();
 
+    // 3. Remover preferências
     await _prefs.remove('guest_token');
     await _prefs.remove('is_guest');
+    await _prefs.remove('endereco_padrao_id');
+    await _prefs.remove('endereco_padrao_json');
+    await _prefs.remove('endereco_convidado_id');
 
     emit(AuthUnauthenticated());
 
-    getIt<NavigationService>().goToOnboarding();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        Routes.onboarding,
+        (route) => false,
+      );
+    });
   }
 
   Future<void> logout() async {
     debugPrint('🚪 [AuthCubit] Iniciando logout...');
 
+    // 1. Excluir endereço atual (se houver)
+    final locState = _localizacaoCubit.state;
+    if (locState is LocalizacaoCarregada && locState.endereco.id != null) {
+      try {
+        await _apiClient.delete(
+          '/app/enderecos/${locState.endereco.id}',
+          requiresAuth: true,
+        );
+        debugPrint('🗑️ [AuthCubit] Endereço ${locState.endereco.id} excluído');
+      } catch (e) {
+        debugPrint('⚠️ [AuthCubit] Erro ao excluir endereço: $e');
+      }
+    }
+
+    // 2. Invalida token no backend
     try {
       await _apiClient.post('app/auth/logout', requiresAuth: true);
     } catch (e) {
       debugPrint('⚠️ [AuthCubit] Erro no logout (ignorado): $e');
     }
 
+    // 3. Limpar dados locais
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
     await _localizacaoCubit.limparLocalizacao();
 
+    // 4. Remover preferências específicas de endereço
     await _prefs.remove('guest_token');
     await _prefs.remove('access_token');
     await _prefs.remove('is_guest');
+    await _prefs.remove('endereco_convidado_id');
+    await _prefs.remove('endereco_padrao_id');
+    await _prefs.remove('endereco_padrao_json');
 
     emit(AuthUnauthenticated());
 
-    getIt<NavigationService>().goToOnboarding();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        Routes.onboarding,
+        (route) => false,
+      );
+    });
   }
 }

@@ -103,9 +103,9 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
         }
 
         if (state is EnderecoLoaded && state.enderecoPrincipal != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (mounted) {
-              context.read<LocalizacaoCubit>().definirEnderecoCompleto(
+              await context.read<LocalizacaoCubit>().definirEnderecoCompleto(
                 state.enderecoPrincipal!,
                 origem: 'endereco_padrao',
               );

@@ -72,7 +72,7 @@ class EnderecoCard extends StatelessWidget {
     final displayUf = isListMode ? endereco!.uf : (uf ?? '');
     final displayPrincipal = isListMode ? isPrincipal : false;
 
-    // 🔥 FALLBACK SEGURO PARA enderecoCompleto
+    // FALLBACK SEGURO PARA enderecoCompleto
     String displayCompleto;
     if (isListMode) {
       try {
@@ -85,7 +85,7 @@ class EnderecoCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
       decoration: BoxDecoration(
         color: displayPrincipal
             ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
@@ -113,10 +113,10 @@ class EnderecoCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
 
-                    // 🔥 Label do endereço
+                    // Label do endereço
                     Text(
                       displayCompleto,
-                      style: AppTextStyles.titleMedium.copyWith( // 18px
+                      style: AppTextStyles.titleMedium.copyWith(
                         color: Colors.grey.shade700,
                       ),
                     ),
@@ -131,7 +131,7 @@ class EnderecoCard extends StatelessWidget {
                         ),
                         child: Text(
                           'Principal',
-                          style: AppTextStyles.caption.copyWith( // 13px
+                          style: AppTextStyles.caption.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -147,7 +147,7 @@ class EnderecoCard extends StatelessWidget {
                     onPressed: onSetPrincipal,
                     child: Text(
                       'Selecionar',
-                      style: AppTextStyles.bodySmall.copyWith( // 16px
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: Theme.of(context).primaryColor,
                       ),
                     ),

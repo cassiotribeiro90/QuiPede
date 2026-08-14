@@ -84,7 +84,6 @@ class _CepInputBodyState extends State<_CepInputBody> {
             'uf': state.dadosCep['uf'] ?? '',
             'cep': state.dadosCep['cep'] ?? '',
           };
-          final authCubit = context.read<AuthCubit>();
           
           Navigator.push(
             context,
@@ -97,11 +96,7 @@ class _CepInputBodyState extends State<_CepInputBody> {
             ),
           ).then((result) {
             if (result == true && mounted) {
-              authCubit.carregarEnderecoUsuario().then((_) {
-                if (mounted) {
-                  getIt<NavigationService>().goToHomeAndRemoveAll();
-                }
-              });
+              Navigator.pop(context, true);
             }
           });
         }

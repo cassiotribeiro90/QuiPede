@@ -14,6 +14,7 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
+        debugPrint('🧭 [AppDrawer] Reconstruindo com estado: ${authState.runtimeType}');
         final isLogged = authState is AuthAuthenticated;
         final isGuest = authState is AuthGuest;
 
@@ -84,6 +85,11 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, bool isLogged, bool isGuest) {
+    final user = context.read<AuthCubit>().usuario;
+    final nomeExibicao = (user?.nome != null && user!.nome.isNotEmpty) 
+        ? user.nome 
+        : (isGuest ? 'Olá, Convidado' : 'QuiPede');
+
     return DrawerHeader(
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
@@ -92,9 +98,9 @@ class AppDrawer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const Text(
-            'QuiPede',
-            style: TextStyle(
+          Text(
+            nomeExibicao,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -102,7 +108,7 @@ class AppDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            isLogged ? 'Bem-vindo de volta!' : (isGuest ? 'Modo Visitante' : 'Faça login para mais recursos'),
+            isLogged ? (user?.email ?? 'Bem-vindo de volta!') : (isGuest ? 'Modo Visitante' : 'Faça login para mais recursos'),
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
