@@ -103,20 +103,22 @@ class AppRouter {
         final locCubit = getIt<LocalizacaoCubit>();
         final authCubit = getIt<AuthCubit>();
         final locState = locCubit.state;
-        
+
         debugPrint('🏠 [AppRouter] Acessando Home. Localização: ${locState.runtimeType}');
 
         if (locState is LocalizacaoNaoEncontrada) {
           final authState = authCubit.state;
           if (authState is AuthAuthenticated || authState is AuthGuest || authState is AuthPerfilCompleto) {
-             debugPrint('🏠 [AppRouter] Sem endereço + logado → MeusEnderecos');
-             return MaterialPageRoute(
-               settings: settings,
-               builder: (_) => BlocProvider.value(
-                 value: getIt<EnderecoCubit>(),
-                 child: const EnderecosListView(),
-               ),
-             );
+            debugPrint('🏠 [AppRouter] Sem endereço + logado → MeusEnderecos');
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => BlocProvider.value(
+                value: getIt<EnderecoCubit>(),
+                child: const EnderecosListView(
+                  origem: NavigationOrigins.home, // ✅ CORRIGIDO
+                ),
+              ),
+            );
           } else {
             debugPrint('🏠 [AppRouter] Sem endereço + deslogado → Onboarding');
             return MaterialPageRoute(
@@ -150,7 +152,6 @@ class AppRouter {
         );
 
       case Routes.carrinho:
-        // ✅ Validação síncrona baseada no status do usuário
         final authCubit = getIt<AuthCubit>();
         final authState = authCubit.state;
         final user = authState.user;
@@ -163,7 +164,6 @@ class AppRouter {
         debugPrint('🛡️ [AppRouter] telefone = ${user?.telefone}');
         debugPrint('🛡️ [AppRouter] nome = ${user?.nome}');
 
-        // Se não há sessão alguma, aí sim mandamos para onboarding
         if (authState is! AuthAuthenticated && authState is! AuthGuest && authState is! AuthPerfilCompleto) {
           debugPrint('🚀 [AppRouter] Sem sessão ativa → onboarding');
           return MaterialPageRoute(
@@ -174,7 +174,6 @@ class AppRouter {
 
         final String? status = user?.status;
 
-        // 1. Convidado (sem telefone) → pedir telefone
         if (status == 'convidado') {
           debugPrint('🛡️ [AppRouter] → PhoneInput (convidado)');
           return MaterialPageRoute(
@@ -186,7 +185,6 @@ class AppRouter {
           );
         }
 
-        // 2. Pendente (tem telefone, falta nome) → completar perfil
         if (status == 'pendente') {
           debugPrint('🛡️ [AppRouter] → CompletarPerfil (pendente)');
           return MaterialPageRoute(
@@ -198,7 +196,6 @@ class AppRouter {
           );
         }
 
-        // 3. Ativo → carrinho liberado
         if (status == 'ativo') {
           debugPrint('🛡️ [AppRouter] → CarrinhoPage (ativo)');
           return MaterialPageRoute(
@@ -207,10 +204,8 @@ class AppRouter {
           );
         }
 
-        // 🔥 Fallback seguro para usuários autenticados mas sem status definido:
-        // Verificamos telefone e nome, mas NUNCA redirecionamos para Onboarding.
         debugPrint('🛡️ [AppRouter] ⚠️ Status desconhecido ou nulo ($status). Fallback para telefone/nome.');
-        
+
         final String telefone = user?.telefone ?? '';
         final String nome = user?.nome ?? '';
 
@@ -271,7 +266,9 @@ class AppRouter {
           settings: settings,
           builder: (_) => BlocProvider.value(
             value: getIt<EnderecoCubit>(),
-            child: const EnderecosListView(),
+            child: const EnderecosListView(
+              origem: NavigationOrigins.meusEnderecos, // ✅ CORRIGIDO
+            ),
           ),
         );
 

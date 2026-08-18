@@ -11,9 +11,11 @@ import '../../../di/dependencies.dart';
 import '../../../services/navigation_service.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../home/bloc/localizacao_cubit.dart';
+import '../../../core/constants/navigation_origins.dart'; // ✅ Import
 
 class EnderecosListView extends StatefulWidget {
-  const EnderecosListView({super.key});
+  final String? origem; // ✅ Novo campo
+  const EnderecosListView({super.key, this.origem});
 
   @override
   State<EnderecosListView> createState() => _EnderecosListViewState();
@@ -72,6 +74,12 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
               backgroundColor: Colors.green,
             ),
           );
+
+          // ✅ Se veio do Onboarding, retorna true
+          if (widget.origem == NavigationOrigins.onboarding) {
+            debugPrint('🚀 [EnderecosListView] Retornando true para Onboarding');
+            Navigator.pop(context, true);
+          }
         } else if (state is EnderecoExcluido) {
           debugPrint('✅ [EnderecosListView] Endereço excluído: ID ${state.id}');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +130,15 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                if (getIt<NavigationService>().canPop()) {
+                final currentState = context.read<EnderecoCubit>().state;
+                final temEndereco = currentState is EnderecoLoaded && currentState.enderecoPrincipal != null;
+
+                debugPrint('⬅️ [EnderecosListView] Voltar - temEndereco: $temEndereco, origem: ${widget.origem}');
+
+                if (widget.origem == NavigationOrigins.onboarding) {
+                  // ✅ Retorna true se tem endereço, false se não tem
+                  Navigator.pop(context, temEndereco);
+                } else if (getIt<NavigationService>().canPop()) {
                   getIt<NavigationService>().pop();
                 } else {
                   getIt<NavigationService>().goToHomeAndRemoveAll();
