@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,7 +7,6 @@ import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/utils/platform_utils.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/services/navigation_service.dart';
-import '../../../../shared/services/token_service.dart';
 import '../services/localizacao_service.dart';
 import 'busca_endereco_page.dart';
 import 'cep_input_page.dart';
@@ -18,8 +15,6 @@ import 'widgets/onboarding_option_card.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../core/constants/navigation_origins.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
-import '../../enderecos/bloc/endereco_state.dart';
-import '../../enderecos/models/endereco_model.dart';
 
 class OnboardingPage extends StatefulWidget {
   final String? origem;
@@ -29,111 +24,15 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> with WidgetsBindingObserver {
+class _OnboardingPageState extends State<OnboardingPage> {
   final _localizacaoService = LocalizacaoService(getIt<ApiClient>());
   bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _logDiagnostico();
-    _verificarEnderecoExistente();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      debugPrint('🔄 [OnboardingPage] App resumed - verificando endereço');
-      _logDiagnostico();
-      _verificarEnderecoExistente();
-    }
-  }
-
-  /// ✅ Log de diagnóstico completo
-  void _logDiagnostico() {
-    debugPrint('═══════════════════════════════════════════');
-    debugPrint('🔍 [DIAGNÓSTICO] OnboardingPage aberto');
-    debugPrint('🔍 [DIAGNÓSTICO] Origem: ${widget.origem}');
-    debugPrint('═══════════════════════════════════════════');
-
-    // Verifica token de autenticação
-    try {
-      final tokenService = getIt<TokenService>();
-      final token = tokenService.getAccessToken();
-      debugPrint('🔑 [DIAGNÓSTICO] Token de acesso: ${token != null ? 'PRESENTE (${token.substring(0, min(20, token.length))}...)' : 'AUSENTE'}');
-
-      final refreshToken = tokenService.getRefreshToken();
-      debugPrint('🔑 [DIAGNÓSTICO] Refresh token: ${refreshToken != null ? 'PRESENTE' : 'AUSENTE'}');
-    } catch (e) {
-      debugPrint('🔑 [DIAGNÓSTICO] Erro ao verificar token: $e');
-    }
-
-    // Verifica endereços salvos
-    try {
-      final enderecoCubit = getIt<EnderecoCubit>();
-      final state = enderecoCubit.state;
-      debugPrint('📦 [DIAGNÓSTICO] Estado do EnderecoCubit: ${state.runtimeType}');
-
-      if (state is EnderecoLoaded) {
-        debugPrint('📦 [DIAGNÓSTICO] Endereços carregados: ${state.enderecos.length}');
-        debugPrint('📦 [DIAGNÓSTICO] Endereço principal: ${state.enderecoPrincipal != null ? 'SIM (ID: ${state.enderecoPrincipal!.id})' : 'NÃO'}');
-
-        if (state.enderecos.isNotEmpty) {
-          for (final e in state.enderecos) {
-            debugPrint('📦 [DIAGNÓSTICO]   - ID: ${e.id}, ${e.logradouro}, ${e.numero}');
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('📦 [DIAGNÓSTICO] Erro ao verificar endereços: $e');
-    }
-  }
-
-  /// ✅ Verifica se já tem endereço cadastrado
-  Future<void> _verificarEnderecoExistente() async {
-    debugPrint('🔍 [OnboardingPage] Verificando endereço existente...');
-
-    try {
-      final enderecoCubit = getIt<EnderecoCubit>();
-      debugPrint('🔍 [OnboardingPage] Chamando carregarEnderecos()...');
-      await enderecoCubit.carregarEnderecos(mostrarLoading: false);
-
-      final state = enderecoCubit.state;
-      debugPrint('🔍 [OnboardingPage] Estado após carregar: ${state.runtimeType}');
-
-      if (state is EnderecoLoaded) {
-        final temEndereco = state.enderecos.isNotEmpty;
-        debugPrint('🔍 [OnboardingPage] Tem endereço: $temEndereco (${state.enderecos.length} endereços)');
-
-        if (temEndereco && mounted) {
-          debugPrint('🚀 [OnboardingPage] ✅ Endereço encontrado → navegando para Home');
-          _irParaHome();
-        } else {
-          debugPrint('⚠️ [OnboardingPage] Nenhum endereço encontrado → permanece no Onboarding');
-        }
-      } else if (state is EnderecoError) {
-        debugPrint('❌ [OnboardingPage] Erro: ${state.message}');
-      } else {
-        debugPrint('⚠️ [OnboardingPage] Estado não é Loaded: ${state.runtimeType}');
-      }
-    } catch (e) {
-      debugPrint('❌ [OnboardingPage] Erro ao verificar endereço: $e');
-    }
-  }
 
   void _setLoading(bool value) {
     if (mounted) setState(() => _isLoading = value);
   }
 
   void _irParaCepPage() {
-    debugPrint('📂 [OnboardingPage] Navegando para CepInputPage');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -142,19 +41,10 @@ class _OnboardingPageState extends State<OnboardingPage> with WidgetsBindingObse
           child: const CepInputPage(),
         ),
       ),
-    ).then((result) {
-      debugPrint('📂 [OnboardingPage] Resultado CEP: $result');
-      if (result == true && mounted) {
-        _irParaHome();
-      } else {
-        debugPrint('📂 [OnboardingPage] Fallback: verificando endereço');
-        _verificarEnderecoExistente();
-      }
-    });
+    );
   }
 
   void _irParaBuscaEndereco() {
-    debugPrint('📂 [OnboardingPage] Navegando para BuscaEnderecoPage');
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -163,20 +53,7 @@ class _OnboardingPageState extends State<OnboardingPage> with WidgetsBindingObse
           child: const BuscaEnderecoPage(),
         ),
       ),
-    ).then((result) {
-      debugPrint('📂 [OnboardingPage] Resultado Busca: $result');
-      if (result == true && mounted) {
-        _irParaHome();
-      } else {
-        debugPrint('📂 [OnboardingPage] Fallback: verificando endereço');
-        _verificarEnderecoExistente();
-      }
-    });
-  }
-
-  void _irParaHome() {
-    debugPrint('🚀 [OnboardingPage] Navegando para Home e limpando pilha');
-    getIt<NavigationService>().goToHomeAndRemoveAll();
+    );
   }
 
   void _usarLocalizacaoAtual() async {
@@ -205,15 +82,7 @@ class _OnboardingPageState extends State<OnboardingPage> with WidgetsBindingObse
                 ),
               ),
             ),
-          ).then((result) {
-            debugPrint('📂 [OnboardingPage] Resultado Localização: $result');
-            if (result == true && mounted) {
-              _irParaHome();
-            } else {
-              debugPrint('📂 [OnboardingPage] Fallback: verificando endereço');
-              _verificarEnderecoExistente();
-            }
-          });
+          );
         } else {
           _showError(response['message'] ?? 'Não foi possível identificar seu endereço.');
         }
@@ -228,7 +97,6 @@ class _OnboardingPageState extends State<OnboardingPage> with WidgetsBindingObse
   }
 
   void _showError(String message) {
-    debugPrint('⚠️ [OnboardingPage] Erro: $message');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.orange),
@@ -238,7 +106,6 @@ class _OnboardingPageState extends State<OnboardingPage> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🏗️ [OnboardingPage] build() chamado');
     const primaryColor = Color(0xFFF57C00);
 
     return MultiBlocProvider(
@@ -315,16 +182,6 @@ class _OnboardingPageState extends State<OnboardingPage> with WidgetsBindingObse
                     ),
                   ),
                   const SizedBox(height: 40),
-                  Center(
-                    child: Text(
-                      'Ao continuar, você concorda com nossos Termos de Uso.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),

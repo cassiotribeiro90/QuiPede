@@ -14,12 +14,11 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
   final SharedPreferences _prefs;
   StreamSubscription? _enderecoSubscription;
 
-  LocalizacaoCubit(this._prefs) : super(LocalizacaoInitial()) {
-    carregarLocalizacaoDoEnderecoPadrao();
-    _ouvirEnderecos();
-  }
+  LocalizacaoCubit(this._prefs) : super(LocalizacaoInitial());
+  // ✅ SEM chamadas no construtor
 
-  void _ouvirEnderecos() {
+  void iniciarListenerEnderecos() {
+    _enderecoSubscription?.cancel();
     final enderecoCubit = getIt<EnderecoCubit>();
     _enderecoSubscription = enderecoCubit.stream.listen((enderecoState) {
       if (enderecoState is EnderecoLoaded) {
@@ -29,7 +28,6 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
             emit(LocalizacaoNaoEncontrada());
           }
         } else if (state is LocalizacaoNaoEncontrada && enderecoState.enderecoPrincipal != null) {
-          // ✅ Se encontrou endereço e estávamos em "Não Encontrada", define o principal
           definirEnderecoCompleto(enderecoState.enderecoPrincipal!, origem: 'endereco_padrao');
         }
       }
@@ -58,22 +56,20 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
   /// Carrega localização a partir do endereço padrão do backend
   Future<void> carregarLocalizacaoDoEnderecoPadrao() async {
     debugPrint('📍 [LocalizacaoCubit] carregarLocalizacaoDoEnderecoPadrao chamado');
-    debugPrint('📍 [LocalizacaoCubit] carregarLocalizacaoDoEnderecoPadrao chamado');
+
     try {
       final enderecoCubit = getIt<EnderecoCubit>();
       await enderecoCubit.carregarEnderecos();
       final enderecoState = enderecoCubit.state;
-      
+
       if (enderecoState is EnderecoLoaded && enderecoState.enderecoPrincipal != null) {
-        definirEnderecoCompleto(enderecoState.enderecoPrincipal!, origem: 'endereco_padrao');
+        await definirEnderecoCompleto(enderecoState.enderecoPrincipal!, origem: 'endereco_padrao');
       } else {
-        // 🔄 Fallback para SharedPreferences se offline ou sem dados no backend
+        // Fallback para SharedPreferences
         final json = _prefs.getString('endereco_padrao_json');
         if (json != null) {
           final endereco = EnderecoModel.fromJson(jsonDecode(json));
           emit(LocalizacaoCarregada(endereco: endereco, origem: 'fallback_local'));
-          debugPrint('📍 [LocalizacaoCubit] Endereço carregado (fallback): ${endereco.resumido}');
-          debugPrint('📍 [LocalizacaoCubit] Endereço carregado: $json');
         } else {
           emit(LocalizacaoNaoEncontrada());
         }
@@ -103,43 +99,30 @@ class LocalizacaoCubit extends Cubit<LocalizacaoState> {
       longitude: longitude,
     );
 
-    debugPrint('🔍 [LocalizacaoCubit] definirLocalizacaoManual: ${endereco.resumido}');
-
     emit(LocalizacaoCarregada(
       endereco: endereco,
       origem: 'manual',
     ));
-    debugPrint('✅ [LocalizacaoCubit] Cubit atualizado em memória: ${endereco.resumido}');
   }
 
-  /// Define a localização a partir de um modelo completo (após confirmação da API)
+  /// Define a localização a partir de um modelo completo
   Future<void> definirEnderecoCompleto(EnderecoModel endereco, {String origem = 'manual'}) async {
-    debugPrint('📍 [LocalizacaoCubit] definirEnderecoCompleto chamado');
-    debugPrint('📍 [LocalizacaoCubit] Endereço recebido: ${endereco.logradouro}, ${endereco.numero}');
-    debugPrint('📍 [LocalizacaoCubit] ID: ${endereco.id}');
-
-    debugPrint('📍 [LocalizacaoCubit] definirEnderecoCompleto chamado');
-
     debugPrint('🔍 [LocalizacaoCubit] definirEnderecoCompleto: ${endereco.resumido}');
-    
-    // 1. Persistir no SharedPreferences para fallback offline
+
     try {
       await _prefs.setInt('endereco_padrao_id', endereco.id ?? -1);
       await _prefs.setString('endereco_padrao_json', jsonEncode(endereco.toJson()));
-      debugPrint('💾 [LocalizacaoCubit] Endereço persistido localmente');
     } catch (e) {
-      debugPrint('⚠️ [LocalizacaoCubit] Erro ao persistir localmente: $e');
+      debugPrint('⚠️ [LocalizacaoCubit] Erro ao persistir: $e');
     }
 
     emit(LocalizacaoCarregada(
       endereco: endereco,
       origem: origem,
     ));
-    debugPrint('✅ [LocalizacaoCubit] Endereço completo definido em memória: ${endereco.resumido}');
   }
 
   Future<void> limparLocalizacao() async {
-    debugPrint('🗑️ [LocalizacaoCubit] Limpando localização');
     await _prefs.remove('endereco_padrao_id');
     await _prefs.remove('endereco_padrao_json');
     emit(LocalizacaoNaoEncontrada());

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/di/dependencies.dart';
+import 'package:quipede/app/services/navigation_service.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
@@ -93,11 +94,8 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
       longitude: widget.longitude,
     );
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
-    // Dispara a criação — o listener cuida do sucesso/erro
     context.read<EnderecoCubit>().criarEndereco(enderecoModel);
   }
 
@@ -105,36 +103,26 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
   Widget build(BuildContext context) {
     return BlocListener<EnderecoCubit, EnderecoState>(
       listenWhen: (previous, current) {
-        // ✅ Só escuta estados relevantes para esta tela
         return current is EnderecoCriado || current is EnderecoError || current is EnderecoLoading;
       },
       listener: (context, state) {
-        // ✅ Endereço criado com sucesso
         if (state is EnderecoCriado) {
           debugPrint('✅ [EnderecoConfirmacaoPage] Endereço criado: ID ${state.endereco.id}');
           setState(() => _isLoading = false);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Endereço adicionado com sucesso!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-
-          if (mounted) {
-            Navigator.of(context).pop(true);
-          }
-        }
-        // ✅ Erro ao criar
-        else if (state is EnderecoError) {
+          // ✅ NAVEGA DIRETO PARA HOME
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              getIt<NavigationService>().goToHomeAndRemoveAll();
+            }
+          });
+        } else if (state is EnderecoError) {
           debugPrint('❌ [EnderecoConfirmacaoPage] Erro: ${state.message}');
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
-        }
-        // ✅ Loading
-        else if (state is EnderecoLoading) {
+        } else if (state is EnderecoLoading) {
           setState(() => _isLoading = true);
         }
       },
@@ -221,20 +209,20 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                           : const Text(
-                              'Confirmar Endereço',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                        'Confirmar Endereço',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),

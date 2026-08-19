@@ -44,18 +44,25 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
     debugPrint('🟢 [LojasListScreen] initState()');
     _scrollController.addListener(_onScroll);
 
-    // ✅ Escuta mudanças de localização para carregar lojas quando endereço ficar disponível
-    _localizacaoSubscription = context.read<LocalizacaoCubit>().stream.listen((locState) {
-      if (locState is LocalizacaoCarregada && _initialized) {
-        debugPrint('🔄 [LojasListScreen] Localização mudou para Carregada - disparando fetchLojas');
-        context.read<LojasCubit>().fetchLojas(perPage: 10);
+    // ✅ Escuta LocalizacaoCubit para carregar lojas quando endereço ficar disponível
+    _localizacaoSubscription = context.read<LocalizacaoCubit>().stream.listen((state) {
+      if (state is LocalizacaoCarregada) {
+        _carregarLojas();
       }
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('🟢 [LojasListScreen] PostFrameCallback');
       _subscribeToRoute();
-      _verificarEnderecoELojas();
+      
+      // Tenta carregar imediatamente se já tem endereço
+      final locState = context.read<LocalizacaoCubit>().state;
+      if (locState is LocalizacaoCarregada) {
+        _carregarLojas();
+      } else {
+        _verificarEnderecoELojas();
+      }
+      
       _firstLoad = false;
     });
 
@@ -100,7 +107,16 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   void _onScreenVisible() {
     if (_firstLoad) return;
     debugPrint('🔄 [LojasListScreen] Tela visível - verificando endereço e lojas');
+    _carregarLojas();
     _verificarEnderecoELojas();
+  }
+
+  void _carregarLojas() {
+    final locState = context.read<LocalizacaoCubit>().state;
+    if (locState is LocalizacaoCarregada) {
+      debugPrint('🔍 [LojasListScreen] Carregando lojas...');
+      context.read<LojasCubit>().fetchLojas(perPage: 10);
+    }
   }
 
   Future<void> _verificarEnderecoELojas() async {

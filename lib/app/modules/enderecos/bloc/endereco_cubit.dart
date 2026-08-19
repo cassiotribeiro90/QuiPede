@@ -9,16 +9,16 @@ import 'endereco_state.dart';
 
 class EnderecoCubit extends Cubit<EnderecoState> {
   final EnderecoRepository _repository;
-  bool _isCarregando = false;
+  bool _carregando = false;
 
   EnderecoCubit(this._repository) : super(EnderecoInitial());
 
   Future<void> carregarEnderecos({bool mostrarLoading = true}) async {
-    if (_isCarregando) {
+    if (_carregando) {
       debugPrint('⏳ [EnderecoCubit] Carregamento já em andamento, ignorando...');
       return;
     }
-    _isCarregando = true;
+    _carregando = true;
 
     try {
       final hasData = state is EnderecoLoaded && (state as EnderecoLoaded).enderecos.isNotEmpty;
@@ -49,7 +49,7 @@ class EnderecoCubit extends Cubit<EnderecoState> {
         emit(EnderecoError(e.toString()));
       }
     } finally {
-      _isCarregando = false;
+      _carregando = false;
     }
   }
 

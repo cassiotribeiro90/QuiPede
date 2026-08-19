@@ -46,6 +46,9 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
 
     try {
+      // ✅ LIMPAR localização anterior ANTES de processar
+      await _localizacaoCubit.limparLocalizacao();
+
       final token = _apiClient.tokenService.getAccessToken();
       final isGuest = _apiClient.tokenService.isGuest();
 
@@ -172,6 +175,9 @@ class AuthCubit extends Cubit<AuthState> {
       debugPrint('🔍 [AuthCubit] endereco: ${data['endereco']}');
       debugPrint('🔍 [AuthCubit] enderecos: ${data['enderecos']}');
 
+      // ✅ LIMPAR localização anterior ANTES de processar
+      await _localizacaoCubit.limparLocalizacao();
+
       final accessToken = data['access_token'] ?? data['token'];
       final userJson = data['usuario'] ?? data['user'];
       final enderecoJson = data['endereco'];
@@ -199,6 +205,9 @@ class AuthCubit extends Cubit<AuthState> {
           }
         }
 
+        // ✅ Marca como telefone verificado localmente após sucesso no OTP
+        user = user.copyWith(telefoneVerificado: true);
+
         _usuario = user;
         debugPrint('🔐 [AuthCubit] verificarOTP: _usuario definido: nome=${_usuario?.nome}, email=${_usuario?.email}, status=${_usuario?.status}, telefone=${_usuario?.telefone}');
 
@@ -216,10 +225,15 @@ class AuthCubit extends Cubit<AuthState> {
 
         emit(AuthAuthenticated(accessToken: accessToken, user: _usuario));
 
+        // ✅ Se TEM endereço, define; se NÃO tem, já foi limpo
         if (enderecoJson != null) {
           final endereco = EnderecoModel.fromJson(Map<String, dynamic>.from(enderecoJson));
-          _localizacaoCubit.definirEnderecoCompleto(endereco, origem: 'endereco_padrao');
+          await _localizacaoCubit.definirEnderecoCompleto(endereco, origem: 'endereco_padrao');
+        } else {
+          // ✅ Garante que está limpo
+          await _localizacaoCubit.limparLocalizacao();
         }
+
         await carregarEnderecoUsuario();
 
         // ✅ Não navega mais daqui — o AppRouter cuida do redirecionamento
@@ -268,11 +282,8 @@ class AuthCubit extends Cubit<AuthState> {
 
         debugPrint('🔐 [AuthCubit] _salvarPerfil: _usuario definido: nome=${_usuario?.nome}, email=${_usuario?.email}, status=${_usuario?.status}');
 
-        if (isInitialCompletion) {
-          emit(AuthPerfilCompleto(accessToken: token ?? '', user: _usuario!));
-        } else {
-          emit(AuthAuthenticated(accessToken: token ?? '', user: _usuario));
-        }
+        // ✅ SEMPRE emite AuthAuthenticated
+        emit(AuthAuthenticated(accessToken: token ?? '', user: _usuario));
       } else {
         emit(const AuthError('Erro ao salvar perfil. Tente novamente.'));
       }
@@ -335,6 +346,12 @@ class AuthCubit extends Cubit<AuthState> {
     debugPrint('🔁 [AuthCubit] Principal: $enderecoPrincipalJson');
     debugPrint('🔁 [AuthCubit] Lista: $enderecosJson');
     
+    // ✅ Se NÃO tem endereço principal, LIMPA localização
+    if (enderecoPrincipalJson == null) {
+      debugPrint('🗑️ [AuthCubit] Sem endereço principal → limpando localização');
+      await _localizacaoCubit.limparLocalizacao();
+    }
+
     debugPrint('🔄 [AuthCubit] Sincronizando endereços...');
 
     // 1. Sincronizar o endereço principal no LocalizacaoCubit
@@ -349,6 +366,9 @@ class AuthCubit extends Cubit<AuthState> {
           .map((json) => EnderecoModel.fromJson(Map<String, dynamic>.from(json)))
           .toList();
       _enderecoCubit.substituirEnderecos(enderecos);
+    } else {
+      // ✅ Lista vazia → substitui por lista vazia
+      _enderecoCubit.substituirEnderecos([]);
     }
   }
 

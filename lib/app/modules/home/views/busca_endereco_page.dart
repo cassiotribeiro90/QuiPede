@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:quipede/app/modules/auth/bloc/auth_cubit.dart';
-import 'package:quipede/app/modules/auth/bloc/auth_state.dart';
 import 'package:quipede/app/modules/enderecos/bloc/endereco_cubit.dart';
 import 'package:quipede/app/modules/enderecos/bloc/endereco_state.dart';
 import 'package:quipede/app/modules/enderecos/models/endereco_model.dart';
@@ -13,6 +11,7 @@ import 'package:quipede/shared/api/api_client.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/core/utils/location_permission_service.dart';
+import 'package:quipede/app/core/utils/estados_brasil.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import 'widgets/endereco_sugestao_tile.dart';
 import 'endereco_confirmacao_page.dart';
@@ -40,22 +39,25 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
     _verificarLocalizacao();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
   Future<void> _verificarLocalizacao() async {
     final temPermissao = await LocationPermissionService.hasPermission();
     if (!temPermissao) {
       final concedida = await LocationPermissionService.requestPermission();
       if (!concedida) {
         if (mounted) {
-          setState(() {
-            _bloquearBusca = true;
-          });
+          setState(() => _bloquearBusca = true);
           _mostrarDialogoPermissao();
         }
       } else {
         await _obterCoordenadas(silencioso: true);
-        if (mounted) {
-          setState(() => _bloquearBusca = false);
-        }
+        if (mounted) setState(() => _bloquearBusca = false);
       }
     } else {
       await _obterCoordenadas(silencioso: true);
@@ -101,9 +103,7 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
     } catch (e) {
       if (!silencioso) {
         debugPrint('Erro ao obter coordenadas: $e');
-        if (mounted) {
-          setState(() => _bloquearBusca = true);
-        }
+        if (mounted) setState(() => _bloquearBusca = true);
       }
     }
   }
@@ -124,8 +124,6 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
       _mostrarDialogoPermissao();
       return;
     }
-    debugPrint('🚨 [BuscaEnderecoPage] Buscando: $query');
-    debugPrint('🔍 [BuscaEndereco] Buscando: $query');
     setState(() => _isLoading = true);
     try {
       final resultados = await _localizacaoService.buscarEndereco(
@@ -143,59 +141,50 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<EnderecoCubit, EnderecoState>(
-      listener: (context, state) {
-        if (state is EnderecoCriado) {
-          if (mounted && Navigator.canPop(context)) {
-            Navigator.pop(context, true);
-          }
-        }
-      },
-      child: ResponsivePageScaffold(
-        appBar: AppBar(
-          title: const Text('Buscar endereço'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+    return ResponsivePageScaffold(
+      appBar: AppBar(
+        title: const Text('Buscar endereço'),
         backgroundColor: Colors.white,
-        body: Align(
-          alignment: Alignment.topCenter,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'Digite rua, bairro ou cidade',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _sugestoes = []);
-                            },
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+        foregroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      backgroundColor: Colors.white,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Digite rua, bairro ou cidade',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _sugestoes = []);
+                    },
+                  )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                const SizedBox(height: 24),
-                _buildContent(),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+              _buildContent(),
+            ],
           ),
         ),
       ),
@@ -205,7 +194,7 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
   Widget _buildContent() {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_searchController.text.trim().length < 3) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -221,7 +210,7 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
       );
     }
     if (_sugestoes.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Nenhum endereço encontrado',
           style: AppTextStyles.bodyLarge,
@@ -234,48 +223,36 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
       itemCount: _sugestoes.length,
       itemBuilder: (context, index) {
         final item = _sugestoes[index];
-        final authCubit = context.read<AuthCubit>();
 
         return EnderecoSugestaoTile(
           endereco: item,
           onTap: () async {
-            final isLogged = authCubit.state is AuthAuthenticated;
-            if (isLogged) {
-              context.read<EnderecoCubit>().criarEndereco(_toEnderecoModel(item));
-            } else {
-              final navigator = Navigator.of(context);
-              final result = await navigator.push<bool>(
-                MaterialPageRoute(
-                  builder: (_) => EnderecoConfirmacaoPage(
-                    endereco: item.toMap(),
-                    latitude: item.latitude ?? 0,
-                    longitude: item.longitude ?? 0,
-                  ),
+            // ✅ SEMPRE abre confirmação para preencher número/complemento
+            final navigator = Navigator.of(context);
+            final result = await navigator.push<bool>(
+              MaterialPageRoute(
+                builder: (_) => EnderecoConfirmacaoPage(
+                  endereco: {
+                    'logradouro': item.logradouro,
+                    'bairro': item.bairro ?? '',
+                    'cidade': item.cidade ?? '',
+                    'uf': converterEstadoParaSigla(item.uf ?? ''),
+                    'cep': item.cep ?? '',
+                  },
+                  latitude: item.latitude ?? 0,
+                  longitude: item.longitude ?? 0,
                 ),
-              );
+              ),
+            );
 
-              if (result == true && mounted) {
-                if (navigator.canPop()) {
-                  navigator.pop(true);
-                }
+            if (result == true && mounted) {
+              if (navigator.canPop()) {
+                navigator.pop(true);
               }
             }
           },
         );
       },
-    );
-  }
-
-  EnderecoModel _toEnderecoModel(EnderecoSugestao item) {
-    return EnderecoModel(
-      cep: item.cep ?? '',
-      logradouro: item.logradouro,
-      numero: item.numero,
-      bairro: item.bairro ?? '',
-      cidade: item.cidade ?? '',
-      uf: item.uf ?? '',
-      latitude: item.latitude,
-      longitude: item.longitude,
     );
   }
 }

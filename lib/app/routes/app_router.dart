@@ -42,7 +42,10 @@ class AppRouter {
         final String? origem = args?['origem'];
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => OnboardingPage(origem: origem),
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: OnboardingPage(origem: origem),
+          ),
         );
 
       case Routes.login:
@@ -108,22 +111,26 @@ class AppRouter {
 
         if (locState is LocalizacaoNaoEncontrada) {
           final authState = authCubit.state;
-          if (authState is AuthAuthenticated || authState is AuthGuest || authState is AuthPerfilCompleto) {
-            debugPrint('🏠 [AppRouter] Sem endereço + logado → MeusEnderecos');
+
+          if (authState is AuthAuthenticated) {
+            debugPrint('🏠 [AppRouter] Sem endereço + autenticado → MeusEnderecos');
             return MaterialPageRoute(
               settings: settings,
               builder: (_) => BlocProvider.value(
                 value: getIt<EnderecoCubit>(),
                 child: const EnderecosListView(
-                  origem: NavigationOrigins.home, // ✅ CORRIGIDO
+                  origem: NavigationOrigins.home,
                 ),
               ),
             );
           } else {
-            debugPrint('🏠 [AppRouter] Sem endereço + deslogado → Onboarding');
+            debugPrint('🏠 [AppRouter] Sem endereço + deslogado/convidado → Onboarding');
             return MaterialPageRoute(
               settings: settings,
-              builder: (_) => const OnboardingPage(origem: NavigationOrigins.home),
+              builder: (_) => BlocProvider.value(
+                value: getIt<AuthCubit>(),
+                child: const OnboardingPage(origem: NavigationOrigins.home),
+              ),
             );
           }
         }
@@ -168,7 +175,10 @@ class AppRouter {
           debugPrint('🚀 [AppRouter] Sem sessão ativa → onboarding');
           return MaterialPageRoute(
             settings: settings,
-            builder: (_) => OnboardingPage(origem: origem),
+            builder: (_) => BlocProvider.value(
+              value: getIt<AuthCubit>(),
+              child: OnboardingPage(origem: origem),
+            ),
           );
         }
 

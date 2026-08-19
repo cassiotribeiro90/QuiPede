@@ -11,10 +11,10 @@ import '../../../di/dependencies.dart';
 import '../../../services/navigation_service.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../home/bloc/localizacao_cubit.dart';
-import '../../../core/constants/navigation_origins.dart'; // ✅ Import
+import '../../../core/constants/navigation_origins.dart';
 
 class EnderecosListView extends StatefulWidget {
-  final String? origem; // ✅ Novo campo
+  final String? origem;
   const EnderecosListView({super.key, this.origem});
 
   @override
@@ -48,6 +48,21 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
     }
   }
 
+  /// ✅ Verifica se deve navegar automaticamente
+  bool get _deveNavegarAutomaticamente =>
+      widget.origem == NavigationOrigins.onboarding ||
+          widget.origem == NavigationOrigins.home;
+
+  /// ✅ Navega para Home automaticamente
+  void _navegarParaHome() {
+    debugPrint('🚀 [EnderecosListView] Navegando automaticamente para Home');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        getIt<NavigationService>().goToHomeAndRemoveAll();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<EnderecoCubit, EnderecoState>(
@@ -68,17 +83,10 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
           );
         } else if (state is EnderecoCriado) {
           debugPrint('✅ [EnderecosListView] Endereço criado: ID ${state.endereco.id}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Endereço adicionado com sucesso!'),
-              backgroundColor: Colors.green,
-            ),
-          );
 
-          // ✅ Se veio do Onboarding, retorna true
-          if (widget.origem == NavigationOrigins.onboarding) {
-            debugPrint('🚀 [EnderecosListView] Retornando true para Onboarding');
-            Navigator.pop(context, true);
+          // ✅ Fecha e navega para Home automaticamente
+          if (_deveNavegarAutomaticamente) {
+            _navegarParaHome();
           }
         } else if (state is EnderecoExcluido) {
           debugPrint('✅ [EnderecosListView] Endereço excluído: ID ${state.id}');
@@ -90,12 +98,11 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
           );
         } else if (state is EnderecoPrincipalDefinido) {
           debugPrint('✅ [EnderecosListView] Principal definido: ID ${state.id}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Endereço selecionado!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+
+          // ✅ Selecionou endereço → navega para Home
+          if (_deveNavegarAutomaticamente) {
+            _navegarParaHome();
+          }
         }
       },
       buildWhen: (previous, current) {
@@ -135,8 +142,7 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
 
                 debugPrint('⬅️ [EnderecosListView] Voltar - temEndereco: $temEndereco, origem: ${widget.origem}');
 
-                if (widget.origem == NavigationOrigins.onboarding) {
-                  // ✅ Retorna true se tem endereço, false se não tem
+                if (_deveNavegarAutomaticamente) {
                   Navigator.pop(context, temEndereco);
                 } else if (getIt<NavigationService>().canPop()) {
                   getIt<NavigationService>().pop();
@@ -196,6 +202,12 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
               if (!isSelected) {
                 debugPrint('👆 [EnderecosListView] Selecionando endereço ID ${endereco.id}');
                 context.read<EnderecoCubit>().definirPrincipal(endereco.id!);
+              } else {
+                // ✅ Já está selecionado → navega automaticamente
+                debugPrint('👆 [EnderecosListView] Endereço já selecionado → navegando');
+                if (_deveNavegarAutomaticamente) {
+                  _navegarParaHome();
+                }
               }
             },
             child: Container(

@@ -14,7 +14,10 @@ class EnderecoService {
     try {
       debugPrint('📡 [EnderecoService] GET /app/enderecos');
 
-      final response = await _apiClient.get('/app/enderecos');
+      final response = await _apiClient.get(
+        '/app/enderecos',
+        requiresAuth: true, // ✅ Usa token autenticado
+      );
 
       debugPrint('📡 [EnderecoService] Status: ${response.statusCode}');
 
@@ -40,7 +43,7 @@ class EnderecoService {
     }
   }
 
-  /// Cria um novo endereço (suporta convidado)
+  /// Cria um novo endereço (usa token autenticado se disponível)
   Future<Map<String, dynamic>> criarEndereco(EnderecoModel endereco) async {
     try {
       final deviceId = await DeviceIdService.getDeviceId();
@@ -54,7 +57,7 @@ class EnderecoService {
       final response = await _apiClient.post(
         '/app/enderecos',
         data: data,
-        requiresAuth: false,
+        requiresAuth: true, // ✅ Usa token autenticado
       );
 
       debugPrint('📡 [EnderecoService] Status: ${response.statusCode}');
@@ -71,6 +74,17 @@ class EnderecoService {
             'usuario': null,
             'token': null,
           };
+        }
+
+        // ✅ Se o backend retornou token de convidado, mas o usuário já é autenticado, IGNORA o token
+        if (resultData is Map) {
+          final token = resultData['token'];
+          final usuarioStatus = resultData['usuario']?['status'];
+
+          // ✅ Se usuário autenticado, remove token de convidado
+          if (usuarioStatus != null && usuarioStatus != 'convidado' && token != null) {
+            resultData.remove('token');
+          }
         }
 
         return resultData ?? {};
@@ -92,6 +106,7 @@ class EnderecoService {
       final response = await _apiClient.put(
         '/app/enderecos/${endereco.id}',
         data: endereco.toJson(),
+        requiresAuth: true, // ✅ Usa token
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
@@ -106,7 +121,10 @@ class EnderecoService {
   /// Remove um endereço
   Future<void> deletarEndereco(int id) async {
     try {
-      final response = await _apiClient.delete('/app/enderecos/$id');
+      final response = await _apiClient.delete(
+        '/app/enderecos/$id',
+        requiresAuth: true, // ✅ Usa token
+      );
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Erro ao excluir endereço');
       }
@@ -123,6 +141,7 @@ class EnderecoService {
       final response = await _apiClient.put(
         '/app/enderecos/$id/set-padrao',
         data: {},
+        requiresAuth: true, // ✅ Usa token
       );
 
       debugPrint('📡 [EnderecoService] Status: ${response.statusCode}');
@@ -132,12 +151,10 @@ class EnderecoService {
 
         final data = response.data['data'];
 
-        // ✅ Agora retorna lista completa
         if (data is List) {
           return data.map((json) => EnderecoModel.fromJson(json as Map<String, dynamic>)).toList();
         }
 
-        // Fallback: se voltar objeto único
         if (data is Map) {
           return [EnderecoModel.fromJson(Map<String, dynamic>.from(data))];
         }
@@ -164,7 +181,7 @@ class EnderecoService {
       final response = await _apiClient.post(
         '/app/enderecos/buscar-cep',
         data: {'cep': cep},
-        requiresAuth: false,
+        requiresAuth: false, // ✅ Público
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {

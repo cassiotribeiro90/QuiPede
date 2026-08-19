@@ -69,22 +69,21 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
   @override
   Widget build(BuildContext context) {
     debugPrint('🔍 [LOG] CompletarPerfilPage foi construída. redirectToCheckout=${widget.redirectToCheckout}');
+
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) {
-        return current is AuthPerfilCompleto || current is AuthError;
+        return current is AuthAuthenticated || current is AuthError;
       },
       listener: (context, state) {
-        if (state is AuthPerfilCompleto) {
+        if (state is AuthAuthenticated) {
           debugPrint('✅ [CompletarPerfil] Perfil completado. origem: ${widget.origem}');
-          
+
           if (widget.redirectToCheckout || widget.origem == NavigationOrigins.carrinho) {
-            // ✅ Fluxo do Carrinho: apenas fecha a tela
             debugPrint('🧭 [CompletarPerfil] Fluxo Carrinho → pop');
             if (mounted) {
               Navigator.pop(context);
             }
           } else {
-            // ✅ Fluxo do Onboarding: redireciona para Home e limpa pilha
             debugPrint('🧭 [CompletarPerfil] Fluxo Onboarding → Home');
             if (mounted) {
               Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);

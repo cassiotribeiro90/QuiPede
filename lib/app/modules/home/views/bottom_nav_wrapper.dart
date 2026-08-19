@@ -34,7 +34,12 @@ class _BottomNavWrapperState extends State<BottomNavWrapper> {
       debugPrint('🚀 Navegando para login');
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const OnboardingPage()),
+        MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: context.read<AuthCubit>(),
+            child: const OnboardingPage(),
+          ),
+        ),
       ).then((_) {
         setState(() {});
       });

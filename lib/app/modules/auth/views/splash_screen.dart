@@ -6,6 +6,7 @@ import '../bloc/auth_cubit.dart';
 import '../../../routes/app_routes.dart';
 import '../../../di/dependencies.dart';
 import '../../../services/navigation_service.dart';
+import '../bloc/auth_state.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -24,16 +25,21 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    // Evita executar duas vezes (hot restart reconstrói o widget)
     if (_bootstrapped) return;
     _bootstrapped = true;
 
     final authCubit = context.read<AuthCubit>();
     final localizacaoCubit = context.read<LocalizacaoCubit>();
 
+    // 1. Autentica
     await authCubit.inicializarApp();
 
-    if (localizacaoCubit.state is! LocalizacaoCarregada) {
+    // ✅ Inicia listener de endereços
+    localizacaoCubit.iniciarListenerEnderecos();
+
+    // 2. Carrega localização (apenas se autenticado)
+    final authState = authCubit.state;
+    if (authState is AuthAuthenticated || authState is AuthGuest) {
       await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
     }
 
@@ -41,15 +47,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    final hasLocation = localizacaoCubit.state is LocalizacaoCarregada;
-    final targetRoute = hasLocation ? Routes.home : Routes.onboarding;
+    // 3. Navega
+    final locState = localizacaoCubit.state;
+    final targetRoute = locState is LocalizacaoCarregada
+        ? Routes.home
+        : Routes.onboarding;
 
-    // ✅ Verifica se já está na rota de destino para evitar push duplicado
     final currentRoute = ModalRoute.of(context)?.settings.name;
-    if (currentRoute == targetRoute) {
-      debugPrint('🛑 [SplashScreen] Já está na rota $targetRoute, ignorando navegação');
-      return;
-    }
+    if (currentRoute == targetRoute) return;
 
     getIt<NavigationService>().pushNamedAndRemoveAll(targetRoute);
   }
