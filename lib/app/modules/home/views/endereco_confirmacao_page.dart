@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/services/navigation_service.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
@@ -216,11 +217,10 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                           strokeWidth: 2,
                         ),
                       )
-                          : const Text(
+                          : Text(
                         'Confirmar Endereço',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        style: AppTextStyles.button.copyWith(
+                          color: Colors.white,
                         ),
                       ),
                     ),

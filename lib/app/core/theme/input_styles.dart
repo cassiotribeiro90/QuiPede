@@ -7,10 +7,10 @@ class InputStyles {
   static const double _borderRadius = 16.0;
 
   // 🔥 TODAS AS VARIÁVEIS DE TAMANHO EM UM ÚNICO LUGAR
-  static const double labelFontSize = 22.0;
-  static const double floatingLabelFontSize = 18.0;
-  static const double hintFontSize = 22.0;
-  static const double inputTextFontSize = 22.0;
+  static const double labelFontSize = 16.0;
+  static const double floatingLabelFontSize = 14.0;
+  static const double hintFontSize = 14.0;
+  static const double inputTextFontSize = 16.0;
 
   static InputDecorationTheme get borderlessDecorationTheme {
     return InputDecorationTheme(

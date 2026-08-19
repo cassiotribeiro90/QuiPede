@@ -85,7 +85,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               const SizedBox(height: 8),
               Text(
                 'Escolha uma forma de definir seu endereço de entrega e encontre as melhores lojas.',
-                style: AppTextStyles.bodyLarge.copyWith(
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: Colors.grey.shade600,
                   height: 1.4,
                 ),

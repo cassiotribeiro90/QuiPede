@@ -72,7 +72,6 @@ class EnderecoCard extends StatelessWidget {
     final displayUf = isListMode ? endereco!.uf : (uf ?? '');
     final displayPrincipal = isListMode ? isPrincipal : false;
 
-    // FALLBACK SEGURO PARA enderecoCompleto
     String displayCompleto;
     if (isListMode) {
       try {
@@ -102,27 +101,36 @@ class EnderecoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: AppColors.primary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 8),
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.check_circle,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 8),
 
-                    // Label do endereço
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
                       displayCompleto,
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: Colors.grey.shade700,
+                      style: const TextStyle(
+                        fontSize: 17, // ✅ Tamanho bom (era 19, reduzimos 2px)
+                        color: Colors.grey,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
                       ),
+                      maxLines: null,
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                     ),
-
                     if (displayPrincipal) ...[
-                      const SizedBox(width: 8),
+                      const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -141,6 +149,7 @@ class EnderecoCard extends StatelessWidget {
                   ],
                 ),
               ),
+
               if (isListMode && onEdit != null && onDelete != null) ...[
                 if (!displayPrincipal && onSetPrincipal != null)
                   TextButton(
