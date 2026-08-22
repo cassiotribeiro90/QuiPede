@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dio/dio.dart';
 import '../storage/auth_storage.dart';
@@ -16,6 +17,11 @@ class FcmService {
 
   /// 🔥 INICIALIZA O FCM E OBTÉM O TOKEN
   Future<void> init() async {
+    // 🔥 Se for Windows, não inicializa
+    if (Platform.isWindows) {
+      print('[FCM] ⏳ Windows não suporta Firebase Messaging');
+      return;
+    }
     if (_isInitialized) return;
 
     try {
@@ -64,6 +70,10 @@ class FcmService {
 
   /// 🔥 ENVIA O TOKEN PARA O BACKEND (chamado após login)
   Future<void> sendTokenToBackend(String authToken) async {
+    if (Platform.isWindows) {
+      print('[FCM] ⏳ Windows: não enviando token');
+      return;
+    }
     if (_token == null) {
       _token = await _fcm.getToken();
     }

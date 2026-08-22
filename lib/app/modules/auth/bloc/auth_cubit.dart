@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -175,11 +176,15 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       debugPrint('[AUTH_CUBIT] 📱 Obtendo FCM token...');
       String? fcmToken;
-      try {
-        fcmToken = await FirebaseMessaging.instance.getToken();
-        debugPrint('[AUTH_CUBIT] 📱 FCM Token obtido: $fcmToken');
-      } catch (fcmError) {
-        debugPrint('[AUTH_CUBIT] ⚠️ Erro ao obter FCM Token (prosseguindo sem ele): $fcmError');
+      if (!Platform.isWindows) {
+        try {
+          fcmToken = await FirebaseMessaging.instance.getToken();
+          debugPrint('[AUTH_CUBIT] 📱 FCM Token obtido: $fcmToken');
+        } catch (fcmError) {
+          debugPrint('[AUTH_CUBIT] ⚠️ Erro ao obter FCM Token (prosseguindo sem ele): $fcmError');
+        }
+      } else {
+        debugPrint('[AUTH_CUBIT] ⏳ Windows detectado: ignorando FCM Token');
       }
 
       debugPrint('[AUTH_CUBIT] 📤 Chamando service.verificarOTP...');

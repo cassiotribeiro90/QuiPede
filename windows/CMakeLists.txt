@@ -1,3 +1,20 @@
+# 🔥 CORREÇÃO: Forçar compatibilidade com CMake 3.5+ e definir NuGet
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+set(CMAKE_MINIMUM_REQUIRED_VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
+
+# 🔥 CORREÇÃO: Forçar caminho do NuGet (para evitar erro do flutter_tts)
+if(DEFINED ENV{NUGET_EXECUTABLE})
+    set(NUGET_EXE "$ENV{NUGET_EXECUTABLE}")
+else()
+    set(NUGET_EXE "C:/Program Files/NuGet/nuget.exe")
+endif()
+if(NOT EXISTS ${NUGET_EXE})
+    message(WARNING "NuGet não encontrado em ${NUGET_EXE}. Instale ou defina NUGET_EXECUTABLE.")
+else()
+    message(STATUS "NuGet encontrado: ${NUGET_EXE}")
+endif()
+
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
 project(qui LANGUAGES CXX)
