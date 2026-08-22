@@ -59,4 +59,7 @@ pubspec.lock
 *.swp
 *.swo
 *.log
-*.bak
+*.bakandroid/app/google-services.json
+lib/firebase_options.dart
+web/firebase-messaging-sw.js
+android/app/google-services.json

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/di/dependencies.dart';
 import 'app/modules/auth/bloc/auth_cubit.dart';
@@ -15,12 +16,23 @@ import 'app/routes/app_routes.dart';
 import 'app/routes/web_navigation_observer.dart';
 import 'app/theme/theme_cubit.dart';
 import 'shared/auth/auth_observer.dart';
+import 'app/core/services/fcm_service.dart';
+import 'firebase_options.dart';  // 🔥 DEVE ESTAR AQUI
 
 // ✅ Definição global do RouteObserver para uso com RouteAware
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 Future<void> setupApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 🔥 INICIALIZA FIREBASE
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // 🔥 INICIALIZA FCM
+  await FcmService().init();
+
   await setupDependencies();
 }
 

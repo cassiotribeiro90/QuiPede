@@ -6,7 +6,9 @@ class UsuarioModel {
   final String? whatsapp;
   final String? status;
   final String? avatar;
-  final bool telefoneVerificado; // ✅ NOVO
+  final bool telefoneVerificado;
+  final String? deviceId;
+  final String? deviceToken;
 
   UsuarioModel({
     required this.id,
@@ -16,7 +18,9 @@ class UsuarioModel {
     this.whatsapp,
     this.status,
     this.avatar,
-    this.telefoneVerificado = false, // ✅ Padrão false
+    this.telefoneVerificado = false,
+    this.deviceId,
+    this.deviceToken,
   });
 
   factory UsuarioModel.fromJson(Map<String, dynamic> json) {
@@ -28,10 +32,11 @@ class UsuarioModel {
       whatsapp: json['whatsapp']?.toString(),
       status: json['status']?.toString(),
       avatar: json['avatar'],
-      // ✅ Parse do campo telefone_verificado
       telefoneVerificado: json['telefone_verificado'] == true ||
           json['telefone_verificado'] == 1 ||
           json['telefone_verificado'] == '1',
+      deviceId: json['device_id'] as String?,
+      deviceToken: json['device_token'] as String?,
     );
   }
 
@@ -44,7 +49,9 @@ class UsuarioModel {
       'whatsapp': whatsapp,
       'status': status,
       'avatar': avatar,
-      'telefone_verificado': telefoneVerificado, // ✅ NOVO
+      'telefone_verificado': telefoneVerificado,
+      'device_id': deviceId,
+      'device_token': deviceToken,
     };
   }
 
@@ -56,7 +63,9 @@ class UsuarioModel {
     String? whatsapp,
     String? status,
     String? avatar,
-    bool? telefoneVerificado, // ✅ NOVO
+    bool? telefoneVerificado,
+    String? deviceId,
+    String? deviceToken,
   }) {
     return UsuarioModel(
       id: id ?? this.id,
@@ -66,7 +75,9 @@ class UsuarioModel {
       whatsapp: whatsapp ?? this.whatsapp,
       status: status ?? this.status,
       avatar: avatar ?? this.avatar,
-      telefoneVerificado: telefoneVerificado ?? this.telefoneVerificado, // ✅
+      telefoneVerificado: telefoneVerificado ?? this.telefoneVerificado,
+      deviceId: deviceId ?? this.deviceId,
+      deviceToken: deviceToken ?? this.deviceToken,
     );
   }
 }

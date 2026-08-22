@@ -55,6 +55,9 @@ class _OtpBodyState extends State<_OtpBody> {
 
   void _onCodeChanged() {
     if (_codeController.text.length == 6 && !_autoVerifying) {
+      debugPrint('[UI_OTP] 🔍 Auto-verificação disparada (6 dígitos)');
+      debugPrint('[UI_OTP] 📞 Phone: ${widget.telefone}');
+      debugPrint('[UI_OTP] 🔢 Code: ${_codeController.text}');
       _autoVerifying = true;
       setState(() => _isLoading = true);
       context.read<AuthCubit>().verificarOTP(

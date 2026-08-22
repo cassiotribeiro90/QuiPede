@@ -39,6 +39,7 @@ class DeviceIdService {
     deviceId ??= 'device_${DateTime.now().millisecondsSinceEpoch}';
 
     _cachedDeviceId = deviceId;
+    debugPrint('[DeviceIdService] 🔑 ID gerado/recuperado: $deviceId');
     await prefs.setString(_key, deviceId);
     return deviceId;
   }

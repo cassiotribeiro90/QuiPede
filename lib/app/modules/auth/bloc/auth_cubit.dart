@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../shared/api/api_client.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
@@ -13,6 +14,8 @@ import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/services/device_service.dart';
+import '../../../core/services/fcm_service.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final ApiClient _apiClient;
@@ -20,6 +23,8 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthService _authService;
   final EnderecoCubit _enderecoCubit;
   final SharedPreferences _prefs;
+  final DeviceService _deviceService = DeviceService();
+  final FcmService _fcmService = FcmService();
   bool _isProcessing = false;
   UsuarioModel? _usuario;
 
@@ -27,11 +32,11 @@ class AuthCubit extends Cubit<AuthState> {
   static const String keyGuestToken = 'guest_token';
 
   AuthCubit(
-      this._apiClient,
-      this._localizacaoCubit,
-      this._enderecoCubit,
-      this._prefs,
-      )   : _authService = AuthService(_apiClient),
+    this._apiClient,
+    this._localizacaoCubit,
+    this._enderecoCubit,
+    this._prefs,
+  )   : _authService = AuthService(_apiClient),
         super(AuthInitial());
 
   UsuarioModel? get usuario => _usuario;
@@ -153,22 +158,35 @@ class AuthCubit extends Cubit<AuthState> {
     debugPrint('🧭 [AuthCubit] enviarTelefone: $telefone');
     emit(AuthLoading()); // ✅ Garante mudança de estado para resetar listeners
     try {
-      await _apiClient.post('/app/auth/phone', data: {'phone': telefone}, requiresAuth: false);
-      debugPrint('🧭 [AuthCubit] POST /app/auth/phone sucesso. Emitindo AuthPhoneEnviado.');
+      await _authService.enviarTelefone(telefone);
+      debugPrint('🧭 [AuthCubit] Sucesso ao enviar telefone. Emitindo AuthPhoneEnviado.');
       emit(AuthPhoneEnviado(telefone: telefone));
     } catch (e) {
-      debugPrint('🧭 [AuthCubit] Erro no POST /app/auth/phone: $e');
+      debugPrint('🧭 [AuthCubit] Erro ao enviar telefone: $e');
       emit(const AuthOtpErro('Erro ao enviar código. Tente novamente.'));
     }
   }
 
   Future<void> verificarOTP(String telefone, String codigo, {bool redirectToCheckout = false}) async {
+    debugPrint('[AUTH_CUBIT] 🔍 verificarOTP chamado');
+    debugPrint('[AUTH_CUBIT] 📞 Phone: $telefone');
+    debugPrint('[AUTH_CUBIT] 🔢 Code: $codigo');
     emit(AuthOtpVerificando(telefone: telefone));
     try {
-      final response = await _apiClient.post('/app/auth/verify-otp',
-          data: {'phone': telefone, 'code': codigo}, requiresAuth: false);
+      debugPrint('[AUTH_CUBIT] 📱 Obtendo FCM token...');
+      String? fcmToken;
+      try {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+        debugPrint('[AUTH_CUBIT] 📱 FCM Token obtido: $fcmToken');
+      } catch (fcmError) {
+        debugPrint('[AUTH_CUBIT] ⚠️ Erro ao obter FCM Token (prosseguindo sem ele): $fcmError');
+      }
 
-      final data = response.data['data'];
+      debugPrint('[AUTH_CUBIT] 📤 Chamando service.verificarOTP...');
+      final responseData = await _authService.verificarOTP(telefone, codigo, deviceToken: fcmToken);
+      debugPrint('[AUTH_CUBIT] 📥 Resposta recebida: $responseData');
+
+      final data = responseData['data'];
 
       debugPrint('🔍 [AuthCubit] verificarOTP - Dados recebidos:');
       debugPrint('🔍 [AuthCubit] usuario: ${data['usuario'] ?? data['user']}');
@@ -241,6 +259,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(const AuthOtpErro('Usuário não encontrado após verificação.'));
       }
     } catch (e) {
+      debugPrint('[AUTH_CUBIT] ❌ Erro no verificarOTP: $e');
       emit(const AuthOtpErro('Código inválido. Tente novamente.'));
     }
   }
@@ -475,6 +494,7 @@ class AuthCubit extends Cubit<AuthState> {
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
     await _localizacaoCubit.limparLocalizacao();
+    await _deviceService.clearDeviceId();
 
     // 3. Remover preferências
     await _prefs.remove('guest_token');
@@ -521,6 +541,7 @@ class AuthCubit extends Cubit<AuthState> {
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
     await _localizacaoCubit.limparLocalizacao();
+    await _deviceService.clearDeviceId();
 
     // 4. Remover preferências específicas de endereço
     await _prefs.remove('guest_token');
