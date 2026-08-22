@@ -476,29 +476,16 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> sairConvidado() async {
     debugPrint('🔐 [AuthCubit] Saindo do modo convidado...');
 
-    // 1. Excluir endereço do backend (se houver)
-    final locState = _localizacaoCubit.state;
-    if (locState is LocalizacaoCarregada && locState.endereco.id != null) {
-      try {
-        await _apiClient.delete(
-          '/app/enderecos/${locState.endereco.id}',
-          requiresAuth: true,
-        );
-        debugPrint('🗑️ [AuthCubit] Endereço ${locState.endereco.id} excluído');
-      } catch (e) {
-        debugPrint('⚠️ [AuthCubit] Erro ao excluir endereço: $e');
-      }
-    }
-
-    // 2. Limpar sessão
+    // 1. Limpar sessão
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
     await _localizacaoCubit.limparLocalizacao();
     await _deviceService.clearDeviceId();
 
-    // 3. Remover preferências
+    // 2. Remover preferências
     await _prefs.remove('guest_token');
     await _prefs.remove('is_guest');
+    await _prefs.remove('refresh_token');
     await _prefs.remove('endereco_padrao_id');
     await _prefs.remove('endereco_padrao_json');
     await _prefs.remove('endereco_convidado_id');
@@ -511,53 +498,47 @@ class AuthCubit extends Cubit<AuthState> {
         (route) => false,
       );
     });
+
+    debugPrint('✅ [AuthCubit] Saída de convidado concluída');
   }
 
   Future<void> logout() async {
     debugPrint('🚪 [AuthCubit] Iniciando logout...');
 
-    // 1. Excluir endereço atual (se houver)
-    final locState = _localizacaoCubit.state;
-    if (locState is LocalizacaoCarregada && locState.endereco.id != null) {
-      try {
-        await _apiClient.delete(
-          '/app/enderecos/${locState.endereco.id}',
-          requiresAuth: true,
-        );
-        debugPrint('🗑️ [AuthCubit] Endereço ${locState.endereco.id} excluído');
-      } catch (e) {
-        debugPrint('⚠️ [AuthCubit] Erro ao excluir endereço: $e');
-      }
-    }
-
-    // 2. Invalida token no backend
+    // 1. Invalida token no backend (apenas limpa device_id e device_token)
     try {
       await _apiClient.post('app/auth/logout', requiresAuth: true);
+      debugPrint('✅ [AuthCubit] Logout na API realizado com sucesso');
     } catch (e) {
-      debugPrint('⚠️ [AuthCubit] Erro no logout (ignorado): $e');
+      debugPrint('⚠️ [AuthCubit] Erro no logout da API (ignorado): $e');
     }
 
-    // 3. Limpar dados locais
+    // 2. Limpar dados locais do usuário
     _usuario = null;
     await _apiClient.tokenService.clearTokens();
-    await _localizacaoCubit.limparLocalizacao();
+    await _localizacaoCubit.limparLocalizacao(); // Apenas limpa estado local
     await _deviceService.clearDeviceId();
 
-    // 4. Remover preferências específicas de endereço
+    // 3. Remover preferências locais
     await _prefs.remove('guest_token');
     await _prefs.remove('access_token');
+    await _prefs.remove('refresh_token');
     await _prefs.remove('is_guest');
     await _prefs.remove('endereco_convidado_id');
     await _prefs.remove('endereco_padrao_id');
     await _prefs.remove('endereco_padrao_json');
 
+    // 4. Emitir estado não autenticado
     emit(AuthUnauthenticated());
 
+    // 5. Navegar para onboarding
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
         Routes.onboarding,
         (route) => false,
       );
     });
+
+    debugPrint('✅ [AuthCubit] Logout concluído com sucesso');
   }
 }
