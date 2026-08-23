@@ -37,6 +37,10 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   bool _enderecoCarregado = false;
   StreamSubscription? _localizacaoSubscription;
 
+  // 🛡️ Throttles específicos
+  final Throttle _lojasThrottle = Throttle(const Duration(seconds: 30));
+  final Throttle _usuarioThrottle = Throttle(const Duration(minutes: 1));
+
   @override
   void initState() {
     super.initState();
@@ -54,7 +58,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('🟢 [LojasListScreen] PostFrameCallback');
       _subscribeToRoute();
-      
+
       // Tenta carregar imediatamente se já tem endereço
       final locState = context.read<LocalizacaoCubit>().state;
       if (locState is LocalizacaoCarregada) {
@@ -62,7 +66,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
       } else {
         _verificarEnderecoELojas();
       }
-      
+
       _firstLoad = false;
     });
 
@@ -112,6 +116,11 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   }
 
   void _carregarLojas() {
+    if (!_lojasThrottle.shouldRun) {
+      debugPrint('⏳ [LojasListScreen] Throttle: fetchLojas ignorado');
+      return;
+    }
+
     final locState = context.read<LocalizacaoCubit>().state;
     if (locState is LocalizacaoCarregada) {
       debugPrint('🔍 [LojasListScreen] Carregando lojas...');
@@ -121,7 +130,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
 
   Future<void> _verificarEnderecoELojas() async {
     if (!mounted) return;
-    
+
     final locCubit = context.read<LocalizacaoCubit>();
     final lojasCubit = context.read<LojasCubit>();
     final authCubit = context.read<AuthCubit>();
@@ -130,8 +139,10 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
 
     if (locCubit.state is LocalizacaoCarregada) {
       debugPrint('🏠 [LojasListScreen] Endereço carregado, carregando lojas');
-      lojasCubit.fetchLojas(perPage: 10);
-      authCubit.recarregarUsuario();
+      _carregarLojas(); // usa throttle para lojas
+      if (_usuarioThrottle.shouldRun) {
+        authCubit.recarregarUsuario();
+      }
     } else {
       debugPrint('🔁 [LojasListScreen] Sem endereço, tentando recarregar...');
       // Tenta recarregar endereços do backend se estiver logado
@@ -139,12 +150,12 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
       if (authState is AuthAuthenticated || authState is AuthGuest) {
         await context.read<EnderecoCubit>().carregarEnderecos(mostrarLoading: false);
       }
-      
+
       if (mounted) {
         if (locCubit.state is LocalizacaoNaoEncontrada) {
           _verificarEndereco();
         } else if (locCubit.state is LocalizacaoCarregada) {
-          lojasCubit.fetchLojas(perPage: 10);
+          _carregarLojas();
         }
       }
     }
@@ -155,7 +166,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
       debugPrint('⏳ [LojasListScreen] _verificarEndereco ignorado: app ainda inicializando');
       return;
     }
-    
+
     final locState = context.read<LocalizacaoCubit>().state;
     final authState = context.read<AuthCubit>().state;
 
@@ -179,7 +190,7 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
           debugPrint('🚀 [LojasListScreen] Sem endereço + deslogado → Onboarding');
           getIt<NavigationService>().pushNamedAndRemoveUntil(
             Routes.onboarding,
-            (route) => false,
+                (route) => false,
             arguments: {'origem': NavigationOrigins.home},
           );
         }
@@ -537,5 +548,22 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
         ],
       ),
     );
+  }
+}
+
+// 🛡️ Classe Throttle simples para controle de intervalo
+class Throttle {
+  final Duration interval;
+  DateTime? _lastRun;
+
+  Throttle(this.interval);
+
+  bool get shouldRun {
+    final now = DateTime.now();
+    if (_lastRun == null || now.difference(_lastRun!) >= interval) {
+      _lastRun = now;
+      return true;
+    }
+    return false;
   }
 }

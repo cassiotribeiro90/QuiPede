@@ -1,10 +1,11 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../../shared/api/api_client.dart';
 import '../models/auth_response_model.dart';
+import 'dart:io' show Platform;
 
 class SocialAuthService {
   final ApiClient _apiClient;
@@ -51,7 +52,8 @@ class SocialAuthService {
 
   /// Apple Sign-In (apenas iOS)
   Future<AuthResponse> signInWithApple() async {
-    if (!Platform.isIOS) {
+    // ✅ Proteção para Web
+    if (kIsWeb || !Platform.isIOS) {
       throw Exception('Apple Sign-In disponível apenas no iOS');
     }
 

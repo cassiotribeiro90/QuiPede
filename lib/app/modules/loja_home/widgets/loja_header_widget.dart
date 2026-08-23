@@ -10,11 +10,10 @@ class LojaHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Stack(
             clipBehavior: Clip.none,
             children: [
               CachedNetworkImage(
@@ -138,10 +137,10 @@ class LojaHeaderWidget extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
+      );
+    }
   }
-}
+
 
 class _InfoItem extends StatelessWidget {
   final IconData icon;

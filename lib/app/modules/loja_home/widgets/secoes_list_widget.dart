@@ -1,5 +1,3 @@
-// lib/modules/loja_home/widgets/secoes_list_widget.dart
-
 import 'package:flutter/material.dart';
 import '../../../models/secao_model.dart';
 import '../../../models/produto_model.dart';
@@ -12,8 +10,7 @@ class SecoesListWidget extends StatelessWidget {
   final Function(ProdutoModel) onProdutoTap;
   final Map<int, int> quantidadesPorProduto;
   final Map<int, int> itemIdsPorProduto;
-
-  static int _buildCount = 0;
+  final Map<int, GlobalKey>? sectionKeys; // chave = secao.id
 
   const SecoesListWidget({
     super.key,
@@ -22,48 +19,45 @@ class SecoesListWidget extends StatelessWidget {
     required this.onProdutoTap,
     required this.quantidadesPorProduto,
     required this.itemIdsPorProduto,
+    this.sectionKeys,
   });
 
   @override
   Widget build(BuildContext context) {
-    _buildCount++;
-    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    debugPrint('📋 [SecoesListWidget] BUILD #$_buildCount');
-    debugPrint('📋 Recebeu: ${secoes.length} seções');
-
     if (secoes.isEmpty) {
-      return const SliverFillRemaining(
-        child: Center(
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.search_off, size: 64, color: Colors.grey),
               SizedBox(height: 16),
-              Text('Nenhum produto encontrado', style: TextStyle(color: Colors.grey)),
+              Text('Nenhum produto encontrado',
+                  style: TextStyle(color: Colors.grey)),
             ],
           ),
         ),
       );
     }
 
-    // ✅ Usar um Set de NOMES para evitar duplicatas visuais quando os IDs da API estão vindo errados
     final nomesVistosGlobal = <String>{};
-    final List<Widget> sliverChildren = [];
+    final List<Widget> children = [];
 
-    for (var secao in secoes) {
+    for (final secao in secoes) {
       final produtosUnicos = secao.produtos.where((p) {
-        // Criamos uma chave baseada no nome para detectar duplicatas "zumbis" da API
         final chaveUnica = p.nome.trim().toLowerCase();
         final jaVisto = nomesVistosGlobal.contains(chaveUnica);
         if (!jaVisto) nomesVistosGlobal.add(chaveUnica);
         return !jaVisto;
       }).toList();
 
-      if (produtosUnicos.isEmpty) continue;
+      final sectionKey = sectionKeys?[secao.id];
 
-      // Cabeçalho da seção
-      sliverChildren.add(
+      // ✅ Cabeçalho da seção SEMPRE presente para garantir que a GlobalKey exista
+      children.add(
         Container(
+          key: sectionKey,
           color: context.surfaceColor,
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
@@ -85,7 +79,7 @@ class SecoesListWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${produtosUnicos.length}',
+                  '${secao.totalProdutos}', // Usar total real da API
                   style: context.caption.copyWith(
                     color: context.primaryColor,
                     fontWeight: FontWeight.w500,
@@ -97,31 +91,54 @@ class SecoesListWidget extends StatelessWidget {
         ),
       );
 
-      // Cards dos produtos
-      for (var produto in produtosUnicos) {
-        sliverChildren.add(
-          ProdutoCardUnificado(
-            key: ValueKey('prod_${produto.id}_${quantidadesPorProduto[produto.id] ?? 0}'),
-            produto: produto,
-            lojaId: lojaId,
-            quantidadeNoCarrinho: quantidadesPorProduto[produto.id] ?? 0,
-            itemIdNoCarrinho: itemIdsPorProduto[produto.id],
-            onTap: () => onProdutoTap(produto),
+      // Cards dos produtos (somente se já carregados)
+      if (produtosUnicos.isNotEmpty) {
+        for (final produto in produtosUnicos) {
+          children.add(
+            ProdutoCardUnificado(
+              key: ValueKey('prod_${produto.id}_${quantidadesPorProduto[produto.id] ?? 0}'),
+              produto: produto,
+              lojaId: lojaId,
+              quantidadeNoCarrinho: quantidadesPorProduto[produto.id] ?? 0,
+              itemIdNoCarrinho: itemIdsPorProduto[produto.id],
+              onTap: () => onProdutoTap(produto),
+            ),
+          );
+        }
+      } else if (secao.hasMore) {
+        // Feedback visual se a seção existe mas produtos ainda estão vindo
+        children.add(
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ),
         );
       }
 
       // Divisor entre seções
-      sliverChildren.add(
-        Divider(height: 1, thickness: 8, color: context.dividerColor.withValues(alpha: 0.5)),
+      children.add(
+        Column(
+          children: [
+            if (secao.isLoadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            Divider(
+              height: 1,
+              thickness: 8,
+              color: context.dividerColor.withValues(alpha: 0.5),
+            ),
+          ],
+        ),
       );
     }
 
-    debugPrint('📋 [SecoesListWidget] BUILD #$_buildCount FINALIZADO');
-    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    return SliverList(
-      delegate: SliverChildListDelegate(sliverChildren),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     );
   }
 }

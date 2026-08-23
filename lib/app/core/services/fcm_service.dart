@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dio/dio.dart';
 import '../storage/auth_storage.dart';
@@ -15,32 +16,16 @@ class FcmService {
   String? _token;
   bool _isInitialized = false;
 
-  /// 🔥 INICIALIZA O FCM E OBTÉM O TOKEN
+  /// 🔥 INICIALIZA OS LISTENERS DO FCM (Não bloqueia a UI)
   Future<void> init() async {
-    // 🔥 Se for Windows, não inicializa
-    if (Platform.isWindows) {
+    if (!kIsWeb && Platform.isWindows) {
       print('[FCM] ⏳ Windows não suporta Firebase Messaging');
       return;
     }
+
     if (_isInitialized) return;
 
     try {
-      // Solicita permissão
-      NotificationSettings settings = await _fcm.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-
-      if (settings.authorizationStatus != AuthorizationStatus.authorized) {
-        print('[FCM] ❌ Permissão negada');
-        return;
-      }
-
-      // Obtém o token
-      _token = await _fcm.getToken();
-      print('[FCM] 📱 Token: $_token');
-
       // 🔥 ESCUTA MENSAGENS EM FOREGROUND
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         print('[FCM] 📨 Mensagem recebida: ${message.notification?.title}');
@@ -61,19 +46,42 @@ class FcmService {
       });
 
       _isInitialized = true;
-      print('[FCM] ✅ Inicializado com sucesso');
-
+      print('[FCM] ✅ Listeners configurados');
     } catch (e) {
-      print('[FCM] ❌ Erro: $e');
+      print('[FCM] ❌ Erro ao configurar listeners: $e');
+    }
+  }
+
+  /// 🔥 SOLICITA PERMISSÃO E OBTÉM O TOKEN (Chamado após o carregamento da UI)
+  Future<bool> requestPermissionAndGetToken() async {
+    try {
+      if (!kIsWeb && Platform.isWindows) return false;
+
+      print('[FCM] 🔔 Solicitando permissão de notificação...');
+      NotificationSettings settings = await _fcm.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        _token = await _fcm.getToken();
+        print('[FCM] ✅ Permissão concedida. Token: $_token');
+        return true;
+      } else {
+        print('[FCM] ❌ Permissão negada ou restrita');
+        return false;
+      }
+    } catch (e) {
+      print('[FCM] ❌ Erro ao solicitar permissão: $e');
+      return false;
     }
   }
 
   /// 🔥 ENVIA O TOKEN PARA O BACKEND (chamado após login)
   Future<void> sendTokenToBackend(String authToken) async {
-    if (Platform.isWindows) {
-      print('[FCM] ⏳ Windows: não enviando token');
-      return;
-    }
+    if (!kIsWeb && Platform.isWindows) return;
+
     if (_token == null) {
       _token = await _fcm.getToken();
     }
@@ -86,10 +94,7 @@ class FcmService {
   Future<void> _sendTokenToBackend(String token) async {
     try {
       final authToken = await AuthStorage().getAccessToken();
-      if (authToken == null) {
-        print('[FCM] ⚠️ Usuário não autenticado');
-        return;
-      }
+      if (authToken == null) return;
 
       final deviceId = await DeviceService().getDeviceId();
 
@@ -115,7 +120,6 @@ class FcmService {
 
   /// 🔥 MOSTRA NOTIFICAÇÃO IN-APP (FOREGROUND)
   void _showInAppNotification(RemoteMessage message) {
-    // Implementar com flutter_local_notifications ou overlay
     print('[FCM] 🔔 ${message.notification?.title}: ${message.notification?.body}');
   }
 
@@ -123,7 +127,7 @@ class FcmService {
   void _handleNotificationTap(RemoteMessage message) {
     final pedidoId = message.data['pedido_id'];
     if (pedidoId != null) {
-      // Navegar para a tela de pedidos
+      // Implementar navegação
     }
   }
 

@@ -1,12 +1,12 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../shared/api/api_client.dart';
 import '../../home/bloc/localizacao_cubit.dart';
-import '../../home/bloc/localizacao_state.dart';
 import '../models/auth_response_model.dart';
 import '../models/usuario_model.dart';
 import '../services/auth_service.dart';
@@ -176,7 +176,8 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       debugPrint('[AUTH_CUBIT] 📱 Obtendo FCM token...');
       String? fcmToken;
-      if (!Platform.isWindows) {
+      // ✅ Proteção para Web: Platform.isWindows só pode ser chamado se NÃO for Web
+      if (kIsWeb || !Platform.isWindows) {
         try {
           fcmToken = await FirebaseMessaging.instance.getToken();
           debugPrint('[AUTH_CUBIT] 📱 FCM Token obtido: $fcmToken');

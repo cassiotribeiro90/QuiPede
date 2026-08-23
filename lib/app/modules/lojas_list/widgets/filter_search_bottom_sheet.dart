@@ -58,7 +58,7 @@ class _FilterSearchBottomSheetState extends State<FilterSearchBottomSheet> {
           _buildHandle(),
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

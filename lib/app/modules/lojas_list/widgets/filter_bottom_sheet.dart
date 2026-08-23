@@ -148,7 +148,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       children: [
         Text(
           'Ordenar por',
-          style: context.titleSmall.copyWith(fontWeight: FontWeight.bold),
+          style: context.titleSmall.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -156,38 +156,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           runSpacing: 8,
           children: _ordenacoes.map((option) {
             final isSelected = _tempOrdenacao == option['value'];
-            final chipTheme = AppDecoration.chipStyle(
-              selected: isSelected,
-              context: context,
-            );
-            
-            return ChoiceChip(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    option['icon']!,
-                    style: AppTextStyles.bodyLarge,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    option['label']!,
-                    style: AppTextStyles.bodyLarge,
-                  ),
-                ],
-              ),
-              selected: isSelected,
+            return _buildChip(
+              label: option['label']!,
+              icon: option['icon']!,
+              isSelected: isSelected,
               onSelected: (selected) {
                 setState(() {
                   _tempOrdenacao = selected ? option['value'] : null;
                 });
               },
-              selectedColor: chipTheme.selectedColor,
-              backgroundColor: chipTheme.backgroundColor,
-              labelStyle: chipTheme.labelStyle,
-              shape: chipTheme.shape,
-              showCheckmark: false,
-              padding: AppDecoration.chipPadding, // 🔥 PADDING CENTRALIZADO
             );
           }).toList(),
         ),
@@ -203,7 +180,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       children: [
         Text(
           'Categorias',
-          style: context.titleSmall.copyWith(fontWeight: FontWeight.bold),
+          style: context.titleSmall.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -211,32 +188,60 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           runSpacing: 8,
           children: widget.categorias.map((cat) {
             final isSelected = _tempCategoria == cat.value;
-            final chipTheme = AppDecoration.chipStyle(
-              selected: isSelected,
-              context: context,
-            );
-            
-            return ChoiceChip(
-              label: Text(
-                '${cat.label} (${cat.count})'.trim(),
-                style: AppTextStyles.bodyLarge,
-              ),
-              selected: isSelected,
+            return _buildChip(
+              label: '${cat.label} (${cat.count})',
+              isSelected: isSelected,
               onSelected: (selected) {
                 setState(() {
                   _tempCategoria = selected ? cat.value : null;
                 });
               },
-              selectedColor: chipTheme.selectedColor,
-              backgroundColor: chipTheme.backgroundColor,
-              labelStyle: chipTheme.labelStyle,
-              shape: chipTheme.shape,
-              showCheckmark: false,
-              padding: AppDecoration.chipPadding, // 🔥 PADDING CENTRALIZADO
             );
           }).toList(),
         ),
       ],
+    );
+  }
+
+  /// 🔥 Chip unificado, compacto e padronizado
+  Widget _buildChip({
+    required String label,
+    String? icon,
+    required bool isSelected,
+    required ValueChanged<bool> onSelected,
+  }) {
+    final chipTheme = AppDecoration.chipStyle(
+      selected: isSelected,
+      context: context,
+    );
+
+    return ChoiceChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Text(
+              icon,
+              style: AppTextStyles.bodySmall?.copyWith(fontSize: 14),
+            ),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: AppTextStyles.bodySmall?.copyWith(fontSize: 14),
+          ),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: onSelected,
+      selectedColor: chipTheme.selectedColor,
+      backgroundColor: chipTheme.backgroundColor,
+      labelStyle: chipTheme.labelStyle?.copyWith(fontSize: 14),
+      shape: chipTheme.shape,
+      showCheckmark: false,
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     );
   }
 

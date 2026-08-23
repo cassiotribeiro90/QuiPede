@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -39,6 +40,23 @@ Future<void> setupApp() async {
 Future<void> main() async {
   await setupApp();
   runApp(const QuiPedeApp());
+
+  // 🔥 SOLICITA PERMISSÃO APÓS O APP ABRIR (Evita tela branca na Web)
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.delayed(const Duration(seconds: 2), () {
+      FcmService().requestPermissionAndGetToken();
+    });
+  });
+}
+
+class AppScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.trackpad,
+  };
 }
 
 class QuiPedeApp extends StatelessWidget {
@@ -62,6 +80,7 @@ class QuiPedeApp extends StatelessWidget {
           return MaterialApp(
             title: 'QuiPede',
             debugShowCheckedModeBanner: false,
+            scrollBehavior: AppScrollBehavior(),
             navigatorKey: getIt<GlobalKey<NavigatorState>>(),
             theme: AppTheme.lightTheme,
             themeMode: themeState.themeMode,

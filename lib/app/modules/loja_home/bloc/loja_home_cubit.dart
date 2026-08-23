@@ -1,5 +1,5 @@
-// lib/modules/loja_home/bloc/loja_home_cubit.dart
-
+import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../repository/loja_repository.dart';
 import 'loja_home_state.dart';
@@ -124,7 +124,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
         quantidade: quantidade,
         opcoes: opcoes,
         observacao: observacao,
-        applyDebounce: false, // ✅ Sem debounce para adição direta
+        applyDebounce: false,
       );
     } catch (e) {
       emit(LojaHomeError('Erro ao adicionar ao carrinho: $e', secoes: state.secoes, loja: state.loja));
@@ -133,7 +133,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
       if (finalState is LojaHomeLoaded) {
         emit(finalState.copyWith(
           isAddingToCart: false,
-          addingProductId: null,
+          resetAddingProductId: true,
         ));
       }
     }
@@ -157,6 +157,64 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
     await loadLoja();
   }
 
+  /// Carrega todas as páginas necessárias até completar a seção com o ID fornecido.
+  /// Emite estados intermediários e define [loadingSectionId] para que a UI mostre overlay.
+  /// Carrega todas as páginas necessárias até completar a seção com o ID fornecido.
+  /// Emite estados intermediários e define [loadingSectionId] para que a UI mostre overlay.
+  Future<void> loadSectionCompletelyById(int sectionId) async {
+    final currentState = state;
+    if (currentState is! LojaHomeLoaded) return;
+
+    debugPrint('⏳ [Cubit] Ativando overlay para seção $sectionId');
+    // 🔥 Ativa o overlay global
+    emit(currentState.copyWith(loadingSectionId: sectionId));
+
+    try {
+      int iterations = 0;
+      const int maxIterations = 15; // Segurança
+
+      while (iterations < maxIterations) {
+        final current = state;
+        if (current is! LojaHomeLoaded) break;
+
+        final sectionIndex = current.secoes.indexWhere((s) => s.id == sectionId);
+
+        if (sectionIndex == -1) {
+          if (!_hasMore) break;
+          debugPrint('📥 [Cubit] Buscando seção $sectionId...');
+          await loadMore();
+        } else {
+          final secao = current.secoes[sectionIndex];
+          if (!secao.hasMore) break;
+          debugPrint('📥 [Cubit] Completando seção $sectionId...');
+          await loadMore();
+        }
+
+        iterations++;
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
+    } finally {
+      final finalState = state;
+      if (finalState is LojaHomeLoaded) {
+        emit(finalState.copyWith(resetLoadingSectionId: true));
+      }
+      debugPrint('🏁 [Cubit] Overlay desativado para $sectionId');
+    }
+  }
+
+  void _setSectionLoading(int sectionIndex, bool isLoading) {
+    final currentState = state;
+    if (currentState is! LojaHomeLoaded) return;
+
+    final updatedSecoes = List<SecaoModel>.from(currentState.secoes);
+    if (sectionIndex < updatedSecoes.length) {
+      updatedSecoes[sectionIndex] = updatedSecoes[sectionIndex].copyWith(
+        isLoadingMore: isLoading,
+      );
+      emit(currentState.copyWith(secoes: updatedSecoes));
+    }
+  }
+
   List<SecaoModel> _removerDuplicatas(List<SecaoModel> secoes) {
     final Set<int> idsVistos = {};
 
@@ -174,7 +232,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
         nome: secao.nome,
         icone: secao.icone,
         ordem: secao.ordem,
-        totalProdutos: produtosUnicos.length,
+        totalProdutos: secao.totalProdutos,
         produtos: produtosUnicos,
       );
     }).toList();
@@ -207,7 +265,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
           nome: existente.nome,
           icone: existente.icone,
           ordem: existente.ordem,
-          totalProdutos: existente.produtos.length + produtosNovos.length,
+          totalProdutos: novaSecao.totalProdutos,
           produtos: [...existente.produtos, ...produtosNovos],
         );
       } else {
@@ -216,7 +274,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
           nome: novaSecao.nome,
           icone: novaSecao.icone,
           ordem: novaSecao.ordem,
-          totalProdutos: produtosNovos.length,
+          totalProdutos: novaSecao.totalProdutos,
           produtos: produtosNovos,
         );
       }
