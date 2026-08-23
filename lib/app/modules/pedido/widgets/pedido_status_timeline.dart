@@ -20,14 +20,17 @@ class PedidoStatusTimeline extends StatelessWidget {
       children: List.generate(steps.length, (index) {
         final step = steps[index];
         final isLast = index == steps.length - 1;
-        
-        // Lógica de conclusão baseada no índice e no status entregue
-        final bool isEntregue = status.toLowerCase() == 'entregue';
-        final bool isCancelado = status.toLowerCase() == 'cancelado';
-        
-        final bool isCompleted = isEntregue || (index < currentStepIndex && !isCancelado);
-        final bool isCurrent = index == currentStepIndex && !isEntregue && !isCancelado;
-        final bool isFuture = index > currentStepIndex && !isEntregue && !isCancelado;
+
+        final isCancelado = status.toLowerCase() == 'cancelado';
+        final isRecusado = status.toLowerCase() == 'recusado';
+        final isEntregue = status.toLowerCase() == 'entregue';
+
+        final isCompleted =
+            isEntregue || (!isCancelado && !isRecusado && index < currentStepIndex);
+        final isCurrent =
+            index == currentStepIndex && !isEntregue && !isCancelado && !isRecusado;
+        final isFuture =
+            index > currentStepIndex && !isEntregue && !isCancelado && !isRecusado;
 
         return IntrinsicHeight(
           child: Row(
@@ -35,12 +38,25 @@ class PedidoStatusTimeline extends StatelessWidget {
             children: [
               Column(
                 children: [
-                  _buildCircle(context, step, isCompleted, isCurrent, isFuture),
+                  _buildCircle(
+                    context,
+                    step,
+                    isCompleted,
+                    isCurrent,
+                    isFuture,
+                    isCancelado: isCancelado,
+                    isRecusado: isRecusado,
+                    isEntregue: isEntregue,
+                  ),
                   if (!isLast)
                     Expanded(
                       child: Container(
                         width: 2,
-                        color: isCompleted ? Colors.green : Colors.grey.shade300,
+                        color: _getLineColor(
+                          isCompleted: isCompleted,
+                          isCancelled: isCancelado || isRecusado,
+                          isFuture: isFuture,
+                        ),
                       ),
                     ),
                 ],
@@ -56,18 +72,24 @@ class PedidoStatusTimeline extends StatelessWidget {
                         step.title,
                         style: context.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isFuture ? context.textSecondary : context.textPrimary,
+                          color: isFuture
+                              ? context.textSecondary
+                              : context.textPrimary,
                         ),
                       ),
                       if (step.timestamp != null)
                         Text(
                           _formatTimestamp(step.timestamp!),
-                          style: context.bodySmall.copyWith(color: context.textSecondary),
+                          style: context.bodySmall.copyWith(
+                            color: context.textSecondary,
+                          ),
                         )
                       else if (isFuture)
                         Text(
                           'Pendente',
-                          style: context.bodySmall.copyWith(color: context.textHint),
+                          style: context.bodySmall.copyWith(
+                            color: context.textHint,
+                          ),
                         ),
                     ],
                   ),
@@ -80,18 +102,40 @@ class PedidoStatusTimeline extends StatelessWidget {
     );
   }
 
-  Widget _buildCircle(BuildContext context, _StepData step, bool isCompleted, bool isCurrent, bool isFuture) {
-    Color color = Colors.grey.shade300;
-    IconData icon = step.icon;
-    
-    if (isCompleted) {
-      color = Colors.green;
-    } else if (isCurrent) {
-      color = context.primaryColor;
+  Color _getLineColor({
+    required bool isCompleted,
+    required bool isCancelled,
+    required bool isFuture,
+  }) {
+    if (isCancelled) {
+      return const Color(0xFFEF9A9A); // vermelho suave
     }
+    if (isCompleted) {
+      return const Color(0xFF81C784); // verde suave
+    }
+    return const Color(0xFFEEEEEE); // cinza bem claro
+  }
 
-    if (status.toLowerCase() == 'cancelado' && step.key == 'cancelado') {
-        color = Colors.red;
+  Widget _buildCircle(
+      BuildContext context,
+      _StepData step,
+      bool isCompleted,
+      bool isCurrent,
+      bool isFuture, {
+        bool isCancelado = false,
+        bool isRecusado = false,
+        bool isEntregue = false,
+      }) {
+    Color color = const Color(0xFFE0E0E0); // cinza claro base
+
+    if (isEntregue) {
+      color = const Color(0xFF81C784); // verde suave
+    } else if ((isCancelado || isRecusado) && step.key == 'cancelado') {
+      color = const Color(0xFFEF9A9A); // vermelho suave
+    } else if (isCompleted) {
+      color = const Color(0xFF81C784); // verde suave
+    } else if (isCurrent) {
+      color = context.primaryColor.withValues(alpha: 0.9);
     }
 
     return Container(
@@ -100,32 +144,47 @@ class PedidoStatusTimeline extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        boxShadow: isCurrent ? [
+        boxShadow: isCurrent
+            ? [
           BoxShadow(
-            color: color.withValues(alpha: 0.4),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 8,
             spreadRadius: 2,
-          )
-        ] : null,
+          ),
+        ]
+            : null,
       ),
-      child: Icon(icon, size: 18, color: Colors.white),
+      child: Icon(step.icon, size: 18, color: Colors.white),
     );
   }
 
   int _getCurrentStepIndex(List<_StepData> steps) {
     final s = status.toLowerCase();
-    if (s == 'cancelado') return steps.length - 1;
-    
-    final statusMap = {
-      'novo': 0,
-      'pendente': 0,
-      'confirmado': 1,
-      'em_preparo': 2,
-      'saiu_entrega': 3,
-      'entregue': 4,
-    };
-    
-    return statusMap[s] ?? 0;
+
+    if (s == 'cancelado' || s == 'recusado') {
+      return steps.length - 1;
+    }
+
+    switch (s) {
+      case 'novo':
+      case 'aguardando':
+      case 'pendente':
+        return 0;
+      case 'confirmado':
+        return 1;
+      case 'preparando':
+      case 'em_preparo':
+        return 2;
+      case 'pronto':
+        return 3;
+      case 'saiu':
+      case 'saiu_entrega':
+        return 4;
+      case 'entregue':
+        return 5;
+      default:
+        return 0;
+    }
   }
 
   List<_StepData> _getSteps() {
@@ -149,6 +208,12 @@ class PedidoStatusTimeline extends StatelessWidget {
         timestamp: timestamps['em_preparo_at'],
       ),
       _StepData(
+        key: 'pronto',
+        title: 'Pedido Pronto',
+        icon: Icons.room_service,
+        timestamp: timestamps['pronto_at'],
+      ),
+      _StepData(
         key: 'saiu_entrega',
         title: 'Saiu para Entrega',
         icon: Icons.delivery_dining,
@@ -162,13 +227,16 @@ class PedidoStatusTimeline extends StatelessWidget {
       ),
     ];
 
-    if (status.toLowerCase() == 'cancelado') {
-      steps.add(_StepData(
-        key: 'cancelado',
-        title: 'Cancelado',
-        icon: Icons.cancel,
-        timestamp: timestamps['cancelado_at'],
-      ));
+    final s = status.toLowerCase();
+    if (s == 'cancelado' || s == 'recusado') {
+      steps.add(
+        _StepData(
+          key: 'cancelado',
+          title: s == 'recusado' ? 'Pedido Recusado' : 'Pedido Cancelado',
+          icon: Icons.cancel,
+          timestamp: timestamps['cancelado_at'] ?? timestamps['recusado_at'],
+        ),
+      );
     }
 
     return steps;
