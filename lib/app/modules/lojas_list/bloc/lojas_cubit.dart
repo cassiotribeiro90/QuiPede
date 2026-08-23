@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../models/loja_resumo_model.dart';
 import 'lojas_state.dart';
@@ -63,6 +64,8 @@ class LojasCubit extends Cubit<LojasState> {
         longitude: lng,
       );
 
+      debugPrint('📡 [LojasCubit] Lojas carregadas: ${response.items.length} itens. Página: ${response.pagination.page}/${response.pagination.totalPages}');
+
       _lastPagination = response.pagination;
       
       if (isLoadMore) {
@@ -82,7 +85,13 @@ class LojasCubit extends Cubit<LojasState> {
         isLoadingMore: false,
       ));
     } catch (e) {
-      emit(LojasError('Erro ao carregar lojas: $e'));
+      debugPrint('❌ [LojasCubit] Erro ao buscar lojas: $e');
+      if (isLoadMore && state is LojasLoaded) {
+        // ✅ Se falhar no load more, mantém a lista anterior e só tira o loading
+        emit((state as LojasLoaded).copyWith(isLoadingMore: false));
+      } else {
+        emit(LojasError('Erro ao carregar lojas: $e'));
+      }
     } finally {
       _isFetching = false;
     }

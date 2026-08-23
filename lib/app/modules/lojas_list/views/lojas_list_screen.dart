@@ -29,7 +29,7 @@ class LojasListScreen extends StatefulWidget {
   State<LojasListScreen> createState() => _LojasListScreenState();
 }
 
-class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingObserver, RouteAware {
+class _LojasListScreenState extends State<LojasListScreen> {
   final _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _initialized = false;
@@ -38,13 +38,13 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   StreamSubscription? _localizacaoSubscription;
 
   // 🛡️ Throttles específicos
-  final Throttle _lojasThrottle = Throttle(const Duration(seconds: 30));
+  final Throttle _lojasThrottle = Throttle(const Duration(seconds: 10)); // ✅ Reduzido para 10s
   final Throttle _usuarioThrottle = Throttle(const Duration(minutes: 1));
+  final Throttle _loadMoreThrottle = Throttle(const Duration(milliseconds: 500)); // ✅ Novo throttle para load more
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     debugPrint('🟢 [LojasListScreen] initState()');
     _scrollController.addListener(_onScroll);
 
@@ -57,7 +57,6 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('🟢 [LojasListScreen] PostFrameCallback');
-      _subscribeToRoute();
 
       // Tenta carregar imediatamente se já tem endereço
       final locState = context.read<LocalizacaoCubit>().state;
@@ -77,42 +76,12 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
     });
   }
 
-  void _subscribeToRoute() {
-    final route = ModalRoute.of(context);
-    if (route is PageRoute) {
-      routeObserver.subscribe(this, route);
-    }
-  }
-
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    routeObserver.unsubscribe(this);
     _localizacaoSubscription?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      debugPrint('🔄 [LojasListScreen] App resumed - verificando endereço');
-      _onScreenVisible();
-    }
-  }
-
-  @override
-  void didPopNext() {
-    debugPrint('🔄 [LojasListScreen] didPopNext - tela voltou a ser visível');
-    _onScreenVisible();
-  }
-
-  void _onScreenVisible() {
-    if (_firstLoad) return;
-    debugPrint('🔄 [LojasListScreen] Tela visível - verificando endereço e lojas');
-    _carregarLojas();
-    _verificarEnderecoELojas();
   }
 
   void _carregarLojas() {
@@ -132,20 +101,18 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
     if (!mounted) return;
 
     final locCubit = context.read<LocalizacaoCubit>();
-    final lojasCubit = context.read<LojasCubit>();
     final authCubit = context.read<AuthCubit>();
 
     debugPrint('🏠 [LojasListScreen] _verificarEnderecoELojas: locState=${locCubit.state.runtimeType}');
 
     if (locCubit.state is LocalizacaoCarregada) {
       debugPrint('🏠 [LojasListScreen] Endereço carregado, carregando lojas');
-      _carregarLojas(); // usa throttle para lojas
+      _carregarLojas();
       if (_usuarioThrottle.shouldRun) {
         authCubit.recarregarUsuario();
       }
     } else {
       debugPrint('🔁 [LojasListScreen] Sem endereço, tentando recarregar...');
-      // Tenta recarregar endereços do backend se estiver logado
       final authState = authCubit.state;
       if (authState is AuthAuthenticated || authState is AuthGuest) {
         await context.read<EnderecoCubit>().carregarEnderecos(mostrarLoading: false);
@@ -176,7 +143,6 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
-        // ✅ Evita navegação duplicada se já estiver na tela de endereços
         final currentRoute = ModalRoute.of(context)?.settings.name;
         if (currentRoute == Routes.meusEnderecos) {
           debugPrint('🛑 [LojasListScreen] Já está em MeusEnderecos, não redireciona');
@@ -199,18 +165,18 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
   }
 
   void _onScroll() {
-    if (_scrollController.hasClients && _scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      final cubit = context.read<LojasCubit>();
-      final state = cubit.state;
-      if (cubit.hasMorePages && state is LojasLoaded && !state.isLoadingMore) {
-        debugPrint('🔄 [LojasListScreen] Carregando mais lojas');
-        cubit.fetchLojas(
-          page: cubit.currentPage + 1,
-          perPage: 10,
-          isLoadMore: true,
-        );
-      }
+    if (!_loadMoreThrottle.shouldRun) return;
+
+    final cubit = context.read<LojasCubit>();
+    final state = cubit.state;
+
+    if (cubit.hasMorePages && state is LojasLoaded && !state.isLoadingMore) {
+      debugPrint('🔄 [LojasListScreen] Carregando mais lojas (página ${cubit.currentPage + 1})');
+      cubit.fetchLojas(
+        page: cubit.currentPage + 1,
+        perPage: 10,
+        isLoadMore: true,
+      );
     }
   }
 
@@ -307,7 +273,6 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
           }
 
           if (_initialized && state is LocalizacaoNaoEncontrada) {
-            // ✅ Só redireciona se já houve uma tentativa de carregamento
             if (_enderecoCarregado) {
               _verificarEndereco();
             }
@@ -341,15 +306,23 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
               bottomNavigationBar: const CarrinhoBottomBar(),
               body: RefreshIndicator(
                 onRefresh: () => context.read<LojasCubit>().refreshList(),
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: _buildSearchTrigger(state),
-                    ),
-                    _buildSliverBody(state),
-                  ],
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification.metrics.extentAfter < 300) {
+                      _onScroll();
+                    }
+                    return false;
+                  },
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: _buildSearchTrigger(state),
+                      ),
+                      _buildSliverBody(state),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -446,11 +419,16 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
 
   String _getOrdenacaoLabel(String value) {
     switch (value) {
-      case 'nota': return 'Melhor avaliados';
-      case 'tempo_entrega': return 'Menor tempo';
-      case 'taxa_entrega': return 'Menor taxa';
-      case 'pedido_minimo': return 'Menor pedido mínimo';
-      default: return value;
+      case 'nota':
+        return 'Melhor avaliados';
+      case 'tempo_entrega':
+        return 'Menor tempo';
+      case 'taxa_entrega':
+        return 'Menor taxa';
+      case 'pedido_minimo':
+        return 'Menor pedido mínimo';
+      default:
+        return value;
     }
   }
 
@@ -461,13 +439,23 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
 
     if (state is LojasLoaded) {
       final lojas = state.lojasFiltradas;
-      if (lojas.isEmpty) return SliverFillRemaining(hasScrollBody: false, child: _buildEmptyState(state.lojas.isEmpty));
+      if (lojas.isEmpty) {
+        return SliverFillRemaining(
+          hasScrollBody: false,
+          child: _buildEmptyState(state.lojas.isEmpty),
+        );
+      }
 
       return SliverList(
         delegate: SliverChildBuilderDelegate(
               (context, index) {
             if (index >= lojas.length) {
-              return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              );
             }
             final loja = lojas[index];
             return Column(
@@ -493,7 +481,10 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
     }
 
     if (state is LojasError) {
-      return SliverFillRemaining(hasScrollBody: false, child: Center(child: Text(state.message)));
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: Text(state.message)),
+      );
     }
 
     return const SliverToBoxAdapter(child: SizedBox());
@@ -532,13 +523,22 @@ class _LojasListScreenState extends State<LojasListScreen> with WidgetsBindingOb
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.storefront_outlined, size: 80, color: Theme.of(context).hintColor.withValues(alpha: 0.5)),
+          Icon(
+            Icons.storefront_outlined,
+            size: 80,
+            color: Theme.of(context).hintColor.withValues(alpha: 0.5),
+          ),
           const SizedBox(height: 16),
-          Text('Nenhuma loja encontrada', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Nenhuma loja encontrada',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           Text(
             isOverallEmpty ? 'Volte mais tarde!' : 'Tente outros filtros',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+            ),
           ),
           if (!isOverallEmpty)
             TextButton(
