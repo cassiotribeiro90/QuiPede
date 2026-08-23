@@ -1,57 +1,122 @@
-markdown
+# 🍔 QuiPede - Delivery Ecosystem
 
-# 🍔 QuiPede
-
-App de delivery desenvolvido em Flutter com arquitetura limpa e BLoC.
+O **QuiPede** é a ponta de lança do ecossistema **QuiDelivery**, focado na experiência de compra do cliente final. Este aplicativo não é apenas uma interface de pedidos, mas um sistema robusto que integra geolocalização, inteligência de cardápio e autenticação segura em um ambiente multiplataforma (Android, iOS, Windows e Web).
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.16+-02569B?style=flat-square&logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.2+-0175C2?style=flat-square&logo=dart&logoColor=white)
 ![BLoC](https://img.shields.io/badge/BLoC-8.1+-29B6F6?style=flat-square&logo=bloc&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Architecture](https://img.shields.io/badge/Arch-Modular--Layered-orange?style=flat-square)
 
 ---
 
-## ✨ Features
+## 📸 Interface do Usuário
 
-- Lista de lojas com filtros por categoria
-- Cardápio organizado por seções
-- Sistema de avaliações com notas e comentários
-- Carrinho de compras com cálculo automático
-- Geolocalização para cálculo de distância
-- Tema personalizado com cores da marca
+| Home & Lojas | Cardápio Dinâmico | Carrinho de Compras | Perfil & Pedidos |
+| :---: | :---: | :---: | :---: |
+| ![Home](https://via.placeholder.com/200x400?text=Lista+de+Lojas) | ![Cardápio](https://via.placeholder.com/200x400?text=Navegação+Categorias) | ![Carrinho](https://via.placeholder.com/200x400?text=Resumo+do+Pedido) | ![Perfil](https://via.placeholder.com/200x400?text=Gestão+de+Dados) |
 
 ---
 
-## 🛠️ Tecnologias
+## 🚀 Funcionalidades Detalhadas
 
-| Camada | Tecnologia |
-|--------|------------|
-| UI | Flutter |
-| Estado | BLoC / Cubit |
-| Injeção de Dependência | GetIt |
-| Requisições HTTP | Dio |
-| Imagens | cached_network_image |
-| Formatação | intl |
-| Armazenamento Local | shared_preferences |
+### 📍 Inteligência Geográfica
+- **Busca por CEP/Endereço**: Integração com APIs de geocodificação para localizar o usuário.
+- **Raio de Atendimento**: Filtro dinâmico que exibe apenas lojas que entregam na localização atual.
+- **Cálculo de Distância**: Exibição da proximidade real entre o cliente e o estabelecimento.
+
+### 📋 Cardápio de Alta Performance
+- **Sticky Headers**: Menu de categorias que permanece fixo no topo durante a rolagem.
+- **Scroll Inteligente**: Ao clicar em uma categoria, o app carrega os dados necessários da API e rola com precisão até a seção desejada.
+- **Customização de Itens**: Suporte completo a complementos (ex: bordas de pizza, tamanhos de bebidas) e observações por item.
+
+### 🔐 Segurança e Autenticação
+- **Flow OTP (One-Time Password)**: Login rápido via número de telefone com verificação por código.
+- **Sessão Convidado**: Permite ao usuário navegar e montar o carrinho antes de exigir a criação de conta.
+- **Device ID Unificado**: Identificação única do dispositivo para controle de notificações e segurança transacional.
 
 ---
 
-## Resumo Técnico do Projeto QuiPede
+## 🏗️ Arquitetura e Padrões
 
-Stack: Flutter 3.x (Dart) no frontend, PHP 8.x com Yii2 no backend, banco MariaDB/MySQL. Gerenciamento de estado com flutter_bloc (Cubit) e injeção de dependências com GetIt. HTTP via Dio customizado no ApiClient. Navegação por rotas nomeadas (Navigator 1.0). Tema com AppThemeExtension e AppTextStyles (bodyLarge 20px, bodyMedium 18px, bodySmall 16px, caption 13px).
+O projeto utiliza uma arquitetura **Modular e Camada**, garantindo que cada funcionalidade seja independente e fácil de testar.
 
-Estrutura de diretórios principal: lib/app/modules/ contém cada funcionalidade (auth, enderecos, home, carrinho, pedidos, loja, produto, splash). Cada módulo segue o padrão: bloc/ (Cubit + State), models/ (modelos com Equatable e copyWith), repositories/ (abstração que chama services), services/ (chamadas HTTP com ApiClient), views/ (telas), widgets/ (componentes reutilizáveis). Exemplo: módulo enderecos tem EnderecoCubit, EnderecoState (EnderecoInitial, EnderecoLoading, EnderecoLoaded, EnderecoError, EnderecoOperacaoSucesso, EnderecoCepBuscando, EnderecoCepCarregado), EnderecoModel (com getters resumido, enderecoCompleto, enderecoResumido e parse robusto de principal e numero), EnderecoRepository, EnderecoService, EnderecosListView, EnderecoFormView, EnderecoEditView, EnderecoActionCards.
+### Estrutura de Pastas
+```text
+lib/
+├── app/
+│   ├── core/           # Temas, Services globais e Constants
+│   ├── di/             # Configuração do GetIt (Injeção de Dependência)
+│   ├── models/         # Modelos de dados globais
+│   ├── modules/        # Funcionalidades isoladas (auth, home, lojas, etc)
+│   │   └── module_name/
+│   │       ├── bloc/   # Lógica de negócio (Cubit/BLoC)
+│   │       ├── views/  # Widgets de tela
+│   │       └── widgets/# Componentes locais
+│   └── routes/         # Gestão de rotas nomeadas
+└── shared/             # Componentes, API Clients e Utils reutilizáveis
+```
 
-Cubits gerenciam estado local e chamam repository -> service -> API. Exemplo de fluxo: View chama context.read<MeuCubit>().metodo(), Cubit emite Loading, processa, emite Loaded ou Error, View reage com BlocBuilder/BlocConsumer.
+### Tecnologias "Under the Hood"
+- **Gerenciamento de Estado**: `Cubit` para fluxos simples e previsíveis.
+- **Rede**: `Dio` com interceptores para injeção automática de Tokens e Device IDs em todos os headers.
+- **Injeção de Dependência**: `GetIt` para desacoplar as camadas de serviço da UI.
+- **Notificações**: `Firebase Cloud Messaging (FCM)` configurado para inicialização diferida na Web (evitando bloqueios de UI).
 
-Injeção de dependências centralizada em app/di/dependencies.dart com GetIt. ApiClient é singleton, Cubits são factories. Exemplo: getIt.registerLazySingleton<ApiClient>(() => ApiClient()); getIt.registerFactory<EnderecoCubit>(() => EnderecoCubit(getIt<EnderecoRepository>())); Nas views, Cubit é acessado via context.read ou BlocProvider.
+---
 
-Backend: autenticação por device_id (header X-Device-Id ou body). Ao criar primeiro endereço, retorna token e usuario; AuthCubit.onEnderecoCriadoComToken persiste. Endpoints: GET /addresses (lista), POST /addresses (cria), PUT /addresses/{id} (atualiza), DELETE /addresses/{id} (soft delete), PUT /addresses/{id}/set-padrao (define principal), POST /addresses/buscar-cep (busca ViaCEP). O controller PHP correspondente é EnderecoController com actions index, view, create, update, delete, setPadrao, buscarCep. O formatEndereco retorna campos como principal, numero, logradouro, bairro, cidade, uf, cep, complemento, referencia, etc.
+## 🖥️ Nuances Multiplataforma
 
-Rotas do app: splash (/), onboarding, home, meusEnderecos, enderecoForm, enderecoEdit, carrinho, pedidos, perfil, etc. Definidas em app/routes/app_routes.dart.
+O QuiPede foi otimizado para rodar com excelência em diferentes ambientes:
 
-Fluxos principais: onboarding (Splash -> Onboarding busca CEP -> completar cadastro nome/email -> criar endereço opcional). Gerenciamento de endereços: listagem com destaque visual (borda laranja e selo Principal) para endereço principal. Toque no card define principal (cubit.definirPrincipal). Ícone lápis edita apenas número, complemento e referência (EnderecoEditView). Ícone lixeira exclui com confirmação (cubit.deletarEndereco). FAB adiciona novo endereço (EnderecoFormView). Home: LocalizacaoCubit gerencia endereço atual e lojas próximas.
+- **Windows Desktop**: 
+    - Implementação de `AppScrollBehavior` para permitir rolagem por arrasto de mouse (padrão mobile).
+    - Configurações de CMake para garantir compilação correta de plugins nativos como `flutter_tts` e Firebase.
+- **Web**:
+    - Gestão de permissões de notificação assíncronas para evitar a "tela branca" inicial.
+    - Otimização de renderização para diferentes resoluções.
+- **Mobile (Android/iOS)**:
+    - Uso intensivo de hardware nativo para localização e sensores.
 
-Convenções: textos em pt-BR, cores via context.primaryColor, context.surfaceColor, context.textPrimary, tipografia com AppTextStyles, telas usam ResponsivePageScaffold, modelos têm Equatable e copyWith, navegação com settings.arguments.
+---
 
-Pontos de atenção: Não alterar EnderecoModel, EnderecoCubit ou EnderecoState sem revisar views. Cubit já tem cache local e flag _operacaoConcluida contra duplicidade. Edição de endereço restrita a número, complemento e referência. Nova rota deve ser registrada em app_routes.dart e no MaterialApp. Backend retorna principal (bool) e numero (string) – parse já é robusto.
+## 📘 O Ecossistema QuiDelivery
+
+O QuiPede é um dos três pilares da nossa solução de delivery:
+
+1. **QuiPede (Client)**: Onde o pedido nasce.
+2. **[QuiManda](https://github.com/seu-usuario/quimanda) (Merchant)**: Onde o lojista gerencia o fluxo de produção e cardápio.
+3. **[QuiGestor](https://github.com/seu-usuario/quigestor) (Admin)**: A torre de controle para administração global da plataforma.
+
+**Backend**: API desenvolvida em **Yii2 (PHP)** com banco **MySQL**, projetada para baixa latência e alta disponibilidade.
+
+---
+
+## 🛠️ Como Rodar
+
+### 1. Configurar o Backend
+Este projeto depende da API do ecossistema QuiDelivery.
+- Acesse o repositório do backend (Yii2).
+- Utilize os arquivos **Docker** inclusos para subir os containers do PHP, MySQL e Nginx.
+- Certifique-se de que a API está acessível no endereço configurado em `lib/app_config.dart`.
+
+### 2. Configurar o Firebase
+- Crie um projeto no [Console do Firebase](https://console.firebase.google.com/).
+- Adicione aplicativos Android, iOS e Web ao projeto.
+- Baixe os arquivos de configuração (`google-services.json`, `GoogleService-Info.plist`).
+- Configure o arquivo `lib/firebase_options.dart` com as chaves geradas para habilitar o FCM e outras funcionalidades.
+
+### 3. Executar o Aplicativo
+- Certifique-se de ter o **Flutter 3.16+** instalado.
+- Instale as dependências:
+  ```bash
+  flutter pub get
+  ```
+- Rode o projeto na plataforma desejada:
+  ```bash
+  flutter run -d windows # Para Windows Desktop
+  flutter run -d chrome  # Para Web
+  flutter run            # Para Android/iOS
+  ```
+
+---
+Desenvolvido com ❤️ por **Cássio** | 2026
