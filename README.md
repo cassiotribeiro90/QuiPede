@@ -11,9 +11,12 @@ O **QuiPede** é a ponta de lança do ecossistema **QuiDelivery**, focado na exp
 
 ## 📸 Interface do Usuário
 
-| Home & Lojas | Cardápio Dinâmico | Carrinho de Compras | Perfil & Pedidos |
-| :---: | :---: | :---: | :---: |
-| ![Home](https://via.placeholder.com/200x400?text=Lista+de+Lojas) | ![Cardápio](https://via.placeholder.com/200x400?text=Navegação+Categorias) | ![Carrinho](https://via.placeholder.com/200x400?text=Resumo+do+Pedido) | ![Perfil](https://via.placeholder.com/200x400?text=Gestão+de+Dados) |
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/dc50c219-93f6-4efd-962e-ab7ed3e238dd" /> 
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/c97329fb-0a5c-4cb2-a332-43737ddfcb6d" />
+<img width="200"alt="image" src="https://github.com/user-attachments/assets/6623cf14-1966-4422-9384-6defb974e57a" />
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/d8a4e19e-d595-46ea-9b02-f7515d00f898" />
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/d280096b-bd9e-43ae-be49-88a2698c3843" />
+
 
 ---
 
