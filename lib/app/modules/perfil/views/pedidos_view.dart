@@ -74,10 +74,6 @@ class _PedidosViewState extends State<PedidosView> {
               onPressed: () => context.read<PedidoCubit>().carregarPedidos(),
               child: const Text('Tentar novamente'),
             ),
-            OutlinedButton(
-              onPressed: () => getIt<NavigationService>().goToHomeAndRemoveAll(),
-              child: const Text('Voltar para o início'),
-            ),
           ],
         ),
       );
@@ -116,19 +112,6 @@ class _PedidosViewState extends State<PedidosView> {
                   return _buildPedidoItem(context, pedido);
                 },
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () => getIt<NavigationService>().goToHomeAndRemoveAll(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Voltar para o Início'),
             ),
           ),
         ],
