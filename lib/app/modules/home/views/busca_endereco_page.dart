@@ -1,11 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:quipede/app/modules/enderecos/bloc/endereco_cubit.dart';
-import 'package:quipede/app/modules/enderecos/bloc/endereco_state.dart';
-import 'package:quipede/app/modules/enderecos/models/endereco_model.dart';
 import 'package:quipede/app/modules/home/models/endereco_sugestao.dart';
 import 'package:quipede/app/modules/home/services/localizacao_service.dart';
 import 'package:quipede/shared/api/api_client.dart';
@@ -201,7 +197,7 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
   Widget _buildContent() {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_searchController.text.trim().length < 3) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -217,7 +213,7 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
       );
     }
     if (_sugestoes.isEmpty) {
-      return Center(
+      return const Center(
         child: Text(
           'Nenhum endereço encontrado',
           style: AppTextStyles.bodyLarge,

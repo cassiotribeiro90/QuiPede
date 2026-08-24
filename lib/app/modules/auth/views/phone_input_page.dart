@@ -7,7 +7,6 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../../di/dependencies.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/widgets/app_text_field.dart';

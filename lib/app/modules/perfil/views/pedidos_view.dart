@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme_extension.dart';
-import '../../../di/dependencies.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../../pedido/bloc/pedido_cubit.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
@@ -55,7 +53,7 @@ class _PedidosViewState extends State<PedidosView> {
   }
 
   Widget _buildBody(BuildContext context, PedidoState state) {
-    final navigationCubit = context.read<NavigationCubit>();
+    context.read<NavigationCubit>();
 
     if (state is PedidoLoading) {
       return const Center(child: CircularProgressIndicator());

@@ -3,9 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/carrinho_cubit.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
-import '../../../di/dependencies.dart';
 import '../../../navigation/navigation_cubit.dart';
-import '../../auth/bloc/auth_cubit.dart';
 import '../../../core/constants/navigation_origins.dart';
 
 class CarrinhoBottomBar extends StatelessWidget {

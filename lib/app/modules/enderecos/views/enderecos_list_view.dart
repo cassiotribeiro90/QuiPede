@@ -251,7 +251,7 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
                               color: Theme.of(context).primaryColor,
                             ),
                             onPressed: () {
-                              final cubit = context.read<EnderecoCubit>();
+                              context.read<EnderecoCubit>();
                               debugPrint('✏️ [EnderecosListView] Editando endereço ID ${endereco.id}');
                               navigationCubit.goToEnderecoEdit(endereco);
                               // A navegação já é feita pelo Cubit, e ao voltar recarregamos

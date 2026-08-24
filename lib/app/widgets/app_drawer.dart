@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../modules/auth/bloc/auth_cubit.dart';
 import '../modules/auth/bloc/auth_state.dart';
-import '../routes/app_routes.dart';
 import '../navigation/navigation_cubit.dart';
 
 class AppDrawer extends StatelessWidget {

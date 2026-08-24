@@ -15,11 +15,9 @@ import '../../../navigation/navigation_cubit.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/constants/navigation_origins.dart';
 import '../../carrinho/widgets/carrinho_bottom_bar.dart';
-import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../../auth/bloc/auth_cubit.dart';
-import '../../../di/dependencies.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
 class LojasListScreen extends StatefulWidget {
@@ -33,7 +31,6 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
   final _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _initialized = false;
-  bool _firstLoad = true;
   bool _enderecoCarregado = false;
   StreamSubscription? _localizacaoSubscription;
 
@@ -64,7 +61,6 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
         _verificarEnderecoELojas();
       }
 
-      _firstLoad = false;
     });
 
     Future.delayed(const Duration(seconds: 1), () {
@@ -474,13 +470,13 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
         child: Row(
           children: [
             LoadingSkeleton(width: 52, height: 52, borderRadius: 8),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   LoadingSkeleton(width: 150, height: 16),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   LoadingSkeleton(width: 100, height: 12),
                 ],
               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quipede/app/modules/home/views/onboarding_page.dart';
 import 'package:go_router/go_router.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/bloc/auth_cubit.dart';

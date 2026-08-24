@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,9 +23,9 @@ class DeviceService {
     if (deviceId == null || deviceId.isEmpty) {
       deviceId = const Uuid().v4();
       await prefs.setString(_keyDeviceId, deviceId);
-      print('[DEVICE] 🔑 Novo device ID gerado: $deviceId');
+      debugPrint('[DEVICE] 🔑 Novo device ID gerado: $deviceId');
     } else {
-      print('[DEVICE] 🔑 Device ID carregado: $deviceId');
+      debugPrint('[DEVICE] 🔑 Device ID carregado: $deviceId');
     }
 
     _cachedDeviceId = deviceId;
@@ -36,6 +37,6 @@ class DeviceService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyDeviceId);
     _cachedDeviceId = null;
-    print('[DEVICE] 🗑️ Device ID removido');
+    debugPrint('[DEVICE] 🗑️ Device ID removido');
   }
 }

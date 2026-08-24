@@ -479,8 +479,6 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     final bool isBlocked = state.isDebouncing || state.isRequesting;
     final bool temFrete = state.taxaEntrega != null;
     final valorTotal = state.total ?? state.subtotal;
-    final navigationCubit = context.read<NavigationCubit>();
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

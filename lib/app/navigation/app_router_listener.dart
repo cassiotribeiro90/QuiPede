@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/navigation/navigation_cubit.dart';
 import 'package:quipede/app/routes/app_router.dart';
-import 'package:go_router/go_router.dart';
 
 import 'navigation_state.dart';
 
 class AppRouterListener extends StatelessWidget {
   final Widget child;
-  const AppRouterListener({required this.child});
+  const AppRouterListener({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +27,7 @@ class AppRouterListener extends StatelessWidget {
         String getCurrentLocation() {
           try {
             final config = appRouter.routerDelegate.currentConfiguration;
-            return config.fullPath ?? config.uri.toString();
+            return config.fullPath;
           } catch (e) {
             return 'unknown';
           }

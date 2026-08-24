@@ -73,7 +73,7 @@ class CarrinhoItem extends Equatable {
   }
 
   factory CarrinhoItem.fromJson(Map<String, dynamic> json) {
-    if (kDebugMode) print('🔍 CarrinhoItem.fromJson: \$json');
+    if (kDebugMode) debugPrint('🔍 CarrinhoItem.fromJson: \$json');
 
     return CarrinhoItem(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,

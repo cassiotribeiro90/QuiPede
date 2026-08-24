@@ -462,7 +462,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
   }
 
   Widget _buildBody(BuildContext context, LojaHomeState state) {
-    final navigationCubit = context.read<NavigationCubit>();
+    context.read<NavigationCubit>();
 
     if (state is LojaHomeLoading && state.secoes.isEmpty) {
       return const Center(child: CircularProgressIndicator());

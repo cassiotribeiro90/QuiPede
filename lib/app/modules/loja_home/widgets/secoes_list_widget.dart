@@ -25,9 +25,9 @@ class SecoesListWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (secoes.isEmpty) {
-      return Center(
+      return const Center(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

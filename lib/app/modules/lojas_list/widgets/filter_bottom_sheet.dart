@@ -222,13 +222,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           if (icon != null) ...[
             Text(
               icon,
-              style: AppTextStyles.bodySmall?.copyWith(fontSize: 14),
+              style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
             ),
             const SizedBox(width: 4),
           ],
           Text(
             label,
-            style: AppTextStyles.bodySmall?.copyWith(fontSize: 14),
+            style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
           ),
         ],
       ),

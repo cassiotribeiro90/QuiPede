@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:quipede/app/modules/auth/bloc/auth_cubit.dart';
 import 'package:quipede/app/modules/auth/bloc/auth_state.dart';
 import 'package:quipede/app/modules/auth/models/cadastro_models.dart';
 import 'package:quipede/app/modules/home/bloc/localizacao_cubit.dart';
 import 'package:quipede/app/modules/home/bloc/localizacao_state.dart';
-import 'package:quipede/app/routes/app_routes.dart';
-import 'package:quipede/app/navigation/navigation_cubit.dart';
 
 class CadastroConfirmacaoPage extends StatelessWidget {
   final CadastroInfoModel dadosPessoais;

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../../app/modules/auth/bloc/auth_cubit.dart';
 import '../../../app/di/dependencies.dart';
 import '../../services/token_service.dart';
-import '../../services/device_id_service.dart';
 
 class RefreshInterceptor extends Interceptor {
   final Dio dio;
@@ -134,13 +133,9 @@ class RefreshInterceptor extends Interceptor {
   Future<void> _atualizarEnderecos(dynamic enderecosJson, dynamic enderecoPrincipalJson) async {
     try {
       final authCubit = getIt<AuthCubit>();
-      if (authCubit != null) {
-        await authCubit.atualizarEnderecos(enderecosJson, enderecoPrincipalJson);
-        debugPrint('🔐 [RefreshInterceptor] ✅ Endereços sincronizados com AuthCubit');
-      } else {
-        debugPrint('⚠️ [RefreshInterceptor] AuthCubit não disponível');
-      }
-    } catch (e) {
+      await authCubit.atualizarEnderecos(enderecosJson, enderecoPrincipalJson);
+      debugPrint('🔐 [RefreshInterceptor] ✅ Endereços sincronizados com AuthCubit');
+        } catch (e) {
       debugPrint('❌ [RefreshInterceptor] Erro ao atualizar endereços: $e');
     }
   }
@@ -148,11 +143,9 @@ class RefreshInterceptor extends Interceptor {
   Future<void> _forceLogout() async {
     try {
       final authCubit = getIt<AuthCubit>();
-      if (authCubit != null) {
-        await authCubit.forceLogout();
-        debugPrint('🔐 [RefreshInterceptor] ✅ Logout forçado realizado');
-      }
-    } catch (e) {
+      await authCubit.forceLogout();
+      debugPrint('🔐 [RefreshInterceptor] ✅ Logout forçado realizado');
+        } catch (e) {
       debugPrint('🔐 [RefreshInterceptor] Erro ao chamar forceLogout: $e');
     }
   }

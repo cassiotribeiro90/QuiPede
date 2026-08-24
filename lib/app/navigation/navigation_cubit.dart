@@ -411,12 +411,6 @@ class NavigationCubit extends Cubit<NavigationState> {
     emit(NavigationState.pushTo(path, queryParams: queryParams, extra: extra, timestamp: timestamp));
   }
 
-  void _pushReplacement(String path, {Map<String, String>? queryParams, Object? extra}) {
-    debugPrint('🧭 [NavigationCubit] _pushReplacement: $path');
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    emit(NavigationState.pushReplacementTo(path, queryParams: queryParams, extra: extra, timestamp: timestamp));
-  }
-
   @override
   Future<void> close() {
     debugPrint('🔴 [NavigationCubit] close chamado');

@@ -14,7 +14,7 @@ class CarrinhoResponse extends Equatable {
   });
 
   factory CarrinhoResponse.fromJson(dynamic json) {
-    if (kDebugMode) print('🔍 Parsing CarrinhoResponse: $json');
+    if (kDebugMode) debugPrint('🔍 Parsing CarrinhoResponse: $json');
     
     // Se o json vier como uma lista (ex: carrinho vazio vindo do backend como []), 
     // tratamos como um objeto vazio para evitar erro de cast.

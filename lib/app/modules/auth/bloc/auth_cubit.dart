@@ -17,9 +17,7 @@ import 'auth_state.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
-import '../../../routes/app_routes.dart';
 import '../../../core/services/device_service.dart';
-import '../../../core/services/fcm_service.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final ApiClient _apiClient;
@@ -28,7 +26,6 @@ class AuthCubit extends Cubit<AuthState> {
   final EnderecoCubit _enderecoCubit;
   final SharedPreferences _prefs;
   final DeviceService _deviceService = DeviceService();
-  final FcmService _fcmService = FcmService();
   bool _isProcessing = false;
   UsuarioModel? _usuario;
 

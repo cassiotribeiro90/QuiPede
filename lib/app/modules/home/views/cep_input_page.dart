@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/routes/app_routes.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dio/dio.dart';
 import '../storage/auth_storage.dart';
@@ -19,7 +19,7 @@ class FcmService {
   /// 🔥 INICIALIZA OS LISTENERS DO FCM (Não bloqueia a UI)
   Future<void> init() async {
     if (!kIsWeb && Platform.isWindows) {
-      print('[FCM] ⏳ Windows não suporta Firebase Messaging');
+      debugPrint('[FCM] ⏳ Windows não suporta Firebase Messaging');
       return;
     }
 
@@ -28,27 +28,27 @@ class FcmService {
     try {
       // 🔥 ESCUTA MENSAGENS EM FOREGROUND
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        print('[FCM] 📨 Mensagem recebida: ${message.notification?.title}');
+        debugPrint('[FCM] 📨 Mensagem recebida: ${message.notification?.title}');
         _showInAppNotification(message);
       });
 
       // 🔥 ESCUTA QUANDO O APP É ABERTO POR NOTIFICAÇÃO
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        print('[FCM] 📨 App aberto por notificação');
+        debugPrint('[FCM] 📨 App aberto por notificação');
         _handleNotificationTap(message);
       });
 
       // 🔥 TOKEN REFRESH
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-        print('[FCM] 🔄 Token atualizado: $newToken');
+        debugPrint('[FCM] 🔄 Token atualizado: $newToken');
         _token = newToken;
         _sendTokenToBackend(newToken);
       });
 
       _isInitialized = true;
-      print('[FCM] ✅ Listeners configurados');
+      debugPrint('[FCM] ✅ Listeners configurados');
     } catch (e) {
-      print('[FCM] ❌ Erro ao configurar listeners: $e');
+      debugPrint('[FCM] ❌ Erro ao configurar listeners: $e');
     }
   }
 
@@ -57,7 +57,7 @@ class FcmService {
     try {
       if (!kIsWeb && Platform.isWindows) return false;
 
-      print('[FCM] 🔔 Solicitando permissão de notificação...');
+      debugPrint('[FCM] 🔔 Solicitando permissão de notificação...');
       NotificationSettings settings = await _fcm.requestPermission(
         alert: true,
         badge: true,
@@ -66,14 +66,14 @@ class FcmService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         _token = await _fcm.getToken();
-        print('[FCM] ✅ Permissão concedida. Token: $_token');
+        debugPrint('[FCM] ✅ Permissão concedida. Token: $_token');
         return true;
       } else {
-        print('[FCM] ❌ Permissão negada ou restrita');
+        debugPrint('[FCM] ❌ Permissão negada ou restrita');
         return false;
       }
     } catch (e) {
-      print('[FCM] ❌ Erro ao solicitar permissão: $e');
+      debugPrint('[FCM] ❌ Erro ao solicitar permissão: $e');
       return false;
     }
   }
@@ -82,9 +82,7 @@ class FcmService {
   Future<void> sendTokenToBackend(String authToken) async {
     if (!kIsWeb && Platform.isWindows) return;
 
-    if (_token == null) {
-      _token = await _fcm.getToken();
-    }
+    _token ??= await _fcm.getToken();
     if (_token != null) {
       await _sendTokenToBackend(_token!);
     }
@@ -112,15 +110,15 @@ class FcmService {
           'device_id': deviceId,
         },
       );
-      print('[FCM] ✅ Token enviado ao backend');
+      debugPrint('[FCM] ✅ Token enviado ao backend');
     } catch (e) {
-      print('[FCM] ❌ Erro ao enviar token: $e');
+      debugPrint('[FCM] ❌ Erro ao enviar token: $e');
     }
   }
 
   /// 🔥 MOSTRA NOTIFICAÇÃO IN-APP (FOREGROUND)
   void _showInAppNotification(RemoteMessage message) {
-    print('[FCM] 🔔 ${message.notification?.title}: ${message.notification?.body}');
+    debugPrint('[FCM] 🔔 ${message.notification?.title}: ${message.notification?.body}');
   }
 
   /// 🔥 NAVEGA PARA A TELA CORRETA AO CLICAR NA NOTIFICAÇÃO

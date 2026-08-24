@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../routes/app_routes.dart';
 import '../bloc/auth_cubit.dart';
-import '../../../core/constants/navigation_origins.dart';
-import '../../../navigation/navigation_cubit.dart';
 import '../bloc/auth_state.dart';
 
 class CompletarPerfilPage extends StatelessWidget {

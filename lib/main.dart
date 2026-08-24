@@ -1,10 +1,8 @@
 import 'dart:developer' as developer;
 import 'dart:ui';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/di/dependencies.dart';
@@ -17,7 +15,6 @@ import 'app/modules/carrinho/bloc/carrinho_cubit.dart';
 import 'app/modules/pedido/bloc/pedido_cubit.dart';
 import 'app/modules/enderecos/bloc/endereco_cubit.dart';
 import 'app/routes/app_router.dart';
-import 'app/routes/app_routes.dart';
 import 'app/theme/theme_cubit.dart';
 import 'app/core/services/fcm_service.dart';
 import 'app/navigation/app_router_listener.dart';

@@ -69,10 +69,8 @@ class AuthService {
 
     // O device_id vai no HEADER X-Device-Id (via ApiClient)
     // Também aceita via body se necessário
-    if (deviceId != null) {
-      data['device_id'] = deviceId;
-    }
-
+    data['device_id'] = deviceId;
+  
     if (deviceToken != null && deviceToken.isNotEmpty) {
       data['device_token'] = deviceToken;
     }

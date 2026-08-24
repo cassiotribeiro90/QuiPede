@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../repository/loja_repository.dart';
 import 'loja_home_state.dart';
@@ -202,18 +201,6 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
     }
   }
 
-  void _setSectionLoading(int sectionIndex, bool isLoading) {
-    final currentState = state;
-    if (currentState is! LojaHomeLoaded) return;
-
-    final updatedSecoes = List<SecaoModel>.from(currentState.secoes);
-    if (sectionIndex < updatedSecoes.length) {
-      updatedSecoes[sectionIndex] = updatedSecoes[sectionIndex].copyWith(
-        isLoadingMore: isLoading,
-      );
-      emit(currentState.copyWith(secoes: updatedSecoes));
-    }
-  }
 
   List<SecaoModel> _removerDuplicatas(List<SecaoModel> secoes) {
     final Set<int> idsVistos = {};
