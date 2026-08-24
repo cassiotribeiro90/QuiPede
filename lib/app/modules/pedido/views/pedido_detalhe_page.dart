@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../routes/app_routes.dart';
 import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../bloc/pedido_cubit.dart';
 import '../widgets/pedido_status_timeline.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
@@ -24,6 +25,10 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
   @override
   void initState() {
     super.initState();
+    // 🔥 Chamada imediata para carregar os dados
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PedidoCubit>().carregarDetalhes(widget.pedidoId);
+    });
     _startPolling();
   }
 
@@ -47,6 +52,8 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
 
   @override
   Widget build(BuildContext context) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     return BlocConsumer<PedidoCubit, PedidoState>(
       listener: (context, state) {
         if (state is PedidoError) {
@@ -71,13 +78,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (getIt<NavigationService>().canPop()) {
-                  getIt<NavigationService>().pop();
-                } else {
-                  getIt<NavigationService>().pushReplacementNamed(Routes.pedidos);
-                }
-              },
+              onPressed: () => navigationCubit.goToPedidos(),
             ),
           ),
           backgroundColor: context.backgroundColor,
@@ -88,6 +89,8 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
   }
 
   Widget _buildBody(BuildContext context, PedidoState state) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     if (state is PedidoLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -108,7 +111,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status do Pedido
             _buildSectionTitle(context, 'Status do Pedido'),
             const SizedBox(height: 12),
             PedidoStatusTimeline(
@@ -117,7 +119,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             ),
             const Divider(height: 32, thickness: 1),
 
-            // Itens
             _buildSectionTitle(context, 'Itens do Pedido'),
             const SizedBox(height: 8),
             ...pedido.itens.map((item) => Padding(
@@ -146,7 +147,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             )),
             const Divider(height: 32, thickness: 1),
 
-            // Endereço
             _buildSectionTitle(context, 'Endereço de Entrega'),
             const SizedBox(height: 8),
             Row(
@@ -164,7 +164,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             ),
             const Divider(height: 32, thickness: 1),
 
-            // Pagamento
             _buildSectionTitle(context, 'Pagamento'),
             const SizedBox(height: 8),
             Row(
@@ -188,7 +187,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             ),
             const Divider(height: 32, thickness: 1),
 
-            // Resumo
             _buildSectionTitle(context, 'Resumo'),
             const SizedBox(height: 8),
             _buildResumoRow(context, 'Subtotal', _formatarMoeda(pedido.subtotal)),
@@ -203,7 +201,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             ),
             const SizedBox(height: 32),
 
-            // Botões
             if (pedido.status == 'pendente' || pedido.status == 'confirmado' || pedido.status == 'novo')
               OutlinedButton(
                 onPressed: () => _confirmarCancelamento(context, pedido.id),
@@ -217,13 +214,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
               ),
             const SizedBox(height: 12),
             OutlinedButton(
-              onPressed: () {
-                if (getIt<NavigationService>().canPop()) {
-                  getIt<NavigationService>().pop();
-                } else {
-                  getIt<NavigationService>().pushReplacementNamed(Routes.pedidos);
-                }
-              },
+              onPressed: () => navigationCubit.goToPedidos(),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -233,7 +224,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                getIt<NavigationService>().goToHomeAndRemoveAll();
+                navigationCubit.goToHomeAndRemoveAll();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.primaryColor,
@@ -283,17 +274,20 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
     final cubit = context.read<PedidoCubit>();
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cancelar pedido'),
         content: const Text('Deseja realmente cancelar este pedido?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Não'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Sim, cancelar'),
           ),
         ],

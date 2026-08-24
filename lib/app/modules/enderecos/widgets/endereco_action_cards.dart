@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_text_styles.dart'; // 🔥 ADICIONADO
 import '../../../di/dependencies.dart';
-import '../../home/views/cep_input_page.dart';
-import '../../home/views/busca_endereco_page.dart';
+import '../../../routes/app_routes.dart';
 import '../bloc/endereco_cubit.dart';
 
 class EnderecoActionCards extends StatelessWidget {
@@ -93,15 +93,7 @@ class EnderecoActionCards extends StatelessWidget {
   }
 
   void _navigateToCepPage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: getIt<EnderecoCubit>(),
-          child: const CepInputPage(),
-        ),
-      ),
-    ).then((result) {
+    context.push(Routes.cepInput).then((result) {
       if (result == true && context.mounted) {
         context.read<EnderecoCubit>().carregarEnderecos();
       }
@@ -109,15 +101,7 @@ class EnderecoActionCards extends StatelessWidget {
   }
 
   void _navigateToBuscaEnderecoPage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: getIt<EnderecoCubit>(),
-          child: const BuscaEnderecoPage(),
-        ),
-      ),
-    ).then((result) {
+    context.push(Routes.buscaEndereco).then((result) {
       if (result == true && context.mounted) {
         context.read<EnderecoCubit>().carregarEnderecos();
       }

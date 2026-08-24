@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../routes/app_routes.dart';
 import '../bloc/auth_cubit.dart';
 import '../../../core/constants/navigation_origins.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../bloc/auth_state.dart';
 
 class CompletarPerfilPage extends StatelessWidget {
@@ -76,19 +78,7 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
       },
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          debugPrint('✅ [CompletarPerfil] Perfil completado. origem: ${widget.origem}');
-
-          if (widget.redirectToCheckout || widget.origem == NavigationOrigins.carrinho) {
-            debugPrint('🧭 [CompletarPerfil] Fluxo Carrinho → pop');
-            if (mounted) {
-              Navigator.pop(context);
-            }
-          } else {
-            debugPrint('🧭 [CompletarPerfil] Fluxo Onboarding → Home');
-            if (mounted) {
-              Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
-            }
-          }
+          debugPrint('✅ [CompletarPerfil] Perfil completado. NavigationCubit cuidará do redirecionamento.');
         } else if (state is AuthError) {
           debugPrint('❌ [CompletarPerfil] Erro: ${state.message}');
           setState(() => _isLoading = false);

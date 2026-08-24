@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../bloc/endereco_cubit.dart';
 import '../bloc/endereco_state.dart';
 import '../widgets/endereco_action_cards.dart';
 import '../models/endereco_model.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../routes/app_routes.dart';
-import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../../core/constants/navigation_origins.dart';
@@ -48,23 +47,23 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
     }
   }
 
-  /// ✅ Verifica se deve navegar automaticamente
   bool get _deveNavegarAutomaticamente =>
       widget.origem == NavigationOrigins.onboarding ||
           widget.origem == NavigationOrigins.home;
 
-  /// ✅ Navega para Home automaticamente
   void _navegarParaHome() {
     debugPrint('🚀 [EnderecosListView] Navegando automaticamente para Home');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        getIt<NavigationService>().goToHomeAndRemoveAll();
+        context.read<NavigationCubit>().goToHomeAndRemoveAll();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     return BlocConsumer<EnderecoCubit, EnderecoState>(
       listenWhen: (previous, current) {
         return current is EnderecoError ||
@@ -84,7 +83,6 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
         } else if (state is EnderecoCriado) {
           debugPrint('✅ [EnderecosListView] Endereço criado: ID ${state.endereco.id}');
 
-          // ✅ Fecha e navega para Home automaticamente
           if (_deveNavegarAutomaticamente) {
             _navegarParaHome();
           }
@@ -99,7 +97,6 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
         } else if (state is EnderecoPrincipalDefinido) {
           debugPrint('✅ [EnderecosListView] Principal definido: ID ${state.id}');
 
-          // ✅ Selecionou endereço → navega para Home
           if (_deveNavegarAutomaticamente) {
             _navegarParaHome();
           }
@@ -143,11 +140,11 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
                 debugPrint('⬅️ [EnderecosListView] Voltar - temEndereco: $temEndereco, origem: ${widget.origem}');
 
                 if (_deveNavegarAutomaticamente) {
-                  Navigator.pop(context, temEndereco);
-                } else if (getIt<NavigationService>().canPop()) {
-                  getIt<NavigationService>().pop();
+                  navigationCubit.pop();
+                } else if (context.canPop()) {
+                  navigationCubit.pop();
                 } else {
-                  getIt<NavigationService>().goToHomeAndRemoveAll();
+                  navigationCubit.goToHomeAndRemoveAll();
                 }
               },
             ),
@@ -196,6 +193,7 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
 
           final endereco = enderecos[index];
           final isSelected = principal?.id == endereco.id;
+          final navigationCubit = context.read<NavigationCubit>();
 
           return GestureDetector(
             onTap: () {
@@ -203,7 +201,6 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
                 debugPrint('👆 [EnderecosListView] Selecionando endereço ID ${endereco.id}');
                 context.read<EnderecoCubit>().definirPrincipal(endereco.id!);
               } else {
-                // ✅ Já está selecionado → navega automaticamente
                 debugPrint('👆 [EnderecosListView] Endereço já selecionado → navegando');
                 if (_deveNavegarAutomaticamente) {
                   _navegarParaHome();
@@ -256,15 +253,8 @@ class _EnderecosListViewState extends State<EnderecosListView> with WidgetsBindi
                             onPressed: () {
                               final cubit = context.read<EnderecoCubit>();
                               debugPrint('✏️ [EnderecosListView] Editando endereço ID ${endereco.id}');
-                              getIt<NavigationService>().pushNamed(
-                                Routes.enderecoEdit,
-                                arguments: endereco,
-                              ).then((_) {
-                                debugPrint('🔄 [EnderecosListView] Voltou da edição, recarregando lista');
-                                if (mounted) {
-                                  cubit.carregarEnderecos(mostrarLoading: false);
-                                }
-                              });
+                              navigationCubit.goToEnderecoEdit(endereco);
+                              // A navegação já é feita pelo Cubit, e ao voltar recarregamos
                             },
                             tooltip: 'Editar',
                             constraints: const BoxConstraints(),

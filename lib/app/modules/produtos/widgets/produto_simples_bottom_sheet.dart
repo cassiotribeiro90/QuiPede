@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
@@ -57,7 +58,7 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
 
         if (state is CarrinhoLoaded && _isAdding) {
           setState(() => _isAdding = false);
-          Navigator.pop(context);
+          context.pop(); // ✅ Fecha o bottom sheet com go_router
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isEdicao
@@ -260,7 +261,8 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
 
   Future<void> _handleAcao() async {
     final authState = context.read<AuthCubit>().state;
-    
+
+    // ✅ Mantém Navigator.pop para retornar valor (obrigatório)
     if (authState is! AuthAuthenticated && authState is! AuthGuest) {
       Navigator.pop(context, {
         'requestLogin': true,
@@ -314,13 +316,13 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(dialogContext);
+              Navigator.pop(dialogContext); // ✅ Mantém (diálogo)
             },
             child: const Text('Manter carrinho'),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(dialogContext);
+              Navigator.pop(dialogContext); // ✅ Mantém (diálogo)
               setState(() => _isAdding = true);
               context.read<CarrinhoCubit>().limparEAdicionar(conflito);
             },

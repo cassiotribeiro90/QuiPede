@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../routes/app_routes.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 
@@ -57,13 +56,7 @@ class PerfilScreen extends StatelessWidget {
 
     if (confirmado == true && context.mounted) {
       await context.read<AuthCubit>().logout();
-      if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          Routes.onboarding,
-          (route) => false,
-        );
-      }
+      // O NavigationCubit cuidará do redirecionamento
     }
   }
 }

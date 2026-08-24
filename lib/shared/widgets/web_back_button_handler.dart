@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:go_router/go_router.dart';
 import '../../app/routes/app_routes.dart';
 
 /// Widget que captura o evento de voltar do navegador e redireciona para a navegação do app
@@ -38,11 +39,11 @@ class WebBackButtonHandler extends StatelessWidget {
 
   void _handleBack(BuildContext context) {
     // 🔥 VERIFICA SE PODE VOLTAR
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context);
+    if (context.canPop()) {
+      context.pop();
     } else {
       // 🔥 SE NÃO TIVER MAIS PÁGINAS NO HISTÓRICO, VOLTA PARA A HOME
-      Navigator.pushReplacementNamed(context, Routes.home);
+      context.go(Routes.home);
     }
   }
 }

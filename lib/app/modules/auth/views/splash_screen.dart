@@ -1,11 +1,9 @@
+// lib/app/modules/auth/views/splash_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../home/bloc/localizacao_cubit.dart';
-import '../../home/bloc/localizacao_state.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../bloc/auth_cubit.dart';
-import '../../../routes/app_routes.dart';
-import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
 import '../bloc/auth_state.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -28,35 +26,52 @@ class _SplashScreenState extends State<SplashScreen> {
     if (_bootstrapped) return;
     _bootstrapped = true;
 
-    final authCubit = context.read<AuthCubit>();
-    final localizacaoCubit = context.read<LocalizacaoCubit>();
+    debugPrint('🏠 [SplashScreen] _bootstrap iniciado');
 
-    // 1. Autentica
-    await authCubit.inicializarApp();
+    try {
+      final authCubit = context.read<AuthCubit>();
+      final navigationCubit = context.read<NavigationCubit>();
 
-    // ✅ Inicia listener de endereços
-    localizacaoCubit.iniciarListenerEnderecos();
+      // ✅ Aguarda a inicialização do Auth
+      await authCubit.inicializarApp();
 
-    // 2. Carrega localização (apenas se autenticado)
-    final authState = authCubit.state;
-    if (authState is AuthAuthenticated || authState is AuthGuest) {
-      await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
+      // ✅ Aguarda 500ms para garantir que o estado foi processado
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      final authState = authCubit.state;
+      debugPrint('🏠 [SplashScreen] AuthState após inicialização: ${authState.runtimeType}');
+
+      // ✅ Verifica se é autenticado
+      if (authState is AuthAuthenticated) {
+        debugPrint('🏠 [SplashScreen] ✅ Usuário autenticado! Navegando para Home');
+        navigationCubit.goToHomeDirectly();
+        return;
+      }
+
+      if (authState is AuthGuest) {
+        debugPrint('🏠 [SplashScreen] ✅ Usuário convidado! Navegando para Home');
+        navigationCubit.goToHomeDirectly();
+        return;
+      }
+
+      if (authState is AuthUnauthenticated) {
+        debugPrint('🏠 [SplashScreen] ❌ Usuário não autenticado! Navegando para Onboarding');
+        navigationCubit.goToOnboarding();
+        return;
+      }
+
+      // ✅ Fallback
+      debugPrint('🏠 [SplashScreen] ⚠️ Estado inesperado: ${authState.runtimeType}');
+      navigationCubit.goToOnboarding();
+
+    } catch (e) {
+      debugPrint('❌ [SplashScreen] Erro no bootstrap: $e');
+      if (mounted) {
+        context.read<NavigationCubit>().goToOnboarding();
+      }
     }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (!mounted) return;
-
-    // 3. Navega
-    final locState = localizacaoCubit.state;
-    final targetRoute = locState is LocalizacaoCarregada
-        ? Routes.home
-        : Routes.onboarding;
-
-    final currentRoute = ModalRoute.of(context)?.settings.name;
-    if (currentRoute == targetRoute) return;
-
-    getIt<NavigationService>().pushNamedAndRemoveAll(targetRoute);
   }
 
   @override
@@ -75,10 +90,15 @@ class _SplashScreenState extends State<SplashScreen> {
                 fontSize: 40,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                letterSpacing: 1.2,
               ),
             ),
             SizedBox(height: 48),
+            CircularProgressIndicator(color: Colors.white),
+            SizedBox(height: 16),
+            Text(
+              'Carregando...',
+              style: TextStyle(color: Colors.white70),
+            ),
           ],
         ),
       ),

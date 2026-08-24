@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/services/navigation_service.dart';
+import 'package:quipede/app/navigation/navigation_cubit.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
@@ -25,13 +26,10 @@ class EnderecoConfirmacaoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: getIt<EnderecoCubit>(),
-      child: _EnderecoConfirmacaoBody(
-        endereco: endereco,
-        latitude: latitude,
-        longitude: longitude,
-      ),
+    return _EnderecoConfirmacaoBody(
+      endereco: endereco,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 }
@@ -102,6 +100,8 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
 
   @override
   Widget build(BuildContext context) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     return BlocListener<EnderecoCubit, EnderecoState>(
       listenWhen: (previous, current) {
         return current is EnderecoCriado || current is EnderecoError || current is EnderecoLoading;
@@ -111,10 +111,10 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
           debugPrint('✅ [EnderecoConfirmacaoPage] Endereço criado: ID ${state.endereco.id}');
           setState(() => _isLoading = false);
 
-          // ✅ NAVEGA DIRETO PARA HOME
+          // ✅ NAVEGA DIRETO PARA HOME via NavigationCubit
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              getIt<NavigationService>().goToHomeAndRemoveAll();
+              navigationCubit.goToHomeAndRemoveAll();
             }
           });
         } else if (state is EnderecoError) {
@@ -136,8 +136,10 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.pop(context);
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/onboarding');
               }
             },
           ),

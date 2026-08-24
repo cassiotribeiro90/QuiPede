@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../di/dependencies.dart';
 import '../../../models/secao_model.dart';
 import '../bloc/loja_home_cubit.dart';
@@ -14,7 +15,7 @@ import '../../carrinho/widgets/carrinho_bottom_bar.dart';
 import '../../produtos/widgets/produto_simples_bottom_sheet.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
-import '../../../services/navigation_service.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 
 class LojaDetalhePage extends StatefulWidget {
@@ -30,7 +31,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
   late final LojaHomeCubit _cubit;
   final ScrollController _scrollController = ScrollController();
   late TabController _categoryTabController;
-  final Map<int, GlobalKey> _sectionKeys = {}; // chave = secao.id
+  final Map<int, GlobalKey> _sectionKeys = {};
   bool _isLoadingMore = false;
   bool _carrinhoJaCarregado = false;
   bool _isAutoScrolling = false;
@@ -164,7 +165,6 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
   }
 
   Future<void> _scrollToSectionById(int sectionId) async {
-    // 🔥 Aguarda reconstrução visual para garantir que as novas seções foram montadas
     await Future.delayed(const Duration(milliseconds: 100));
 
     final key = _sectionKeys[sectionId];
@@ -180,7 +180,6 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
       );
 
       if (_scrollController.hasClients) {
-        // Compensação: AppBar (56) + Header Categorias (56) = 112
         const double offsetCompensacao = 112.0;
         final currentOffset = _scrollController.offset;
         final targetOffset = (currentOffset - offsetCompensacao).clamp(0.0, _scrollController.position.maxScrollExtent);
@@ -222,7 +221,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
 
   Widget _buildCategoryHeader(List<SecaoModel> secoes) {
     return Container(
-      height: 52, // Aumentado levemente para melhor respiro
+      height: 52,
       decoration: BoxDecoration(
         color: context.surfaceColor,
         border: Border(
@@ -236,8 +235,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: secoes.length,
-        // ✅ Força a rolagem ser sempre detectada
-        physics: const BouncingScrollPhysics(), 
+        physics: const BouncingScrollPhysics(),
         separatorBuilder: (context, index) => VerticalDivider(
           indent: 16,
           endIndent: 16,
@@ -258,7 +256,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
               });
             },
             child: Container(
-              color: Colors.transparent, // Área de toque
+              color: Colors.transparent,
               alignment: Alignment.center,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -270,7 +268,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
                           ? context.primaryColor
                           : context.textPrimary.withValues(alpha: 0.7),
                       fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      isSelected ? FontWeight.w700 : FontWeight.w500,
                       fontSize: 14,
                     ),
                   ),
@@ -309,7 +307,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
           duration: Duration(seconds: 3),
         ),
       );
-      getIt<NavigationService>().goToOnboarding();
+      context.read<NavigationCubit>().goToOnboarding();
     }
   }
 
@@ -326,7 +324,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
     if (carrinhoState is CarrinhoLoaded) {
       try {
         final itemExistente = carrinhoState.itens.firstWhere(
-          (item) => item.produtoId == produto.id,
+              (item) => item.produtoId == produto.id,
         );
         itemId = itemExistente.id;
         initialQuantidade = itemExistente.quantidade;
@@ -396,7 +394,10 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
             return ResponsivePageScaffold(
               backgroundColor: context.backgroundColor,
               appBar: AppBar(
-                leading: BackButton(color: context.textPrimary),
+                leading: BackButton(
+                  color: context.textPrimary,
+                  onPressed: () => context.pop(),
+                ),
                 title: Text(
                   state.loja?.nome ?? 'Carregando...',
                   style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
@@ -404,7 +405,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
                 backgroundColor: context.surfaceColor,
                 elevation: 0,
               ),
-              bottomNavigationBar: _buildBottomBar(state),
+              bottomNavigationBar: _buildBottomBar(context, state),
               body: Column(
                 children: [
                   if (state.secoes.isNotEmpty) _buildCategoryHeader(state.secoes),
@@ -438,7 +439,9 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
     );
   }
 
-  Widget? _buildBottomBar(LojaHomeState state) {
+  Widget? _buildBottomBar(BuildContext context, LojaHomeState state) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     return BlocBuilder<CarrinhoCubit, CarrinhoState>(
       builder: (context, carrinhoState) {
         final isLoading = carrinhoState is CarrinhoLoaded &&
@@ -450,7 +453,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
           return CarrinhoBottomBar(
             lojaNome: lojaNome,
             isLoading: isLoading,
-            onTap: () => getIt<NavigationService>().goToCarrinho(),
+            onTap: () => navigationCubit.goToCarrinho(),
           );
         }
         return const SizedBox(height: 0, width: 0);
@@ -459,6 +462,8 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
   }
 
   Widget _buildBody(BuildContext context, LojaHomeState state) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     if (state is LojaHomeLoading && state.secoes.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../home/views/widgets/onboarding_option_card.dart';
-import '../../home/views/cep_input_page.dart';
-import '../../home/views/busca_endereco_page.dart';
+import '../../../routes/app_routes.dart';
 import '../bloc/endereco_cubit.dart';
 
 class EnderecoActionButtons extends StatelessWidget {
@@ -33,12 +33,7 @@ class EnderecoActionButtons extends StatelessWidget {
   }
 
   void _navigateToCepPage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const CepInputPage(),
-      ),
-    ).then((result) {
+    context.push(Routes.cepInput).then((result) {
       // 🔥 QUANDO VOLTAR DA TELA, RECARREGA A LISTA DE ENDEREÇOS SE O RESULTADO FOR TRUE
       if (result == true && context.mounted) {
         context.read<EnderecoCubit>().carregarEnderecos();
@@ -47,12 +42,7 @@ class EnderecoActionButtons extends StatelessWidget {
   }
 
   void _navigateToBuscaEnderecoPage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const BuscaEnderecoPage(),
-      ),
-    ).then((result) {
+    context.push(Routes.buscaEndereco).then((result) {
       // 🔥 QUANDO VOLTAR DA TELA, RECARREGA A LISTA DE ENDEREÇOS SE O RESULTADO FOR TRUE
       if (result == true && context.mounted) {
         context.read<EnderecoCubit>().carregarEnderecos();

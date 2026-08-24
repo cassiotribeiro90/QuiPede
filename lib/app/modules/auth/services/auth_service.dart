@@ -1,3 +1,6 @@
+// lib/app/modules/auth/services/auth_service.dart
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../../../shared/api/api_client.dart';
 import '../../../../shared/services/token_service.dart';
@@ -8,6 +11,91 @@ class AuthService {
   final DeviceService _deviceService = DeviceService();
 
   AuthService(this._apiClient);
+
+  /// Enviar telefone para OTP
+  Future<void> enviarTelefone(String phone) async {
+    debugPrint('[AUTH_SERVICE] ========================================');
+    debugPrint('[AUTH_SERVICE] 📤 enviarTelefone chamado');
+    debugPrint('[AUTH_SERVICE] 📞 Phone recebido: "$phone"');
+    debugPrint('[AUTH_SERVICE] 📞 Phone length: ${phone.length}');
+
+    final deviceId = await _deviceService.getDeviceId();
+    debugPrint('[AUTH_SERVICE] 📱 Device ID: $deviceId');
+
+    // ✅ Backend espera 'phone' e 'device_id' no body
+    final data = {
+      'phone': phone,           // ← CAMPO CORRETO: 'phone'
+    };
+
+    // O device_id vai no HEADER X-Device-Id (via ApiClient)
+    // Mas também pode ser enviado no body se necessário
+
+    debugPrint('[AUTH_SERVICE] 📤 Data: $data');
+    debugPrint('[AUTH_SERVICE] 📤 URL: /app/auth/phone');
+
+    try {
+      final response = await _apiClient.post(
+        '/app/auth/phone',
+        data: data,
+        requiresAuth: false,
+      );
+      debugPrint('[AUTH_SERVICE] ✅ Resposta: ${response.data}');
+      debugPrint('[AUTH_SERVICE] ========================================');
+      return;
+    } catch (e) {
+      debugPrint('[AUTH_SERVICE] ❌ Erro ao enviar telefone: $e');
+      if (e is DioException) {
+        debugPrint('[AUTH_SERVICE] Response: ${e.response?.data}');
+      }
+      debugPrint('[AUTH_SERVICE] ========================================');
+      rethrow;
+    }
+  }
+
+  /// Verificar OTP
+  Future<Map<String, dynamic>> verificarOTP(String phone, String code, {String? deviceToken}) async {
+    debugPrint('[AUTH_SERVICE] 🔍 verificarOTP chamado');
+    debugPrint('[AUTH_SERVICE] 📞 Phone: $phone');
+    debugPrint('[AUTH_SERVICE] 🔢 Code: $code');
+
+    final deviceId = await _deviceService.getDeviceId();
+    debugPrint('[AUTH_SERVICE] 📱 Device ID: $deviceId');
+
+    // ✅ Backend espera 'phone' e 'code' no body
+    final data = <String, dynamic>{
+      'phone': phone,           // ← CAMPO CORRETO: 'phone'
+      'code': code,             // ← CAMPO CORRETO: 'code'
+    };
+
+    // O device_id vai no HEADER X-Device-Id (via ApiClient)
+    // Também aceita via body se necessário
+    if (deviceId != null) {
+      data['device_id'] = deviceId;
+    }
+
+    if (deviceToken != null && deviceToken.isNotEmpty) {
+      data['device_token'] = deviceToken;
+    }
+
+    debugPrint('[AUTH_SERVICE] 📤 Data: $data');
+    debugPrint('[AUTH_SERVICE] 📤 URL: /app/auth/verify-otp');
+
+    try {
+      final response = await _apiClient.post(
+        '/app/auth/verify-otp',
+        data: data,
+        requiresAuth: false,
+      );
+      debugPrint('[AUTH_SERVICE] ✅ Resposta: ${response.data}');
+      return response.data;
+    } catch (e) {
+      debugPrint('[AUTH_SERVICE] ❌ Erro no verificarOTP: $e');
+      if (e is DioException) {
+        debugPrint('[AUTH_SERVICE] Response: ${e.response?.data}');
+      }
+      rethrow;
+    }
+  }
 
   /// Login com email e senha
   Future<Map<String, dynamic>> login(String email, String password, {String? deviceToken}) async {
@@ -28,54 +116,6 @@ class AuthService {
       );
       return response.data;
     } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Enviar telefone para OTP
-  Future<void> enviarTelefone(String phone) async {
-    final deviceId = await _deviceService.getDeviceId();
-    await _apiClient.post(
-      '/app/auth/phone',
-      data: {
-        'phone': phone,
-        'device_id': deviceId,
-      },
-      requiresAuth: false,
-    );
-  }
-
-  /// Verificar OTP
-  Future<Map<String, dynamic>> verificarOTP(String phone, String code, {String? deviceToken}) async {
-    debugPrint('[AUTH_SERVICE] 🔍 verificarOTP chamado');
-    debugPrint('[AUTH_SERVICE] 📞 Phone: $phone');
-    debugPrint('[AUTH_SERVICE] 🔢 Code: $code');
-    
-    final deviceId = await _deviceService.getDeviceId();
-    debugPrint('[AUTH_SERVICE] 📱 Device ID: $deviceId');
-    
-    final data = {
-      'phone': phone,
-      'code': code,
-      'device_id': deviceId,
-    };
-    if (deviceToken != null) {
-      data['device_token'] = deviceToken;
-    }
-    
-    debugPrint('[AUTH_SERVICE] 📤 Enviando POST para /app/auth/verify-otp');
-    debugPrint('[AUTH_SERVICE] 📤 Data: $data');
-    
-    try {
-      final response = await _apiClient.post(
-        '/app/auth/verify-otp',
-        data: data,
-        requiresAuth: false,
-      );
-      debugPrint('[AUTH_SERVICE] ✅ Resposta recebida: ${response.data}');
-      return response.data;
-    } catch (e) {
-      debugPrint('[AUTH_SERVICE] ❌ Erro no verificarOTP: $e');
       rethrow;
     }
   }
@@ -188,7 +228,7 @@ class AuthService {
       'app/auth/confirm-update-telefone',
       data: {
         'telefone': telefone,
-        'code': codigo,
+        'code': codigo,  // ← Backend espera 'code' neste endpoint
       },
       requiresAuth: true,
     );

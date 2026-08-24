@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/modules/home/views/onboarding_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../../routes/app_routes.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import 'home_screen.dart';
@@ -32,16 +34,8 @@ class _BottomNavWrapperState extends State<BottomNavWrapper> {
     // Índice 3 é Perfil/Entrar
     if (index == 3 && !isLogged) {
       debugPrint('🚀 Navegando para login');
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
-            value: context.read<AuthCubit>(),
-            child: const OnboardingPage(),
-          ),
-        ),
-      ).then((_) {
-        setState(() {});
+      context.push(Routes.onboarding).then((_) {
+        if (mounted) setState(() {});
       });
       return;
     }

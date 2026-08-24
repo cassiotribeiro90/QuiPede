@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../bloc/carrinho_cubit.dart';
 import '../../pedido/bloc/pedido_cubit.dart';
 import '../widgets/quantity_selector.dart';
@@ -10,9 +12,6 @@ import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../../../../shared/widgets/endereco_selecionado_widget.dart';
 import '../../../widgets/app_scaffold.dart';
-import '../../../routes/app_routes.dart';
-import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../../core/theme/input_styles.dart';
@@ -62,6 +61,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   @override
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFFF57C00);
+    final navigationCubit = context.read<NavigationCubit>();
 
     return AppScaffold(
       appBar: AppBar(
@@ -71,7 +71,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => getIt<NavigationService>().pop(),
+          onPressed: () => navigationCubit.pop(),
         ),
         actions: [
           BlocBuilder<CarrinhoCubit, CarrinhoState>(
@@ -114,10 +114,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
               listener: (context, state) {
                 if (state is PedidoCriado) {
                   context.read<CarrinhoCubit>().limparCarrinho();
-                  getIt<NavigationService>().pushReplacementNamed(
-                    Routes.pedidoDetalhe,
-                    arguments: state.pedidoId,
-                  );
+                  context.push('/pedidos/detalhe/${state.pedidoId}');
                 } else if (state is PedidoError) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(state.message), backgroundColor: Colors.red),
@@ -146,7 +143,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
-                          onPressed: () => getIt<NavigationService>().pop(),
+                          onPressed: () => navigationCubit.pop(),
                           child: const Text('Continuar Comprando'),
                         ),
                       ],
@@ -482,6 +479,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
     final bool isBlocked = state.isDebouncing || state.isRequesting;
     final bool temFrete = state.taxaEntrega != null;
     final valorTotal = state.total ?? state.subtotal;
+    final navigationCubit = context.read<NavigationCubit>();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -592,6 +590,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
   }
 
   Future<void> _finalizarPedido(BuildContext context, CarrinhoLoaded state) async {
+    final navigationCubit = context.read<NavigationCubit>();
     final authCubit = context.read<AuthCubit>();
     final authState = authCubit.state;
     final String? status = authState.user?.status;
@@ -600,19 +599,19 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
 
     if (status == 'convidado') {
       debugPrint('📱 [CarrinhoPage] Usuário convidado → phoneInput');
-      getIt<NavigationService>().goToPhoneInput(redirectToCheckout: true);
+      navigationCubit.goToPhoneInput(redirectToCheckout: true);
       return;
     }
 
     if (status == 'pendente') {
       debugPrint('📝 [CarrinhoPage] Usuário pendente → completarPerfil');
-      getIt<NavigationService>().goToCompletarPerfil(redirectToCheckout: true);
+      navigationCubit.goToCompletarPerfil(redirectToCheckout: true);
       return;
     }
 
     if (status != 'ativo') {
       debugPrint('🚀 [CarrinhoPage] Não autenticado → onboarding');
-      getIt<NavigationService>().goToOnboarding();
+      navigationCubit.goToOnboarding();
       return;
     }
 

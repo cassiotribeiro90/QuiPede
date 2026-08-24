@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // 👈 Adicionado
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_decoration.dart';
@@ -75,7 +76,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(), // 🔥 go_router
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -203,7 +204,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  /// 🔥 Chip unificado, compacto e padronizado
   Widget _buildChip({
     required String label,
     String? icon,
@@ -269,7 +269,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   _searchController.clear();
                 });
                 widget.onClear();
-                Navigator.pop(context);
+                context.pop(); // 🔥 go_router
               },
               style: AppDecoration.clearButton,
               child: Text(
@@ -289,7 +289,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   _tempCategoria,
                   _tempOrdenacao,
                 );
-                Navigator.pop(context);
+                context.pop(); // 🔥 go_router
               },
               style: AppDecoration.filterButton,
               child: Text(

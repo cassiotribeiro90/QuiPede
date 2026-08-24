@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:quipede/app/di/dependencies.dart';
-import 'package:quipede/app/services/navigation_service.dart';
+import 'package:go_router/go_router.dart';
+import '../../../di/dependencies.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../bloc/localizacao_cubit.dart';
@@ -84,13 +84,12 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
       listener: (context, state) {
         if (state is EnderecoCriado) {
           final locCubit = context.read<LocalizacaoCubit>();
-          
+
           if (!context.mounted) return;
           final messenger = ScaffoldMessenger.of(context);
-          
+
           setState(() => _isLoading = false);
 
-          // ✅ Sincroniza o endereço completo (incluindo ID) com o LocalizacaoCubit
           locCubit.definirEnderecoCompleto(state.endereco, origem: 'manual').then((_) {
             messenger.showSnackBar(
               const SnackBar(
@@ -98,8 +97,7 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
                 backgroundColor: Colors.green,
               ),
             );
-            // ✅ APENAS fecha. A tela pai (OnboardingPage ou outra) cuidará da navegação para Home
-            Navigator.of(context).pop(true);
+            context.pop(true); // go_router com valor
           });
         }
         if (state is EnderecoError) {
@@ -125,7 +123,7 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => getIt<NavigationService>().pop(),
+            onPressed: () => context.pop(), // go_router
           ),
         ),
         backgroundColor: Colors.white,
@@ -204,25 +202,25 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                           : const Text(
-                              'Confirmar Endereço',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                        'Confirmar Endereço',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextButton(
-                    onPressed: () => getIt<NavigationService>().pop(),
+                    onPressed: () => context.pop(), // go_router
                     child: const Text('Tentar outra forma'),
                   ),
                 ],

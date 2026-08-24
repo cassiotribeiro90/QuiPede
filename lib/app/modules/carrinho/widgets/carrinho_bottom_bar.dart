@@ -4,7 +4,7 @@ import '../bloc/carrinho_cubit.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
 import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../../core/constants/navigation_origins.dart';
 
@@ -25,24 +25,7 @@ class CarrinhoBottomBar extends StatelessWidget {
   }
 
   void _abrirCarrinho(BuildContext context) {
-    final authState = context.read<AuthCubit>().state;
-    final String? status = authState.user?.status;
-
-    if (status == 'ativo') {
-      getIt<NavigationService>().goToCarrinho(origem: NavigationOrigins.lojaHome);
-    } else if (status == 'pendente') {
-      getIt<NavigationService>().goToCompletarPerfil(
-        redirectToCheckout: true,
-        origem: NavigationOrigins.carrinho,
-      );
-    } else if (status == 'convidado') {
-      getIt<NavigationService>().goToPhoneInput(
-        redirectToCheckout: true,
-        origem: NavigationOrigins.carrinho,
-      );
-    } else {
-      getIt<NavigationService>().goToOnboarding(origem: NavigationOrigins.lojaHome);
-    }
+    context.read<NavigationCubit>().navigateToCart(origem: lojaNome ?? NavigationOrigins.lojaHome);
   }
 
   @override
@@ -184,9 +167,9 @@ class CarrinhoBottomBar extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Icon(
-                            Icons.arrow_forward_ios,
-                            size: 14,
-                            color: context.primaryColor
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: context.primaryColor,
                         ),
                       ],
                     ),

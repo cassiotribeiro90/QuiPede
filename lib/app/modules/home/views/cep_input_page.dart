@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
-import 'package:quipede/app/services/navigation_service.dart';
+import 'package:quipede/app/routes/app_routes.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
-import 'endereco_confirmacao_page.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
 
@@ -15,10 +15,7 @@ class CepInputPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: getIt<EnderecoCubit>(),
-      child: const _CepInputBody(),
-    );
+    return const _CepInputBody();
   }
 }
 
@@ -83,21 +80,17 @@ class _CepInputBodyState extends State<_CepInputBody> {
             'uf': state.dadosCep['uf'] ?? '',
             'cep': state.dadosCep['cep'] ?? '',
           };
-          
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => EnderecoConfirmacaoPage(
-                endereco: endereco,
-                latitude: 0.0,
-                longitude: 0.0,
-              ),
-            ),
-          ).then((result) {
-            if (result == true && mounted) {
-              Navigator.pop(context, true);
-            }
-          });
+
+          // 🔥 Usa go em vez de push para substituir a pilha
+          // Isso evita que o NavigationCubit faça pop para onboarding
+          context.go(
+            Routes.enderecoConfirmacao,
+            extra: {
+              'endereco': endereco,
+              'latitude': 0.0,
+              'longitude': 0.0,
+            },
+          );
         }
         if (state is EnderecoError) {
           setState(() => _isLoading = false);
@@ -117,7 +110,13 @@ class _CepInputBodyState extends State<_CepInputBody> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => getIt<NavigationService>().pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(Routes.onboarding);
+              }
+            },
           ),
         ),
         backgroundColor: Colors.white,

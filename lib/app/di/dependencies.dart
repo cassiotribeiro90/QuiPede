@@ -23,7 +23,7 @@ import '../modules/pedido/bloc/pedido_cubit.dart';
 import '../modules/enderecos/bloc/endereco_cubit.dart';
 import '../modules/enderecos/repositories/endereco_repository.dart';
 import '../modules/enderecos/services/endereco_service.dart';
-import 'package:quipede/app/services/navigation_service.dart';
+import 'package:quipede/app/navigation/navigation_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -38,9 +38,6 @@ Future<void> setupDependencies() async {
   // ✅ 2. Navigator Key
   getIt.registerSingleton<GlobalKey<NavigatorState>>(ApiClient.navigatorKey);
 
-  getIt.registerLazySingleton<NavigationService>(
-    () => NavigationService(getIt<GlobalKey<NavigatorState>>()),
-  );
 
   // ✅ 3. ApiClient (baixo nível)
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
@@ -77,6 +74,14 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  // 🔥 9.5 NavigationCubit
+  getIt.registerSingleton<NavigationCubit>(
+    NavigationCubit(
+      authCubit: getIt<AuthCubit>(),
+      localizacaoCubit: getIt<LocalizacaoCubit>(),
+    ),
+  );
+
   // ✅ 10. CarrinhoCubit
   getIt.registerSingleton<CarrinhoCubit>(
     CarrinhoCubit(
@@ -93,7 +98,7 @@ Future<void> setupDependencies() async {
   getIt.registerFactory(() => AddressCubit());
   getIt.registerFactory(() => HomeCubit());
 
-  getIt.registerFactory(() => LojasCubit(
+  getIt.registerLazySingleton(() => LojasCubit(
     getIt<LojaRepository>(),
     getIt<LocalizacaoCubit>(),
   ));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
 import '../../../routes/app_routes.dart';
@@ -24,7 +25,7 @@ class EnderecoBar extends StatelessWidget {
 
         return GestureDetector(
           onTap: () {
-            Navigator.pushNamed(context, Routes.onboarding);
+            context.push(Routes.onboarding);
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

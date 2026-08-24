@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quipede/app/modules/enderecos/bloc/endereco_cubit.dart';
 import 'package:quipede/app/modules/enderecos/bloc/endereco_state.dart';
 import 'package:quipede/app/modules/enderecos/models/endereco_model.dart';
@@ -12,9 +13,9 @@ import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/core/utils/location_permission_service.dart';
 import 'package:quipede/app/core/utils/estados_brasil.dart';
+import 'package:quipede/app/routes/app_routes.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import 'widgets/endereco_sugestao_tile.dart';
-import 'endereco_confirmacao_page.dart';
 
 class BuscaEnderecoPage extends StatefulWidget {
   const BuscaEnderecoPage({super.key});
@@ -149,7 +150,13 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(Routes.onboarding);
+            }
+          },
         ),
       ),
       backgroundColor: Colors.white,
@@ -227,29 +234,22 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
         return EnderecoSugestaoTile(
           endereco: item,
           onTap: () async {
-            // ✅ SEMPRE abre confirmação para preencher número/complemento
-            final navigator = Navigator.of(context);
-            final result = await navigator.push<bool>(
-              MaterialPageRoute(
-                builder: (_) => EnderecoConfirmacaoPage(
-                  endereco: {
-                    'logradouro': item.logradouro,
-                    'bairro': item.bairro ?? '',
-                    'cidade': item.cidade ?? '',
-                    'uf': converterEstadoParaSigla(item.uf ?? ''),
-                    'cep': item.cep ?? '',
-                  },
-                  latitude: item.latitude ?? 0,
-                  longitude: item.longitude ?? 0,
-                ),
-              ),
+            // 🔥 Usa go em vez de push para substituir a pilha
+            // Isso evita que o NavigationCubit faça pop para onboarding
+            context.go(
+              Routes.enderecoConfirmacao,
+              extra: {
+                'endereco': {
+                  'logradouro': item.logradouro,
+                  'bairro': item.bairro ?? '',
+                  'cidade': item.cidade ?? '',
+                  'uf': converterEstadoParaSigla(item.uf ?? ''),
+                  'cep': item.cep ?? '',
+                },
+                'latitude': item.latitude ?? 0,
+                'longitude': item.longitude ?? 0,
+              },
             );
-
-            if (result == true && mounted) {
-              if (navigator.canPop()) {
-                navigator.pop(true);
-              }
-            }
           },
         );
       },

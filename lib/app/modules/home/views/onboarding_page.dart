@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quipede/app/di/dependencies.dart';
 import 'package:quipede/app/core/theme/app_text_styles.dart';
-import 'package:quipede/app/services/navigation_service.dart';
+import 'package:quipede/app/routes/app_routes.dart';
+import 'package:quipede/app/navigation/navigation_cubit.dart';
 import 'busca_endereco_page.dart';
 import 'cep_input_page.dart';
 import 'widgets/onboarding_option_card.dart';
@@ -19,27 +21,21 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
+  // ✅ Navegação com go_router usando context.go (substitui a pilha)
   void _irParaCepPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: getIt<EnderecoCubit>(),
-          child: const CepInputPage(),
-        ),
-      ),
-    );
+    context.go(Routes.cepInput);
   }
 
   void _irParaBuscaEndereco() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: getIt<EnderecoCubit>(),
-          child: const BuscaEnderecoPage(),
-        ),
-      ),
+    context.go(Routes.buscaEndereco);
+  }
+
+  void _irParaPhoneInput() {
+    context.go(
+      Routes.phoneInput,
+      extra: {
+        'origem': widget.origem ?? NavigationOrigins.onboarding,
+      },
     );
   }
 
@@ -47,12 +43,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFFF57C00);
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: getIt<EnderecoCubit>()),
-      ],
-      child: _buildContent(context, primaryColor),
-    );
+    return _buildContent(context, primaryColor);
   }
 
   Widget _buildContent(BuildContext context, Color primaryColor) {
@@ -72,7 +63,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     color: primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.delivery_dining_rounded, size: 100, color: primaryColor),
+                  child: Icon(
+                    Icons.delivery_dining_rounded,
+                    size: 100,
+                    color: primaryColor,
+                  ),
                 ),
               ),
               const SizedBox(height: 40),
@@ -107,9 +102,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 icon: Icons.person_outline_rounded,
                 title: 'Já tenho uma conta',
                 subtitle: 'Entrar com seu número de telefone',
-                onTap: () => getIt<NavigationService>().goToPhoneInput(
-                  origem: widget.origem ?? NavigationOrigins.onboarding,
-                ),
+                onTap: _irParaPhoneInput,
               ),
               const SizedBox(height: 40),
             ],

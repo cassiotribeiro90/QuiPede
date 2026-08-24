@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../di/dependencies.dart';
-import '../../../services/navigation_service.dart';
+import '../../../navigation/navigation_cubit.dart';
 import '../../pedido/bloc/pedido_cubit.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../pedido/models/pedido_detalhe_model.dart';
 
 class PedidosView extends StatefulWidget {
   const PedidosView({super.key});
@@ -30,6 +32,8 @@ class _PedidosViewState extends State<PedidosView> {
 
   @override
   Widget build(BuildContext context) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     return BlocBuilder<PedidoCubit, PedidoState>(
       builder: (context, state) {
         return ResponsivePageScaffold(
@@ -40,13 +44,7 @@ class _PedidosViewState extends State<PedidosView> {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (getIt<NavigationService>().canPop()) {
-                  getIt<NavigationService>().pop();
-                } else {
-                  getIt<NavigationService>().goToHomeAndRemoveAll();
-                }
-              },
+              onPressed: () => navigationCubit.goToHomeAndRemoveAll(),
             ),
           ),
           backgroundColor: context.backgroundColor,
@@ -57,6 +55,8 @@ class _PedidosViewState extends State<PedidosView> {
   }
 
   Widget _buildBody(BuildContext context, PedidoState state) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     if (state is PedidoLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -80,57 +80,67 @@ class _PedidosViewState extends State<PedidosView> {
     }
 
     if (state is PedidoListaCarregada) {
-      if (state.pedidos.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.receipt_long_outlined, size: 64, color: context.textHint),
-              const SizedBox(height: 16),
-              Text('Você ainda não fez nenhum pedido', style: context.bodyLarge),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => getIt<NavigationService>().goToHomeAndRemoveAll(),
-                child: const Text('Ir às compras'),
-              ),
-            ],
-          ),
-        );
-      }
+      return _buildLista(context, state.pedidos);
+    }
 
-      return Column(
-        children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => context.read<PedidoCubit>().carregarPedidos(),
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: state.pedidos.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final pedido = state.pedidos[index];
-                  return _buildPedidoItem(context, pedido);
-                },
-              ),
-            ),
-          ),
-        ],
-      );
+    if (state is PedidoDetalheCarregado) {
+      return _buildLista(context, state.pedidos);
     }
 
     return const SizedBox.shrink();
   }
 
-  // 🔥 ITEM DA LISTA COM LOGO E PREÇO CENTRALIZADOS
+  Widget _buildLista(BuildContext context, List<PedidoDetalheModel> pedidos) {
+    final navigationCubit = context.read<NavigationCubit>();
+
+    if (pedidos.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.receipt_long_outlined, size: 64, color: context.textHint),
+            const SizedBox(height: 16),
+            Text('Você ainda não fez nenhum pedido', style: context.bodyLarge),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => navigationCubit.goToHomeAndRemoveAll(),
+              child: const Text('Ir às compras'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () => context.read<PedidoCubit>().carregarPedidos(),
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: pedidos.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final pedido = pedidos[index];
+                return _buildPedidoItem(context, pedido);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPedidoItem(BuildContext context, dynamic pedido) {
+    final navigationCubit = context.read<NavigationCubit>();
+
     return InkWell(
-      onTap: () => getIt<NavigationService>().goToPedidoDetalhe(pedido.id),
+      onTap: () => navigationCubit.goToPedidoDetalhe(pedido.id),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center, // 🔥 CENTRALIZA VERTICALMENTE
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 🔥 LOGO DA LOJA
             Container(
               width: 56,
               height: 56,
@@ -150,7 +160,6 @@ class _PedidosViewState extends State<PedidosView> {
             ),
             const SizedBox(width: 14),
 
-            // 🔥 INFORMAÇÕES DO PEDIDO
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +174,6 @@ class _PedidosViewState extends State<PedidosView> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  // ID e data
                   Row(
                     children: [
                       Text('Pedido #${pedido.id}', style: context.bodySmall),
@@ -179,7 +187,6 @@ class _PedidosViewState extends State<PedidosView> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Status e itens
                   Row(
                     children: [
                       Container(
@@ -230,7 +237,6 @@ class _PedidosViewState extends State<PedidosView> {
 
             const SizedBox(width: 8),
 
-            // 🔥 TOTAL (CENTRALIZADO VERTICALMENTE)
             Text(
               _formatarMoeda(pedido.total),
               style: context.titleMedium.copyWith(

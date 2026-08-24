@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../routes/app_routes.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../../home/bloc/localizacao_state.dart';
@@ -19,7 +20,7 @@ class CadastroPage extends StatelessWidget {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
-          Navigator.pushNamedAndRemoveUntil(context, Routes.home, (route) => false);
+          debugPrint('✅ [CadastroPage] Autenticado. NavigationCubit cuidará do redirecionamento.');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
@@ -54,7 +55,7 @@ class CadastroPage extends StatelessWidget {
 
                   EnderecoSelecionadoWidget(
                     endereco: isEnderecoDefinido ? locState.endereco : null,
-                    onTap: () => Navigator.pushNamed(context, Routes.onboarding),
+                    onTap: () => context.push(Routes.onboarding),
                   ),
 
                   // 🔥 Mensagem de aviso "Defina um endereço para continuar"

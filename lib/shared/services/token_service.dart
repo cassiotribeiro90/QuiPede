@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
@@ -30,7 +32,7 @@ class TokenService {
     int expiresIn = 7200,
     bool isGuest = false,
   }) async {
-    debugPrint('🔐 [TokenService] saveTokens chamado. accessToken: ${accessToken.substring(0, 5)}..., isGuest: $isGuest');
+    developer.log('💾 [TokenService] Salvando tokens... isGuest: $isGuest', name: 'TOKEN');
     if (isGuest) {
       await _prefs.setString(guestTokenKey, accessToken);
       await _prefs.remove(accessTokenKey);
@@ -48,36 +50,51 @@ class TokenService {
     await _prefs.setBool(isGuestKey, isGuest);
     final expiresAt = DateTime.now().millisecondsSinceEpoch + (expiresIn * 1000);
     await _prefs.setString(tokenExpiresKey, expiresAt.toString());
+    developer.log('✅ [TokenService] Tokens salvos', name: 'TOKEN');
   }
 
   Future<void> saveUser(Map<String, dynamic> userJson) async {
-    debugPrint('💾 [TokenService] saveUser chamado com: $userJson');
+    developer.log('💾 [TokenService] saveUser chamado com: $userJson', name: 'TOKEN');
     await _prefs.setString(userKey, jsonEncode(userJson));
-    debugPrint('💾 [TokenService] saveUser: $userJson');
+    developer.log('✅ [TokenService] Usuário salvo', name: 'TOKEN');
   }
 
   Map<String, dynamic>? getUser() {
     final data = _prefs.getString(userKey);
-    debugPrint('💾 [TokenService] getUser retornou: $data');
+    developer.log('💾 [TokenService] getUser retornou: ${data != null ? "SIM" : "NÃO"}', name: 'TOKEN');
     if (data == null || data.isEmpty) return null;
-    debugPrint('💾 [TokenService] getUser: $data');
     try {
       return jsonDecode(data) as Map<String, dynamic>;
     } catch (e) {
+      developer.log('❌ [TokenService] Erro ao decodificar user: $e', name: 'TOKEN');
       return null;
     }
   }
 
   /// Retorna o token disponível, priorizando o de usuário autenticado
   String? getAccessToken() {
-    final token = _prefs.getString(accessTokenKey) ?? _prefs.getString(guestTokenKey);
-    final isGuest = _prefs.getBool(isGuestKey) ?? false;
-    final tokenResumo = (token != null && token.length > 5) ? token.substring(0, 5) : (token ?? "null");
-    debugPrint('🔐 [TokenService] getAccessToken: $tokenResumo... (isGuest: $isGuest)');
-    return token;
+    try {
+      final token = _prefs.getString(accessTokenKey) ?? _prefs.getString(guestTokenKey);
+      final isGuest = _prefs.getBool(isGuestKey) ?? false;
+      developer.log('🔑 [TokenService] getAccessToken: ${token != null ? "SIM (${token.substring(0, min(10, token.length))}...)" : "NÃO"} (isGuest: $isGuest)', name: 'TOKEN');
+      return token;
+    } catch (e) {
+      developer.log('❌ [TokenService] Erro ao ler token: $e', name: 'TOKEN');
+      return null;
+    }
   }
 
-  String? getRefreshToken() => _prefs.getString(refreshTokenKey);
+  /// Retorna o token disponível, priorizando o de usuário autenticado
+  String? getRefreshToken() {
+    try {
+      final token = _prefs.getString(refreshTokenKey);
+      developer.log('🔑 [TokenService] getRefreshToken: ${token != null ? "SIM (${token.substring(0, min(10, token.length))}...)" : "NÃO"}', name: 'TOKEN');
+      return token;
+    } catch (e) {
+      developer.log('❌ [TokenService] Erro ao ler refresh token: $e', name: 'TOKEN');
+      return null;
+    }
+  }
   
   bool isGuest() => _prefs.getBool(isGuestKey) ?? (_prefs.getString(guestTokenKey) != null);
 
@@ -104,13 +121,21 @@ class TokenService {
   /// Alias para verificar se há um token ativo e não expirado
   bool isLoggedIn() => hasToken() && !isTokenExpired();
 
+  Future<void> saveAccessToken(String token) async {
+    developer.log('💾 [TokenService] Salvando access token...', name: 'TOKEN');
+    await _prefs.setString(accessTokenKey, token);
+    developer.log('✅ [TokenService] Access token salvo', name: 'TOKEN');
+  }
+
   Future<void> clearTokens() async {
+    developer.log('🔐 [TokenService] 🧹 Limpando todos os tokens...', name: 'TOKEN');
     await _prefs.remove(accessTokenKey);
     await _prefs.remove(guestTokenKey);
     await _prefs.remove(userKey);
     await _prefs.remove(refreshTokenKey);
     await _prefs.remove(tokenExpiresKey);
     await _prefs.remove(isGuestKey);
+    developer.log('🔐 [TokenService] ✅ Todos os tokens removidos', name: 'TOKEN');
   }
 
   Future<void> saveBaseUrl(String url) async {

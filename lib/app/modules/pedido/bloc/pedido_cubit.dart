@@ -24,9 +24,10 @@ class PedidoCriado extends PedidoState {
 
 class PedidoDetalheCarregado extends PedidoState {
   final PedidoDetalheModel pedido;
-  const PedidoDetalheCarregado(this.pedido);
+  final List<PedidoDetalheModel> pedidos;
+  const PedidoDetalheCarregado(this.pedido, {this.pedidos = const []});
   @override
-  List<Object> get props => [pedido];
+  List<Object> get props => [pedido, pedidos];
 }
 
 class PedidoListaCarregada extends PedidoState {
@@ -45,6 +46,7 @@ class PedidoError extends PedidoState {
 
 class PedidoCubit extends Cubit<PedidoState> {
   final PedidoService _service;
+  List<PedidoDetalheModel> _lastPedidos = [];
 
   PedidoCubit(this._service) : super(PedidoInitial());
 
@@ -69,10 +71,11 @@ class PedidoCubit extends Cubit<PedidoState> {
   }
 
   Future<void> carregarDetalhes(int pedidoId) async {
+    // 🔥 Mantemos a lista anterior no estado de loading se possível
     emit(PedidoLoading());
     try {
       final pedido = await _service.getPedidoDetalhe(pedidoId);
-      emit(PedidoDetalheCarregado(pedido));
+      emit(PedidoDetalheCarregado(pedido, pedidos: _lastPedidos));
     } catch (e) {
       emit(PedidoError(e.toString()));
     }
@@ -82,6 +85,7 @@ class PedidoCubit extends Cubit<PedidoState> {
     emit(PedidoLoading());
     try {
       final pedidos = await _service.getPedidos();
+      _lastPedidos = pedidos; // 🔥 Cache da lista
       emit(PedidoListaCarregada(pedidos));
     } catch (e) {
       emit(PedidoError(e.toString()));

@@ -1,4 +1,7 @@
+// lib/app/modules/auth/bloc/auth_cubit.dart
+
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -33,11 +36,11 @@ class AuthCubit extends Cubit<AuthState> {
   static const String keyGuestToken = 'guest_token';
 
   AuthCubit(
-    this._apiClient,
-    this._localizacaoCubit,
-    this._enderecoCubit,
-    this._prefs,
-  )   : _authService = AuthService(_apiClient),
+      this._apiClient,
+      this._localizacaoCubit,
+      this._enderecoCubit,
+      this._prefs,
+      )   : _authService = AuthService(_apiClient),
         super(AuthInitial());
 
   UsuarioModel? get usuario => _usuario;
@@ -48,36 +51,38 @@ class AuthCubit extends Cubit<AuthState> {
     if (_isProcessing) return;
     _isProcessing = true;
 
-    debugPrint('🔐 [AuthCubit] 🔥 INICIALIZANDO APP...');
+    developer.log('🔐 [AuthCubit] 🔥 INICIALIZANDO APP...', name: 'AUTH');
     emit(AuthLoading());
 
     try {
-      // ✅ LIMPAR localização anterior ANTES de processar
-      await _localizacaoCubit.limparLocalizacao();
-
+      // ✅ 1. LOG DO TOKEN
       final token = _apiClient.tokenService.getAccessToken();
       final isGuest = _apiClient.tokenService.isGuest();
+      developer.log('🔐 [AuthCubit] Token: ${token != null ? "SIM (${token.substring(0, token.length > 10 ? 10 : token.length)}...)" : "NÃO"}', name: 'AUTH');
+      developer.log('🔐 [AuthCubit] isGuest: $isGuest', name: 'AUTH');
+
+      // ✅ 2. LIMPA LOCALIZAÇÃO
+      await _localizacaoCubit.limparLocalizacao();
+      developer.log('🗑️ [AuthCubit] Localização limpa', name: 'AUTH');
 
       if (token != null && token.isNotEmpty) {
+        // ✅ 3. BUSCA USUÁRIO NO BACKEND
         try {
+          developer.log('📡 [AuthCubit] Buscando usuário no backend...', name: 'AUTH');
           final response = await _apiClient.get('app/auth/me', requiresAuth: true);
+
           if (response.statusCode == 200 && response.data['success'] == true) {
             final data = response.data['data'];
-            
-            debugPrint('🔍 [AuthCubit] inicializarApp - Dados recebidos:');
-            debugPrint('🔍 [AuthCubit] usuario: ${data['usuario'] ?? data['user']}');
-            debugPrint('🔍 [AuthCubit] endereco: ${data['endereco']}');
-            debugPrint('🔍 [AuthCubit] enderecos: ${data['enderecos']}');
+            developer.log('✅ [AuthCubit] Usuário encontrado no backend', name: 'AUTH');
 
+            // ✅ 4. PROCESSA DADOS
             final authResponse = AuthResponse.fromJson(data);
             _usuario = authResponse.user;
+            developer.log('👤 [AuthCubit] Usuário: ${_usuario?.nome}, status: ${_usuario?.status}', name: 'AUTH');
 
-            debugPrint('🔐 [AuthCubit] inicializarApp: _usuario definido: nome=${_usuario?.nome}, email=${_usuario?.email}, status=${_usuario?.status}, telefone=${_usuario?.telefone}');
-
-            // ✅ Sincroniza cache local
             if (_usuario != null) {
               await _apiClient.tokenService.saveUser(_usuario!.toJson());
-              debugPrint('💾 [AuthCubit] inicializarApp: usuário salvo: ${_usuario?.nome}');
+              developer.log('💾 [AuthCubit] Usuário salvo no cache', name: 'AUTH');
             }
 
             final enderecosJson = data['enderecos'];
@@ -90,18 +95,21 @@ class AuthCubit extends Cubit<AuthState> {
               emit(AuthAuthenticated(accessToken: token, user: _usuario));
             }
 
+            developer.log('✅ [AuthCubit] Autenticado com sucesso', name: 'AUTH');
             await carregarEnderecoUsuario();
             _isProcessing = false;
             return;
           }
         } catch (e) {
-          debugPrint('❌ [AuthCubit] Erro ao buscar /me, usando cache local: $e');
+          developer.log('⚠️ [AuthCubit] Erro ao buscar /me, usando cache local: $e', name: 'AUTH');
         }
 
-        // ✅ Fallback para cache local
+        // ✅ 5. FALLBACK PARA CACHE LOCAL
+        developer.log('📦 [AuthCubit] Usando cache local...', name: 'AUTH');
         final userJson = _apiClient.tokenService.getUser();
         if (userJson != null) {
           _usuario = UsuarioModel.fromJson(userJson);
+          developer.log('👤 [AuthCubit] Usuário do cache: ${_usuario?.nome}', name: 'AUTH');
         }
 
         if (isGuest) {
@@ -109,14 +117,16 @@ class AuthCubit extends Cubit<AuthState> {
         } else {
           emit(AuthAuthenticated(accessToken: token, user: _usuario));
         }
+
         await carregarEnderecoUsuario();
         _isProcessing = false;
         return;
       }
 
+      developer.log('🚫 [AuthCubit] Nenhum token encontrado', name: 'AUTH');
       emit(AuthUnauthenticated());
     } catch (e) {
-      debugPrint('❌ [AuthCubit] ERRO NA INICIALIZAÇÃO: $e');
+      developer.log('❌ [AuthCubit] ERRO NA INICIALIZAÇÃO: $e', name: 'AUTH', error: e);
       emit(AuthUnauthenticated());
     } finally {
       _isProcessing = false;
@@ -127,7 +137,7 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final token = _apiClient.tokenService.getAccessToken();
       if (token == null || token.isEmpty) return;
-      
+
       final isGuest = _apiClient.tokenService.isGuest();
 
       final response = await _apiClient.get('app/auth/me', requiresAuth: true);
@@ -138,13 +148,13 @@ class AuthCubit extends Cubit<AuthState> {
         if (usuarioJson != null) {
           _usuario = UsuarioModel.fromJson(Map<String, dynamic>.from(usuarioJson));
           await _apiClient.tokenService.saveUser(_usuario!.toJson());
-          
+
           if (isGuest) {
             emit(AuthGuest(accessToken: token, user: _usuario));
           } else {
             emit(AuthAuthenticated(accessToken: token, user: _usuario));
           }
-          
+
           debugPrint('🔄 [AuthCubit] Usuário recarregado: ${_usuario?.nome} (isGuest: $isGuest)');
         }
       }
@@ -156,36 +166,107 @@ class AuthCubit extends Cubit<AuthState> {
   // ============ MÉTODOS OTP (TELEFONE) ============
 
   Future<void> enviarTelefone(String telefone) async {
-    debugPrint('🧭 [AuthCubit] enviarTelefone: $telefone');
-    emit(AuthLoading()); // ✅ Garante mudança de estado para resetar listeners
+    debugPrint('🧭 [AuthCubit] ========================================');
+    debugPrint('🧭 [AuthCubit] enviarTelefone chamado');
+    debugPrint('🧭 [AuthCubit] 📞 Telefone recebido: "$telefone"');
+    debugPrint('🧭 [AuthCubit] 📞 Telefone length: ${telefone.length}');
+
+    // ✅ Verifica se o telefone está vazio
+    if (telefone.trim().isEmpty) {
+      debugPrint('❌ [AuthCubit] Telefone vazio!');
+      emit(const AuthOtpErro('Telefone é obrigatório'));
+      return;
+    }
+
+    // ✅ Remove caracteres não numéricos
+    final cleanedPhone = telefone.replaceAll(RegExp(r'[^0-9]'), '');
+    debugPrint('🧭 [AuthCubit] 📞 Telefone limpo: "$cleanedPhone"');
+    debugPrint('🧭 [AuthCubit] 📞 Telefone limpo length: ${cleanedPhone.length}');
+
+    if (cleanedPhone.isEmpty) {
+      debugPrint('❌ [AuthCubit] Telefone sem números válidos!');
+      emit(const AuthOtpErro('Telefone inválido'));
+      return;
+    }
+
+    if (cleanedPhone.length != 11) {
+      debugPrint('❌ [AuthCubit] Telefone com tamanho incorreto: ${cleanedPhone.length} (esperado: 11)');
+      emit(const AuthOtpErro('Telefone inválido. Use DDD + 9 dígitos'));
+      return;
+    }
+
+    emit(AuthLoading());
     try {
-      await _authService.enviarTelefone(telefone);
-      debugPrint('🧭 [AuthCubit] Sucesso ao enviar telefone. Emitindo AuthPhoneEnviado.');
-      emit(AuthPhoneEnviado(telefone: telefone));
+      debugPrint('🧭 [AuthCubit] Chamando _authService.enviarTelefone com: "$cleanedPhone"');
+      await _authService.enviarTelefone(cleanedPhone);
+      debugPrint('🧭 [AuthCubit] ✅ Sucesso ao enviar telefone. Emitindo AuthPhoneEnviado.');
+      emit(AuthPhoneEnviado(telefone: cleanedPhone));
     } catch (e) {
-      debugPrint('🧭 [AuthCubit] Erro ao enviar telefone: $e');
+      debugPrint('🧭 [AuthCubit] ❌ Erro ao enviar telefone: $e');
       emit(const AuthOtpErro('Erro ao enviar código. Tente novamente.'));
     }
+    debugPrint('🧭 [AuthCubit] ========================================');
   }
 
   Future<void> verificarOTP(String telefone, String codigo, {bool redirectToCheckout = false}) async {
+    debugPrint('🧭 [AuthCubit] ========================================');
     debugPrint('[AUTH_CUBIT] 🔍 verificarOTP chamado');
     debugPrint('[AUTH_CUBIT] 📞 Phone: $telefone');
     debugPrint('[AUTH_CUBIT] 🔢 Code: $codigo');
+
+    // ✅ Verifica se o telefone está vazio
+    if (telefone.trim().isEmpty) {
+      debugPrint('❌ [AuthCubit] Telefone vazio!');
+      emit(const AuthOtpErro('Telefone é obrigatório'));
+      return;
+    }
+
+    // ✅ Verifica se o código está vazio
+    if (codigo.trim().isEmpty) {
+      debugPrint('❌ [AuthCubit] Código vazio!');
+      emit(const AuthOtpErro('Código é obrigatório'));
+      return;
+    }
+
     emit(AuthOtpVerificando(telefone: telefone));
     try {
       debugPrint('[AUTH_CUBIT] 📱 Obtendo FCM token...');
       String? fcmToken;
-      // ✅ Proteção para Web: Platform.isWindows só pode ser chamado se NÃO for Web
-      if (kIsWeb || !Platform.isWindows) {
+
+      // ✅ Proteção Robusta para Web e Windows
+      if (kIsWeb) {
         try {
-          fcmToken = await FirebaseMessaging.instance.getToken();
-          debugPrint('[AUTH_CUBIT] 📱 FCM Token obtido: $fcmToken');
-        } catch (fcmError) {
-          debugPrint('[AUTH_CUBIT] ⚠️ Erro ao obter FCM Token (prosseguindo sem ele): $fcmError');
+          // No Web, getToken pode exigir vapidKey ou falhar se não houver permissão
+          fcmToken = await FirebaseMessaging.instance.getToken().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () {
+              debugPrint('[AUTH_CUBIT] ⏰ FCM Token timeout no Web');
+              return null;
+            },
+          );
+        } catch (e) {
+          debugPrint('[AUTH_CUBIT] ⚠️ Erro FCM Web: $e');
         }
       } else {
-        debugPrint('[AUTH_CUBIT] ⏳ Windows detectado: ignorando FCM Token');
+        // Mobile (Android/iOS)
+        try {
+          // Evita usar dart:io Platform diretamente sem check kIsWeb
+          // Mas aqui já sabemos que não é Web
+          bool isWindows = false;
+          try {
+            isWindows = Platform.isWindows;
+          } catch (_) {}
+
+          if (!isWindows) {
+            fcmToken = await FirebaseMessaging.instance.getToken();
+          }
+        } catch (e) {
+          debugPrint('[AUTH_CUBIT] ⚠️ Erro FCM Mobile: $e');
+        }
+      }
+
+      if (fcmToken != null) {
+        debugPrint('[AUTH_CUBIT] 📱 FCM Token obtido: ${fcmToken.substring(0, 15)}...');
       }
 
       debugPrint('[AUTH_CUBIT] 📤 Chamando service.verificarOTP...');
@@ -203,15 +284,17 @@ class AuthCubit extends Cubit<AuthState> {
       await _localizacaoCubit.limparLocalizacao();
 
       final accessToken = data['access_token'] ?? data['token'];
+      final refreshToken = data['refresh_token']; // ✅ PEGA O REFRESH TOKEN
       final userJson = data['usuario'] ?? data['user'];
       final enderecoJson = data['endereco'];
 
       if (userJson != null) {
         final usuarioMap = Map<String, dynamic>.from(userJson);
-        
+
         // ✅ Salva tokens IMEDIATAMENTE
-        await _apiClient.tokenService.saveTokens(accessToken, null, isGuest: false);
+        await _apiClient.tokenService.saveTokens(accessToken, refreshToken, isGuest: false);
         debugPrint('🔑 [AuthCubit] Access token salvo após OTP: ${accessToken.substring(0, 10)}...');
+        debugPrint('🔑 [AuthCubit] Refresh token salvo após OTP: ${refreshToken != null ? refreshToken.substring(0, 10) + "..." : "NULO"}');
 
         var user = UsuarioModel.fromJson(usuarioMap);
 
@@ -219,7 +302,7 @@ class AuthCubit extends Cubit<AuthState> {
         if (user.status == null) {
           final nome = user.nome;
           final telefone = user.telefone ?? '';
-          
+
           if (nome.isNotEmpty) {
             user = user.copyWith(status: 'ativo');
           } else if (telefone.isNotEmpty) {
@@ -243,7 +326,7 @@ class AuthCubit extends Cubit<AuthState> {
         // ✅ Salva cache local atualizado (inclui status forçado se necessário)
         await _apiClient.tokenService.saveUser(_usuario!.toJson());
         debugPrint('💾 [AuthCubit] verificarOTP: usuário salvo: ${_usuario?.nome}');
-        
+
         debugPrint('🔐 [AuthCubit] Estado emitido: AuthAuthenticated');
         debugPrint('🔐 [AuthCubit] Dados do usuário: status=${_usuario!.status}, telefone=${_usuario!.telefone}, nome=${_usuario!.nome}');
 
@@ -262,12 +345,14 @@ class AuthCubit extends Cubit<AuthState> {
 
         // ✅ Não navega mais daqui — o AppRouter cuida do redirecionamento
       } else {
+        debugPrint('❌ [AuthCubit] Usuário não encontrado na resposta');
         emit(const AuthOtpErro('Usuário não encontrado após verificação.'));
       }
     } catch (e) {
       debugPrint('[AUTH_CUBIT] ❌ Erro no verificarOTP: $e');
       emit(const AuthOtpErro('Código inválido. Tente novamente.'));
     }
+    debugPrint('🧭 [AuthCubit] ========================================');
   }
 
   // ============ ATUALIZAÇÃO DE PERFIL ============
@@ -366,11 +451,13 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  // ============ SINCRONIZAÇÃO DE ENDEREÇOS ============
+
   Future<void> _sincronizarEnderecos(dynamic enderecosJson, dynamic enderecoPrincipalJson) async {
     debugPrint('🔁 [AuthCubit] _sincronizarEnderecos chamado');
     debugPrint('🔁 [AuthCubit] Principal: $enderecoPrincipalJson');
     debugPrint('🔁 [AuthCubit] Lista: $enderecosJson');
-    
+
     // ✅ Se NÃO tem endereço principal, LIMPA localização
     if (enderecoPrincipalJson == null) {
       debugPrint('🗑️ [AuthCubit] Sem endereço principal → limpando localização');
@@ -394,6 +481,20 @@ class AuthCubit extends Cubit<AuthState> {
     } else {
       // ✅ Lista vazia → substitui por lista vazia
       _enderecoCubit.substituirEnderecos([]);
+    }
+  }
+
+  /// ✅ ATUALIZA OS ENDEREÇOS (usado pelo RefreshInterceptor)
+  Future<void> atualizarEnderecos(dynamic enderecosJson, dynamic enderecoPrincipalJson) async {
+    developer.log('🔄 [AuthCubit] atualizarEnderecos chamado', name: 'AUTH');
+    developer.log('   - enderecos: $enderecosJson', name: 'AUTH');
+    developer.log('   - principal: $enderecoPrincipalJson', name: 'AUTH');
+
+    try {
+      await _sincronizarEnderecos(enderecosJson, enderecoPrincipalJson);
+      developer.log('✅ [AuthCubit] Endereços atualizados com sucesso', name: 'AUTH');
+    } catch (e) {
+      developer.log('❌ [AuthCubit] Erro ao atualizar endereços: $e', name: 'AUTH');
     }
   }
 
@@ -498,13 +599,6 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(AuthUnauthenticated());
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        Routes.onboarding,
-        (route) => false,
-      );
-    });
-
     debugPrint('✅ [AuthCubit] Saída de convidado concluída');
   }
 
@@ -537,14 +631,28 @@ class AuthCubit extends Cubit<AuthState> {
     // 4. Emitir estado não autenticado
     emit(AuthUnauthenticated());
 
-    // 5. Navegar para onboarding
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ApiClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        Routes.onboarding,
-        (route) => false,
-      );
-    });
-
     debugPrint('✅ [AuthCubit] Logout concluído com sucesso');
+  }
+
+  /// ✅ FORÇA LOGOUT (usado pelo RefreshInterceptor)
+  Future<void> forceLogout() async {
+    developer.log('🔐 [AuthCubit] 🚪 Forçando logout...', name: 'AUTH');
+
+    // ✅ Limpa dados locais
+    _usuario = null;
+    await _apiClient.tokenService.clearTokens();
+    await _localizacaoCubit.limparLocalizacao();
+    await _deviceService.clearDeviceId();
+
+    // ✅ Emite estado não autenticado
+    emit(AuthUnauthenticated());
+
+    developer.log('✅ [AuthCubit] Logout forçado concluído', name: 'AUTH');
+  }
+
+  void restaurarTelefone(String telefone) {
+    if (state is! AuthPhoneEnviado) {
+      emit(AuthPhoneEnviado(telefone: telefone));
+    }
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../modules/auth/bloc/auth_cubit.dart';
 import '../modules/auth/bloc/auth_state.dart';
 import '../routes/app_routes.dart';
-import '../di/dependencies.dart';
-import '../services/navigation_service.dart';
+import '../navigation/navigation_cubit.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -17,26 +17,27 @@ class AppDrawer extends StatelessWidget {
         debugPrint('🧭 [AppDrawer] Reconstruindo com estado: ${authState.runtimeType}');
         final isLogged = authState is AuthAuthenticated;
         final isGuest = authState is AuthGuest;
+        final navigationCubit = context.read<NavigationCubit>();
 
         return Drawer(
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              _buildHeader(context, isLogged, isGuest),
+              _buildHeader(context, authState),
               const Divider(),
 
               // Lojas (sempre visível)
               _buildMenuItem(
                 icon: Icons.storefront,
                 label: 'Lojas',
-                onTap: () => _navigateAndClose(context, Routes.home),
+                onTap: () => _navigateAndClose(context, navigationCubit.goToHome),
               ),
 
               // Carrinho (sempre visível)
               _buildMenuItem(
                 icon: Icons.shopping_cart,
                 label: 'Carrinho',
-                onTap: () => _navigateAndClose(context, Routes.carrinho),
+                onTap: () => _navigateAndClose(context, navigationCubit.goToCarrinho),
               ),
 
               const Divider(),
@@ -46,18 +47,18 @@ class AppDrawer extends StatelessWidget {
                 _buildMenuItem(
                   icon: Icons.shopping_bag,
                   label: 'Meus Pedidos',
-                  onTap: () => _navigateAndClose(context, Routes.pedidos),
+                  onTap: () => _navigateAndClose(context, navigationCubit.goToPedidos),
                 ),
                 _buildMenuItem(
                   icon: Icons.person,
                   label: 'Meu Perfil',
-                  onTap: () => _navigateAndClose(context, Routes.perfil),
+                  onTap: () => _navigateAndClose(context, navigationCubit.goToPerfil),
                 ),
                 _buildMenuItem(
                   icon: Icons.logout,
                   label: 'Sair',
                   isLogout: true,
-                  onTap: () => _confirmarLogout(context),
+                  onTap: () => _confirmarLogout(context, navigationCubit),
                 ),
               ],
 
@@ -67,14 +68,14 @@ class AppDrawer extends StatelessWidget {
                   icon: Icons.login,
                   label: isGuest ? 'Identificar-se' : 'Entrar',
                   isLogin: true,
-                  onTap: () => _navigateAndClose(context, Routes.login),
+                  onTap: () => _navigateAndClose(context, navigationCubit.goToLogin),
                 ),
                 if (isGuest)
                   _buildMenuItem(
                     icon: Icons.exit_to_app,
                     label: 'Sair do Convidado',
                     isLogout: true,
-                    onTap: () => _confirmarSairConvidado(context),
+                    onTap: () => _confirmarSairConvidado(context, navigationCubit),
                   ),
               ],
             ],
@@ -84,10 +85,13 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isLogged, bool isGuest) {
+  Widget _buildHeader(BuildContext context, AuthState authState) {
     final user = context.read<AuthCubit>().usuario;
-    final nomeExibicao = (user?.nome != null && user!.nome.isNotEmpty) 
-        ? user.nome 
+    final isGuest = authState is AuthGuest;
+    final isLogged = authState is AuthAuthenticated;
+
+    final nomeExibicao = (user?.nome != null && user!.nome.isNotEmpty)
+        ? user.nome
         : (isGuest ? 'Olá, Convidado' : 'QuiPede');
 
     return DrawerHeader(
@@ -108,7 +112,9 @@ class AppDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            isLogged ? (user?.email ?? 'Bem-vindo de volta!') : (isGuest ? 'Modo Visitante' : 'Faça login para mais recursos'),
+            isLogged
+                ? (user?.email ?? 'Bem-vindo de volta!')
+                : (isGuest ? 'Modo Visitante' : 'Faça login para mais recursos'),
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
@@ -138,24 +144,25 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  void _navigateAndClose(BuildContext context, String route) {
-    getIt<NavigationService>().pop(); // Fecha o drawer
-    getIt<NavigationService>().pushNamed(route);
+  // 🔥 Fecha o drawer e executa a navegação
+  void _navigateAndClose(BuildContext context, VoidCallback navigationAction) {
+    context.pop(); // Fecha o drawer usando go_router
+    navigationAction(); // Executa a navegação via NavigationCubit
   }
 
-  void _confirmarLogout(BuildContext context) async {
+  void _confirmarLogout(BuildContext context, NavigationCubit cubit) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sair'),
         content: const Text('Tem certeza que deseja sair?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(_, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(_, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Sair', style: TextStyle(color: Colors.red)),
           ),
         ],
@@ -164,13 +171,13 @@ class AppDrawer extends StatelessWidget {
 
     if (confirm == true) {
       if (context.mounted) {
-        getIt<NavigationService>().pop(); // Fecha o drawer
-        await context.read<AuthCubit>().logout();
+        context.pop(); // Fecha o drawer
+        await cubit.logout(); // Delega ao NavigationCubit
       }
     }
   }
 
-  void _confirmarSairConvidado(BuildContext context) async {
+  void _confirmarSairConvidado(BuildContext context, NavigationCubit cubit) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -191,8 +198,8 @@ class AppDrawer extends StatelessWidget {
 
     if (confirm == true) {
       if (context.mounted) {
-        getIt<NavigationService>().pop(); // Fecha o drawer
-        await context.read<AuthCubit>().sairConvidado();
+        context.pop(); // Fecha o drawer
+        await cubit.logoutGuest(); // Delega ao NavigationCubit
       }
     }
   }
