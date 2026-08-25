@@ -49,14 +49,17 @@ lib/
 ├── app/
 │   ├── core/           # Temas, Services globais e Constants
 │   ├── di/             # Configuração do GetIt (Injeção de Dependência)
+│   ├── initialization/ # Inicialização do App (Firebase, Insets, etc)
 │   ├── models/         # Modelos de dados globais
-│   ├── modules/        # Funcionalidades isoladas (auth, home, lojas, etc)
-│   │   └── module_name/
-│   │       ├── bloc/   # Lógica de negócio (Cubit/BLoC)
-│   │       ├── views/  # Widgets de tela
-│   │       └── widgets/# Componentes locais
-│   └── routes/         # Gestão de rotas nomeadas
-└── shared/             # Componentes, API Clients e Utils reutilizáveis
+│   ├── navigation/     # Gestão de navegação (NavigationCubit)
+│   ├── routes/         # Configuração de rotas (GoRouter)
+│   ├── widgets/        # Widgets globais (Ex: SplashScreen)
+│   └── modules/        # Funcionalidades isoladas (auth, home, lojas, etc)
+│       └── module_name/
+│           ├── bloc/   # Lógica de negócio (Cubit/BLoC)
+│           ├── views/  # Widgets de tela
+│           └── widgets/# Componentes locais
+└── shared/             # Componentes, API Clients, Interceptors e Utils
 ```
 
 ### Tecnologias "Under the Hood"
@@ -120,6 +123,91 @@ Este projeto depende da API do ecossistema QuiDelivery.
   flutter run -d chrome  # Para Web
   flutter run            # Para Android/iOS
   ```
+
+---
+
+## 📝 Changelog
+
+### [2026-08-24] - GoRouter Migration & Firebase Integration
+
+#### 🚀 Novas Funcionalidades
+- **Firebase Integration**: Adicionado suporte completo ao Firebase
+  - Firebase Core para autenticação e serviços
+  - Firebase Messaging para notificações push
+  - Configuração multi-plataforma (Web, Android, iOS)
+
+- **GoRouter Navigation**: Migração completa da navegação
+  - Deep linking funcional com URLs limpas (sem `#`)
+  - `ShellRoute` com `BottomNavigationBar`
+  - Redirecionamento inteligente baseado em autenticação
+  - Refresh token automático com interceptor
+
+- **Web Improvements**
+  - URLs amigáveis com `usePathUrlStrategy()`
+  - Servidor SPA configurado para produção
+  - Build otimizado com source maps
+
+#### 🐛 Correções de Bugs
+- Corrigido tela branca durante solicitação de permissões.
+- Corrigido redirecionamento forçado para Dashboard em URLs diretas.
+- Corrigido "Page Not Found" ao abrir nova aba com URL direta.
+- Adicionado `SplashScreen` com loading state para melhorar UX inicial.
+
+#### 📊 Estrutura
+
+```text
+lib/
+├── app/
+│   ├── navigation/
+│   │   ├── navigation_cubit.dart
+│   │   ├── navigation_state.dart
+│   │   └── app_router_listener.dart
+│   ├── routes/
+│   │   └── app_router.dart
+│   ├── initialization/
+│   │   └── app_initializer.dart
+│   └── widgets/
+│       └── splash_screen.dart
+├── modules/
+│   ├── auth/
+│   │   └── cubit/
+│   │       ├── auth_cubit.dart
+│   │       └── auth_state.dart
+│   └── ...
+└── shared/
+    └── api/
+        └── interceptors/
+            └── refresh_interceptor.dart
+```
+
+#### 🔧 Comandos Úteis
+
+**Desenvolvimento:**
+```bash
+flutter run -d chrome
+```
+
+**Build de Produção:**
+```bash
+# Gerar build web otimizado
+flutter build web --release --source-maps
+
+# Rodar servidor SPA localmente
+cd build/web
+dart pub add shelf shelf_router --dev
+dart run server.dart
+```
+
+#### 📚 Documentação
+- **Padrão de navegação**: Utilizar `NavigationCubit` para todas as ações de navegação disparadas pela lógica de negócio.
+- **Debug**: Logs padronizados com `debugPrint()` e emojis para facilitar o rastreamento no console.
+- **SPA Server**: Necessário para que as URLs diretas funcionem corretamente sem o hash `#`.
+
+### [2026-08-01] - Versão Inicial
+- Implementação base com Firebase.
+- Estrutura inicial do projeto modular.
+- Autenticação com telefone/OTP.
+- Módulos core: Loja, Carrinho, Pedidos.
 
 ---
 Desenvolvido com ❤️ por **Cássio** | 2026
