@@ -1,3 +1,5 @@
+// lib/app/modules/loja_home/bloc/loja_home_cubit.dart
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../repository/loja_repository.dart';
@@ -17,6 +19,9 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
   String? _orderBy;
 
   bool _isLoading = false;
+  bool _isSearching = false;
+
+  List<SecaoModel>? _originalSections;
 
   LojaHomeCubit(this._repository, this.lojaId) : super(const LojaHomeInitial());
 
@@ -41,6 +46,10 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
       _hasMore = response.pagination.page < response.pagination.totalPages;
       final secoesLimpa = _removerDuplicatas(response.secoes);
 
+      if (_categoriaId == null && (_searchQuery == null || _searchQuery!.isEmpty)) {
+        _originalSections = secoesLimpa;
+      }
+
       emit(LojaHomeLoaded(
         loja: response,
         secoes: secoesLimpa,
@@ -53,12 +62,120 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
         pagination: response.pagination,
         filterOptions: response.filterOptions,
         activeFilterCount: _calcularFiltrosAtivos(),
+        isSearching: false,
       ));
     } catch (e) {
       emit(LojaHomeError('Erro ao carregar loja: $e'));
     } finally {
       _isLoading = false;
     }
+  }
+
+  Future<void> searchLojas({String? search, int? categoriaId, String? orderBy}) async {
+    if (_isSearching) return;
+    _isSearching = true;
+
+    final currentState = state;
+    if (currentState is! LojaHomeLoaded) {
+      _isSearching = false;
+      await applyFilters(search: search, categoriaId: categoriaId, orderBy: orderBy);
+      return;
+    }
+
+    emit(currentState.copyWith(isSearching: true));
+
+    _searchQuery = search?.trim().isEmpty == true ? null : search?.trim();
+    _categoriaId = categoriaId;
+    _orderBy = orderBy;
+
+    debugPrint('🔍 [LojaHomeCubit] searchLojas: _searchQuery = "$_searchQuery"');
+
+    try {
+      final response = await _repository.getLojaDetalhe(
+        id: lojaId,
+        page: 1,
+        perPage: 20,
+        categoriaId: _categoriaId,
+        search: _searchQuery,
+        orderBy: _orderBy,
+      );
+
+      _hasMore = response.pagination.page < response.pagination.totalPages;
+      final secoesLimpa = _removerDuplicatas(response.secoes);
+
+      if (_categoriaId == null && (_searchQuery == null || _searchQuery!.isEmpty)) {
+        _originalSections = secoesLimpa;
+      }
+
+      emit(currentState.copyWith(
+        loja: response,
+        secoes: secoesLimpa,
+        selectedCategories: _categoriaId != null ? [_categoriaId!] : [],
+        orderBy: _orderBy,
+        searchQuery: _searchQuery,
+        hasMore: _hasMore,
+        currentPage: 1,
+        totalPages: response.pagination.totalPages,
+        pagination: response.pagination,
+        filterOptions: response.filterOptions,
+        activeFilterCount: _calcularFiltrosAtivos(),
+        isLoadingMore: false,
+        isFiltering: false,
+        isSearching: false,
+      ));
+    } catch (e) {
+      debugPrint('❌ [LojaHomeCubit] Erro na pesquisa suave: $e');
+      if (state is LojaHomeLoaded) {
+        emit((state as LojaHomeLoaded).copyWith(isSearching: false));
+      }
+    } finally {
+      _isSearching = false;
+    }
+  }
+
+  void clearFiltersOnly() {
+    final currentState = state;
+    if (currentState is! LojaHomeLoaded) return;
+
+    debugPrint('🧹 [LojaHomeCubit] clearFiltersOnly: limpando filtros');
+
+    // Limpa as variáveis internas imediatamente
+    _searchQuery = null;
+    _categoriaId = null;
+    _orderBy = null;
+
+    if (_originalSections != null) {
+      // Se temos as seções originais, restaura sem precisar de nova chamada
+      emit(currentState.copyWith(
+        secoes: _originalSections!,
+        searchQuery: null,
+        selectedCategoriaId: null,
+        orderBy: null,
+        selectedCategories: [],
+        activeFilterCount: 0,
+        isFiltering: false,
+        isLoadingMore: false,
+        isSearching: false,
+      ));
+    } else {
+      // Caso não tenha as originais, faz uma nova busca sem filtros
+      searchLojas(search: null, categoriaId: null, orderBy: null);
+    }
+  }
+
+  // 🔥 Novo metodo: limpa somente a busca textual
+  void clearSearchOnly() {
+    debugPrint('🧹 [LojaHomeCubit] clearSearchOnly: limpando somente a busca');
+
+    _searchQuery = null;
+
+    // Recarrega mantendo categoria e ordenação atuais
+    loadLoja();
+  }
+
+  void searchProducts(String? search) {
+    final searchValue = search?.trim().isEmpty == true ? null : search?.trim();
+    searchLojas(search: searchValue);
   }
 
   Future<void> loadMore() async {
@@ -132,7 +249,7 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
       if (finalState is LojaHomeLoaded) {
         emit(finalState.copyWith(
           isAddingToCart: false,
-          resetAddingProductId: true,
+          addingProductId: null,
         ));
       }
     }
@@ -146,31 +263,24 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
   }
 
   Future<void> clearFilters() async {
-    _searchQuery = null;
-    _categoriaId = null;
-    _orderBy = null;
-    await loadLoja();
+    clearFiltersOnly();
   }
 
   Future<void> refresh() async {
+    _originalSections = null;
     await loadLoja();
   }
 
-  /// Carrega todas as páginas necessárias até completar a seção com o ID fornecido.
-  /// Emite estados intermediários e define [loadingSectionId] para que a UI mostre overlay.
-  /// Carrega todas as páginas necessárias até completar a seção com o ID fornecido.
-  /// Emite estados intermediários e define [loadingSectionId] para que a UI mostre overlay.
   Future<void> loadSectionCompletelyById(int sectionId) async {
     final currentState = state;
     if (currentState is! LojaHomeLoaded) return;
 
     debugPrint('⏳ [Cubit] Ativando overlay para seção $sectionId');
-    // 🔥 Ativa o overlay global
     emit(currentState.copyWith(loadingSectionId: sectionId));
 
     try {
       int iterations = 0;
-      const int maxIterations = 15; // Segurança
+      const int maxIterations = 15;
 
       while (iterations < maxIterations) {
         final current = state;
@@ -195,12 +305,11 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
     } finally {
       final finalState = state;
       if (finalState is LojaHomeLoaded) {
-        emit(finalState.copyWith(resetLoadingSectionId: true));
+        emit(finalState.copyWith(loadingSectionId: null));
       }
       debugPrint('🏁 [Cubit] Overlay desativado para $sectionId');
     }
   }
-
 
   List<SecaoModel> _removerDuplicatas(List<SecaoModel> secoes) {
     final Set<int> idsVistos = {};

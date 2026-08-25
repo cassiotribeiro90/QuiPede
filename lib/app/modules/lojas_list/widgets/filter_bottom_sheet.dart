@@ -1,17 +1,14 @@
+// lib/app/modules/lojas/widgets/filter_bottom_sheet.dart
+
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // 👈 Adicionado
-import '../../../core/theme/app_theme_extension.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/theme/app_decoration.dart';
+import 'package:go_router/go_router.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
-import '../../../core/theme/input_styles.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final List<LojasListFilterOptionModel> categorias;
   final String? selectedCategoria;
   final String? selectedOrdenacao;
-  final String? initialSearch;
-  final Function(String? search, String? categoria, String? ordenacao) onApply;
+  final Function(String? categoria, String? ordenacao) onApply;
   final VoidCallback onClear;
 
   const FilterBottomSheet({
@@ -19,25 +16,45 @@ class FilterBottomSheet extends StatefulWidget {
     required this.categorias,
     this.selectedCategoria,
     this.selectedOrdenacao,
-    this.initialSearch,
     required this.onApply,
     required this.onClear,
   });
 
   @override
   State<FilterBottomSheet> createState() => _FilterBottomSheetState();
+
+  static Future<void> show({
+    required BuildContext context,
+    required List<LojasListFilterOptionModel> categorias,
+    String? selectedCategoria,
+    String? selectedOrdenacao,
+    required Function(String? categoria, String? ordenacao) onApply,
+    required VoidCallback onClear,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FilterBottomSheet(
+        categorias: categorias,
+        selectedCategoria: selectedCategoria,
+        selectedOrdenacao: selectedOrdenacao,
+        onApply: onApply,
+        onClear: onClear,
+      ),
+    );
+  }
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late String? _tempCategoria;
   late String? _tempOrdenacao;
-  late TextEditingController _searchController;
 
-  final List<Map<String, String>> _ordenacoes = [
-    {'value': 'nota', 'label': 'Melhor avaliados', 'icon': '⭐'},
-    {'value': 'tempo_entrega', 'label': 'Menor tempo', 'icon': '⏱️'},
-    {'value': 'taxa_entrega', 'label': 'Menor taxa', 'icon': '💰'},
-    {'value': 'pedido_minimo', 'label': 'Menor pedido mínimo', 'icon': '📉'},
+  final List<_OrdenacaoOption> _ordenacoes = const [
+    _OrdenacaoOption(value: 'nota', label: 'Melhor avaliados', icon: Icons.star),
+    _OrdenacaoOption(value: 'tempo_entrega', label: 'Menor tempo', icon: Icons.timer),
+    _OrdenacaoOption(value: 'taxa_entrega', label: 'Menor taxa', icon: Icons.money_off),
+    _OrdenacaoOption(value: 'pedido_minimo', label: 'Menor pedido mínimo', icon: Icons.shopping_cart),
   ];
 
   @override
@@ -45,127 +62,162 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     super.initState();
     _tempCategoria = widget.selectedCategoria;
     _tempOrdenacao = widget.selectedOrdenacao;
-    _searchController = TextEditingController(text: widget.initialSearch);
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  int get _activeFiltersCount {
+    int count = 0;
+    if (_tempCategoria != null) count++;
+    if (_tempOrdenacao != null) count++;
+    return count;
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.70,
       decoration: BoxDecoration(
-        color: context.backgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
           _buildHandle(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Filtrar lojas',
-                  style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => context.pop(), // 🔥 go_router
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ),
+          _buildHeader(),
           const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: _buildSearchField(),
-          ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
                   _buildOrderSection(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   _buildCategoriesSection(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
           ),
-          _buildFixedFooter(),
+          _buildFooter(),
         ],
       ),
     );
   }
 
   Widget _buildHandle() {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(top: 12),
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: context.textHint.withValues(alpha: 0.3),
+        color: theme.hintColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(2),
       ),
     );
   }
 
-  Widget _buildSearchField() {
-    return TextField(
-      controller: _searchController,
-      decoration: InputStyles.decoration(
-        label: 'Pesquisar lojas',
-        hint: 'Ex: Pizza, Mercado...',
-        prefixIcon: Icons.search,
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-          icon: const Icon(Icons.close, size: 20),
-          onPressed: () {
-            setState(() {
-              _searchController.clear();
-            });
-          },
-        )
-            : null,
+  Widget _buildHeader() {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 12, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Filtrar lojas',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => context.pop(),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 24,
+          ),
+        ],
       ),
-      onChanged: (val) => setState(() {}),
     );
   }
 
   Widget _buildOrderSection() {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Ordenar por',
-          style: context.titleSmall.copyWith(fontWeight: FontWeight.w600),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _ordenacoes.map((option) {
-            final isSelected = _tempOrdenacao == option['value'];
-            return _buildChip(
-              label: option['label']!,
-              icon: option['icon']!,
-              isSelected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _tempOrdenacao = selected ? option['value'] : null;
-                });
-              },
+        const SizedBox(height: 8),
+        // 🔥 LISTA MINIMALISTA SEM BORDAS
+        Column(
+          children: _ordenacoes.asMap().entries.map((entry) {
+            final index = entry.key;
+            final option = entry.value;
+            final isSelected = _tempOrdenacao == option.value;
+
+            return Column(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _tempOrdenacao = isSelected ? null : option.value;
+                    });
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      children: [
+                        Icon(
+                          option.icon,
+                          size: 22,
+                          color: isSelected ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            option.label,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                              color: isSelected ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        if (isSelected)
+                          Icon(
+                            Icons.check_circle,
+                            size: 22,
+                            color: theme.primaryColor,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (index < _ordenacoes.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: theme.dividerColor.withValues(alpha: 0.3),
+                  ),
+              ],
             );
           }).toList(),
         ),
@@ -176,27 +228,64 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   Widget _buildCategoriesSection() {
     if (widget.categorias.isEmpty) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Categorias',
-          style: context.titleSmall.copyWith(fontWeight: FontWeight.w600),
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: widget.categorias.map((cat) {
+        const SizedBox(height: 8),
+        // 🔥 LISTA MINIMALISTA SEM BORDAS
+        Column(
+          children: widget.categorias.asMap().entries.map((entry) {
+            final index = entry.key;
+            final cat = entry.value;
             final isSelected = _tempCategoria == cat.value;
-            return _buildChip(
-              label: '${cat.label} (${cat.count})',
-              isSelected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _tempCategoria = selected ? cat.value : null;
-                });
-              },
+
+            return Column(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _tempCategoria = isSelected ? null : cat.value;
+                    });
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${cat.label} (${cat.count})',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (isSelected)
+                          Icon(
+                            Icons.check_circle,
+                            size: 22,
+                            color: theme.primaryColor,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (index < widget.categorias.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: theme.dividerColor.withValues(alpha: 0.3),
+                  ),
+              ],
             );
           }).toList(),
         ),
@@ -204,52 +293,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _buildChip({
-    required String label,
-    String? icon,
-    required bool isSelected,
-    required ValueChanged<bool> onSelected,
-  }) {
-    final chipTheme = AppDecoration.chipStyle(
-      selected: isSelected,
-      context: context,
-    );
+  Widget _buildFooter() {
+    final theme = Theme.of(context);
+    final hasActiveFilters = _activeFiltersCount > 0;
 
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Text(
-              icon,
-              style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
-            ),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(fontSize: 14),
-          ),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: onSelected,
-      selectedColor: chipTheme.selectedColor,
-      backgroundColor: chipTheme.backgroundColor,
-      labelStyle: chipTheme.labelStyle?.copyWith(fontSize: 14),
-      shape: chipTheme.shape,
-      showCheckmark: false,
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    );
-  }
-
-  Widget _buildFixedFooter() {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 16),
       decoration: BoxDecoration(
-        color: context.backgroundColor,
+        color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -261,42 +312,50 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                setState(() {
-                  _tempCategoria = null;
-                  _tempOrdenacao = null;
-                  _searchController.clear();
-                });
-                widget.onClear();
-                context.pop(); // 🔥 go_router
-              },
-              style: AppDecoration.clearButton,
-              child: Text(
-                'Limpar',
-                style: AppTextStyles.button.copyWith(
-                  color: context.textPrimary,
+            child: SizedBox(
+              height: 56,
+              child: OutlinedButton(
+                onPressed: hasActiveFilters ? _clearFilters : null,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: hasActiveFilters ? theme.primaryColor : theme.hintColor,
+                  side: BorderSide(
+                    color: hasActiveFilters ? theme.primaryColor : theme.dividerColor,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Limpar',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: hasActiveFilters ? theme.primaryColor : theme.hintColor,
+                  ),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                widget.onApply(
-                  _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
-                  _tempCategoria,
-                  _tempOrdenacao,
-                );
-                context.pop(); // 🔥 go_router
-              },
-              style: AppDecoration.filterButton,
-              child: Text(
-                'Aplicar',
-                style: AppTextStyles.button.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            child: SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _applyFilters,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Aplicar',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -305,4 +364,30 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       ),
     );
   }
+
+  void _applyFilters() {
+    widget.onApply(_tempCategoria, _tempOrdenacao);
+    context.pop();
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _tempCategoria = null;
+      _tempOrdenacao = null;
+    });
+    widget.onClear();
+    context.pop();
+  }
+}
+
+class _OrdenacaoOption {
+  final String value;
+  final String label;
+  final IconData icon;
+
+  const _OrdenacaoOption({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
 }

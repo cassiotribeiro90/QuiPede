@@ -1,3 +1,5 @@
+// lib/app/modules/loja_home/views/loja_detalhe_page.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,7 +11,6 @@ import '../bloc/loja_home_state.dart';
 import '../widgets/loja_header_widget.dart';
 import '../widgets/search_with_filters.dart';
 import '../widgets/secoes_list_widget.dart';
-import '../../../core/theme/app_theme_extension.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../carrinho/widgets/carrinho_bottom_bar.dart';
 import '../../produtos/widgets/produto_simples_bottom_sheet.dart';
@@ -17,6 +18,7 @@ import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../../../shared/widgets/loading_skeleton.dart';
 
 class LojaDetalhePage extends StatefulWidget {
   final int lojaId;
@@ -27,7 +29,8 @@ class LojaDetalhePage extends StatefulWidget {
   State<LojaDetalhePage> createState() => _LojaDetalhePageState();
 }
 
-class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderStateMixin {
+class _LojaDetalhePageState extends State<LojaDetalhePage>
+    with TickerProviderStateMixin {
   late final LojaHomeCubit _cubit;
   final ScrollController _scrollController = ScrollController();
   late TabController _categoryTabController;
@@ -77,16 +80,17 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
   }
 
   void _onScroll() {
-    if (_isLoadingMore) return;
-
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       final state = _cubit.state;
-      if (state is LojaHomeLoaded && state.hasMore && !state.isLoadingMore) {
+      if (state is LojaHomeLoaded &&
+          state.hasMore &&
+          !state.isLoadingMore &&
+          !_isLoadingMore) {
         _isLoadingMore = true;
-        _cubit.loadMore();
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) _isLoadingMore = false;
+        _cubit.loadMore().whenComplete(() {
+          _isLoadingMore = false;
+          if (mounted) setState(() {});
         });
       }
     }
@@ -112,7 +116,6 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
       final secao = state.secoes[i];
       final key = _sectionKeys[secao.id];
       if (key == null) continue;
-
       final context = key.currentContext;
       if (context == null) continue;
 
@@ -151,7 +154,10 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
         await Future.delayed(const Duration(milliseconds: 300));
       }
 
-      await _scrollToSectionById(secao.id);
+      final key = _sectionKeys[secao.id];
+      if (key != null) {
+        await _scrollToSection(key);
+      }
 
       if (mounted) {
         _categoryTabController.animateTo(index);
@@ -164,12 +170,10 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
     }
   }
 
-  Future<void> _scrollToSectionById(int sectionId) async {
+  Future<void> _scrollToSection(GlobalKey key) async {
     await Future.delayed(const Duration(milliseconds: 100));
 
-    final key = _sectionKeys[sectionId];
-    final targetContext = key?.currentContext;
-
+    final targetContext = key.currentContext;
     if (targetContext != null) {
       _isAutoScrolling = true;
       await Scrollable.ensureVisible(
@@ -182,7 +186,10 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
       if (_scrollController.hasClients) {
         const double offsetCompensacao = 112.0;
         final currentOffset = _scrollController.offset;
-        final targetOffset = (currentOffset - offsetCompensacao).clamp(0.0, _scrollController.position.maxScrollExtent);
+        final targetOffset = (currentOffset - offsetCompensacao).clamp(
+          0.0,
+          _scrollController.position.maxScrollExtent,
+        );
 
         if ((targetOffset - currentOffset).abs() > 1.0) {
           await _scrollController.animateTo(
@@ -194,7 +201,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
       }
       _isAutoScrolling = false;
     } else {
-      debugPrint('⚠️ [Scroll] Seção $sectionId não encontrada na árvore de widgets');
+      debugPrint('⚠️ [Scroll] Seção não encontrada na árvore de widgets');
     }
   }
 
@@ -220,13 +227,15 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
   }
 
   Widget _buildCategoryHeader(List<SecaoModel> secoes) {
+    final theme = Theme.of(context);
+
     return Container(
       height: 52,
       decoration: BoxDecoration(
-        color: context.surfaceColor,
+        color: theme.cardColor,
         border: Border(
           bottom: BorderSide(
-            color: context.dividerColor.withValues(alpha: 0.1),
+            color: theme.dividerColor.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -241,7 +250,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
           endIndent: 16,
           width: 32,
           thickness: 1,
-          color: context.dividerColor.withValues(alpha: 0.1),
+          color: theme.dividerColor.withValues(alpha: 0.1),
         ),
         itemBuilder: (context, index) {
           final secao = secoes[index];
@@ -265,10 +274,9 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
                     secao.nome,
                     style: TextStyle(
                       color: isSelected
-                          ? context.primaryColor
-                          : context.textPrimary.withValues(alpha: 0.7),
-                      fontWeight:
-                      isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ? theme.primaryColor
+                          : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       fontSize: 14,
                     ),
                   ),
@@ -278,7 +286,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
                     height: 3,
                     width: isSelected ? 24 : 0,
                     decoration: BoxDecoration(
-                      color: context.primaryColor,
+                      color: theme.primaryColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -391,18 +399,26 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
         child: BlocBuilder<LojaHomeCubit, LojaHomeState>(
           buildWhen: (previous, current) => true,
           builder: (context, state) {
+            final theme = Theme.of(context);
+
+            if (state is LojaHomeLoaded) {
+              debugPrint('🔍 [LojaDetalhePage] searchQuery no estado: "${state.searchQuery}"');
+            }
+
             return ResponsivePageScaffold(
-              backgroundColor: context.backgroundColor,
+              backgroundColor: theme.scaffoldBackgroundColor,
               appBar: AppBar(
                 leading: BackButton(
-                  color: context.textPrimary,
+                  color: theme.textTheme.bodyMedium?.color,
                   onPressed: () => context.pop(),
                 ),
                 title: Text(
                   state.loja?.nome ?? 'Carregando...',
-                  style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                backgroundColor: context.surfaceColor,
+                backgroundColor: theme.cardColor,
                 elevation: 0,
               ),
               bottomNavigationBar: _buildBottomBar(context, state),
@@ -417,14 +433,9 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
                           Positioned.fill(
                             child: Container(
                               color: Colors.white.withValues(alpha: 0.7),
-                              child: const Center(child: CircularProgressIndicator()),
-                            ),
-                          ),
-                        if (state is LojaHomeLoaded && state.isFiltering)
-                          Positioned.fill(
-                            child: Container(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              child: const Center(child: CircularProgressIndicator()),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             ),
                           ),
                       ],
@@ -446,8 +457,12 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
       builder: (context, carrinhoState) {
         final isLoading = carrinhoState is CarrinhoLoaded &&
             (carrinhoState.isRequesting || carrinhoState.isDebouncing);
-        final totalItens = carrinhoState is CarrinhoLoaded ? carrinhoState.totalItens : 0;
-        final lojaNome = carrinhoState is CarrinhoLoaded ? carrinhoState.lojaNome : null;
+        final totalItens = carrinhoState is CarrinhoLoaded
+            ? carrinhoState.totalItens
+            : 0;
+        final lojaNome = carrinhoState is CarrinhoLoaded
+            ? carrinhoState.lojaNome
+            : null;
 
         if (totalItens > 0 && lojaNome != null) {
           return CarrinhoBottomBar(
@@ -462,10 +477,8 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
   }
 
   Widget _buildBody(BuildContext context, LojaHomeState state) {
-    context.read<NavigationCubit>();
-
     if (state is LojaHomeLoading && state.secoes.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildLoadingState();
     }
 
     if (state is LojaHomeError && state.secoes.isEmpty) {
@@ -521,18 +534,36 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
                 if (loja != null) LojaHeaderWidget(loja: loja),
                 if (loja != null)
                   SearchWithFilters(
-                    categorias: loja.filterOptions.categorias,
-                    selectedCategoriaId: state is LojaHomeLoaded && state.selectedCategories.isNotEmpty
-                        ? state.selectedCategories.first
-                        : null,
-                    selectedOrderBy: state is LojaHomeLoaded ? state.orderBy : null,
+                    key: ValueKey(state is LojaHomeLoaded ? state.searchQuery : null),
                     searchQuery: state is LojaHomeLoaded ? state.searchQuery : null,
-                    onApply: (search, catId, orderBy) => _cubit.applyFilters(
-                      search: search,
-                      categoriaId: catId,
-                      orderBy: orderBy,
-                    ),
-                    onClearFilters: () => _cubit.clearFilters(),
+                    selectedOrderBy: state is LojaHomeLoaded ? state.orderBy : null,
+                    isSearching: state is LojaHomeLoaded ? state.isSearching : false,
+                    onSearch: (search) {
+                      if (state is LojaHomeLoaded) {
+                        _cubit.searchProducts(search);
+                      }
+                    },
+                    onOrderBy: (orderBy) {
+                      if (state is LojaHomeLoaded) {
+                        _cubit.applyFilters(
+                          search: state.searchQuery,
+                          categoriaId: state.selectedCategories.isNotEmpty
+                              ? state.selectedCategories.first
+                              : null,
+                          orderBy: orderBy,
+                        );
+                      }
+                    },
+                    onClearFilters: () {
+                      if (state is LojaHomeLoaded) {
+                        _cubit.clearFilters();
+                      }
+                    },
+                    onClearSearch: () {
+                      if (state is LojaHomeLoaded) {
+                        _cubit.clearSearchOnly();
+                      }
+                    },
                   ),
                 SecoesListWidget(
                   secoes: state.secoes,
@@ -547,7 +578,9 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
                     padding: EdgeInsets.all(16),
                     child: Center(child: CircularProgressIndicator()),
                   ),
-                if (state is LojaHomeLoaded && !state.hasMore && state.secoes.isNotEmpty)
+                if (state is LojaHomeLoaded &&
+                    !state.hasMore &&
+                    state.secoes.isNotEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 32),
                     child: Center(
@@ -561,6 +594,34 @@ class _LojaDetalhePageState extends State<LojaDetalhePage> with TickerProviderSt
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: 8,
+      itemBuilder: (_, __) => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            LoadingSkeleton(width: 52, height: 52, borderRadius: 8),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LoadingSkeleton(width: 150, height: 16),
+                  SizedBox(height: 8),
+                  LoadingSkeleton(width: 100, height: 12),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

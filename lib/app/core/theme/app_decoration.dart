@@ -1,8 +1,8 @@
 // lib/app/core/theme/app_decoration.dart
+
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
-import 'app_theme_extension.dart';
 
 class AppDecoration {
   // ============ BORDAS ============
@@ -39,7 +39,8 @@ class AppDecoration {
 
   // ============ CHIPS ============
 
-  static const EdgeInsets chipPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 14);
+  static const EdgeInsets chipPadding =
+  EdgeInsets.symmetric(horizontal: 20, vertical: 14);
 
   static ChipThemeData get chipTheme => ChipThemeData(
     backgroundColor: AppColors.surface,
@@ -58,22 +59,23 @@ class AppDecoration {
     required bool selected,
     required BuildContext context,
   }) {
+    final theme = Theme.of(context);
     return ChipThemeData(
-      backgroundColor: context.surfaceColor,
-      selectedColor: context.primarySurface,
+      backgroundColor: theme.cardColor,
+      selectedColor: theme.primaryColor.withValues(alpha: 0.1),
       padding: chipPadding,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: selected ? context.primaryColor : context.borderColor,
+          color: selected ? theme.primaryColor : theme.dividerColor,
         ),
       ),
       labelStyle: AppTextStyles.bodyLarge.copyWith(
-        color: selected ? context.primaryColor : context.textSecondary,
+        color: selected ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
         fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
       ),
       secondaryLabelStyle: AppTextStyles.bodyLarge.copyWith(
-        color: selected ? context.primaryColor : context.textSecondary,
+        color: selected ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
         fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
       ),
       brightness: Brightness.light,
@@ -81,12 +83,12 @@ class AppDecoration {
   }
 
   static BoxDecoration chipDecoration({required bool selected}) {
+    final color = selected ? AppColors.primarySurface : AppColors.surface;
+    final borderColor = selected ? AppColors.primary : AppColors.border;
     return BoxDecoration(
-      color: selected ? AppColors.primarySurface : AppColors.surface,
+      color: color,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: selected ? AppColors.primary : AppColors.border,
-      ),
+      border: Border.all(color: borderColor),
     );
   }
 

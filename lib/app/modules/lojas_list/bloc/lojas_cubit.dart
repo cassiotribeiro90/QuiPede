@@ -1,3 +1,5 @@
+// lib/app/modules/lojas_list/bloc/lojas_cubit.dart
+
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,8 +17,9 @@ class LojasCubit extends Cubit<LojasState> {
   String? _ordenacaoAtual;
   String? _searchQuery;
   List<LojaResumo> _todasLojas = [];
+  List<LojaResumo> _lojasFiltradas = [];
   PaginationModel? _lastPagination;
-  
+
   bool _isFetching = false;
 
   LojasCubit(this._repository, this._localizacaoCubit) : super(LojasInitial());
@@ -33,10 +36,12 @@ class LojasCubit extends Cubit<LojasState> {
     _isFetching = true;
 
     try {
-      // Atualiza os filtros internos se forem passados
+      // Atualiza os filtros internos se fornecidos
       if (categoria != null) _categoriaAtual = categoria;
       if (ordenacao != null) _ordenacaoAtual = ordenacao;
       if (search != null) _searchQuery = search;
+
+      debugPrint('📡 [LojasCubit] fetchLojas: search="$_searchQuery"');
 
       if (!isLoadMore) {
         emit(LojasLoading());
@@ -45,7 +50,6 @@ class LojasCubit extends Cubit<LojasState> {
         emit((state as LojasLoaded).copyWith(isLoadingMore: true));
       }
 
-      // Obtém coordenadas do LocalizacaoCubit para ordenação por proximidade
       double? lat;
       double? lng;
       final localizacaoState = _localizacaoCubit.state;
@@ -64,30 +68,32 @@ class LojasCubit extends Cubit<LojasState> {
         longitude: lng,
       );
 
-      debugPrint('📡 [LojasCubit] Lojas carregadas: ${response.items.length} itens. Página: ${response.pagination.page}/${response.pagination.totalPages}');
+      debugPrint('📡 [LojasCubit] Lojas carregadas: ${response.items.length} itens');
 
       _lastPagination = response.pagination;
-      
+
       if (isLoadMore) {
         _todasLojas.addAll(response.items);
       } else {
-        _todasLojas = List.from(response.items); 
+        _todasLojas = List.from(response.items);
       }
+
+      _lojasFiltradas = List.from(_todasLojas);
 
       emit(LojasLoaded(
         lojas: List.from(_todasLojas),
-        lojasFiltradas: List.from(_todasLojas),
+        lojasFiltradas: List.from(_lojasFiltradas),
         categorias: response.filterOptions.categorias,
         categoriaSelecionada: _categoriaAtual,
         ordenacaoAtual: _ordenacaoAtual,
         searchQuery: _searchQuery,
         pagination: response.pagination,
         isLoadingMore: false,
+        isSearching: false,
       ));
     } catch (e) {
       debugPrint('❌ [LojasCubit] Erro ao buscar lojas: $e');
       if (isLoadMore && state is LojasLoaded) {
-        // ✅ Se falhar no load more, mantém a lista anterior e só tira o loading
         emit((state as LojasLoaded).copyWith(isLoadingMore: false));
       } else {
         emit(LojasError('Erro ao carregar lojas: $e'));
@@ -97,6 +103,46 @@ class LojasCubit extends Cubit<LojasState> {
     }
   }
 
+  void applyFilters({
+    String? search,
+    String? categoria,
+    String? ordenacao,
+  }) {
+    _searchQuery = search?.trim().isEmpty == true ? null : search?.trim();
+    _categoriaAtual = categoria;
+    _ordenacaoAtual = ordenacao;
+
+    debugPrint('🔍 [LojasCubit] applyFilters: _searchQuery = "$_searchQuery"');
+
+    fetchLojas(
+      page: 1,
+      search: _searchQuery,
+      categoria: _categoriaAtual,
+      ordenacao: _ordenacaoAtual,
+    );
+  }
+
+  void clearAllFilters() {
+    debugPrint('🧹 [LojasCubit] clearAllFilters: limpando filtros');
+
+    _categoriaAtual = null;
+    _ordenacaoAtual = null;
+    _searchQuery = null;
+
+    fetchLojas(page: 1);
+  }
+
+  // 🔥 Novo metodo: limpa somente a busca textual
+  void clearSearchOnly() {
+    debugPrint('🧹 [LojasCubit] clearSearchOnly: limpando somente a busca');
+
+    _searchQuery = null;
+
+    // Recarrega mantendo categoria e ordenação atuais
+    fetchLojas(page: 1);
+  }
+
+  // Métodos auxiliares (mantidos)
   void filterByCategoria(String? categoria) {
     _categoriaAtual = categoria;
     fetchLojas(page: 1);
@@ -112,30 +158,12 @@ class LojasCubit extends Cubit<LojasState> {
     fetchLojas(page: 1);
   }
 
-  void applyFilters({
-    String? search,
-    String? categoria,
-    String? ordenacao,
-  }) {
-    _searchQuery = search?.trim().isEmpty == true ? null : search?.trim();
-    _categoriaAtual = categoria;
-    _ordenacaoAtual = ordenacao;
-    fetchLojas(page: 1);
-  }
-
-  void clearAllFilters() {
-    _categoriaAtual = null;
-    _ordenacaoAtual = null;
-    _searchQuery = null;
-    fetchLojas(page: 1);
-  }
-
   Future<void> refreshList() async {
     await fetchLojas(page: 1);
   }
 
   int get currentPage => _lastPagination?.page ?? 1;
-  
+
   bool get hasMorePages {
     if (_lastPagination == null) return false;
     return _lastPagination!.page < _lastPagination!.totalPages;

@@ -28,7 +28,7 @@ class SecaoModel extends Equatable {
       nome: json['nome'] as String,
       icone: json['icone'] as String?,
       ordem: json['ordem'] as int? ?? 0,
-      totalProdutos: (json['total_produtos'] ?? json['totalProdutos'] ?? 0) as int,
+      totalProdutos: (json['total_produtos'] ?? json['total_produtos'] ?? 0) as int,
       produtos: (json['produtos'] as List? ?? [])
           .map((e) => ProdutoModel.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -57,12 +57,12 @@ class SecaoModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        nome,
-        icone,
-        ordem,
-        totalProdutos,
-        produtos,
-        isLoadingMore,
-      ];
+    id,
+    nome,
+    icone,
+    ordem,
+    totalProdutos,
+    produtos,
+    isLoadingMore,
+  ];
 }

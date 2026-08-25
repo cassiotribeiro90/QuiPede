@@ -1,3 +1,5 @@
+// lib/app/modules/lojas_list/views/lojas_list_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,11 +8,10 @@ import '../../auth/bloc/auth_state.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../bloc/lojas_cubit.dart';
 import '../bloc/lojas_state.dart';
-import '../widgets/filter_bottom_sheet.dart';
 import '../widgets/loja_item.dart';
+import '../widgets/search_with_filters_lojas.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
 import '../../../widgets/app_drawer.dart';
-import '../../../models/lojas_list_filter_option_model.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/constants/navigation_origins.dart';
@@ -28,13 +29,11 @@ class LojasListScreen extends StatefulWidget {
 }
 
 class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAliveClientMixin {
-  final _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _initialized = false;
   bool _enderecoCarregado = false;
   StreamSubscription? _localizacaoSubscription;
 
-  // 🛡️ Throttles específicos
   final Throttle _lojasThrottle = Throttle(const Duration(seconds: 10));
   final Throttle _usuarioThrottle = Throttle(const Duration(minutes: 1));
   final Throttle _loadMoreThrottle = Throttle(const Duration(milliseconds: 500));
@@ -53,14 +52,12 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('🟢 [LojasListScreen] PostFrameCallback');
-
       final locState = context.read<LocalizacaoCubit>().state;
       if (locState is LocalizacaoCarregada) {
         _carregarLojas();
       } else {
         _verificarEnderecoELojas();
       }
-
     });
 
     Future.delayed(const Duration(seconds: 1), () {
@@ -73,7 +70,6 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
   @override
   void dispose() {
     _localizacaoSubscription?.cancel();
-    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -99,10 +95,8 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
 
   Future<void> _verificarEnderecoELojas() async {
     if (!mounted) return;
-
     final locCubit = context.read<LocalizacaoCubit>();
     final authCubit = context.read<AuthCubit>();
-
     debugPrint('🏠 [LojasListScreen] _verificarEnderecoELojas: locState=${locCubit.state.runtimeType}');
 
     if (locCubit.state is LocalizacaoCarregada) {
@@ -125,10 +119,8 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
       debugPrint('⏳ [LojasListScreen] _verificarEndereco ignorado: app ainda inicializando');
       return;
     }
-
     final locState = context.read<LocalizacaoCubit>().state;
     debugPrint('🔍 [LojasListScreen] _verificarEndereco: locState=${locState.runtimeType}');
-
     if (locState is LocalizacaoNaoEncontrada) {
       context.read<NavigationCubit>().goToHome();
     }
@@ -136,10 +128,8 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
 
   void _onScroll() {
     if (!_loadMoreThrottle.shouldRun) return;
-
     final cubit = context.read<LojasCubit>();
     final state = cubit.state;
-
     if (cubit.hasMorePages && state is LojasLoaded && !state.isLoadingMore) {
       debugPrint('🔄 [LojasListScreen] Carregando mais lojas (página ${cubit.currentPage + 1})');
       cubit.fetchLojas(
@@ -150,36 +140,10 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
     }
   }
 
-  void _showFilter(LojasLoaded state) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => FilterBottomSheet(
-        categorias: state.categorias,
-        selectedCategoria: state.categoriaSelecionada,
-        selectedOrdenacao: state.ordenacaoAtual,
-        initialSearch: _searchController.text,
-        onApply: (search, categoria, ordenacao) {
-          _searchController.text = search ?? '';
-          context.read<LojasCubit>().applyFilters(
-            categoria: categoria,
-            ordenacao: ordenacao,
-            search: search,
-          );
-        },
-        onClear: () {
-          _searchController.clear();
-          context.read<LojasCubit>().clearAllFilters();
-        },
-      ),
-    );
-  }
 
   void _navegarParaEnderecos(BuildContext context) {
     final authState = context.read<AuthCubit>().state;
     final String? status = authState.user?.status;
-
     if (status == 'ativo' || status == 'pendente' || status == 'convidado') {
       context.push(Routes.meusEnderecos).then((_) {
         _verificarEndereco();
@@ -194,12 +158,10 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
       builder: (context, state) {
         debugPrint('🔍 [LojasListScreen] LocalizacaoState: ${state.runtimeType}');
         String titulo = 'Selecionar endereço';
-
         if (state is LocalizacaoCarregada) {
           titulo = state.enderecoFormatado;
           debugPrint('🔍 [LojasListScreen] Exibindo endereço: $titulo');
         }
-
         return GestureDetector(
           onTap: () => _navegarParaEnderecos(context),
           behavior: HitTestBehavior.opaque,
@@ -221,7 +183,11 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down_rounded, size: 22, color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 22,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+              ),
             ],
           ),
         );
@@ -241,7 +207,6 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
         if (state is LocalizacaoCarregada) {
           _enderecoCarregado = true;
         }
-
         if (_initialized && state is LocalizacaoNaoEncontrada) {
           if (_enderecoCarregado) {
             _verificarEndereco();
@@ -251,6 +216,12 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
       child: BlocBuilder<LojasCubit, LojasState>(
         builder: (context, state) {
           debugPrint('📢 [LojasListScreen] BlocBuilder LojasState: ${state.runtimeType}');
+          final isSearching = state is LojasLoaded && state.isSearching;
+
+          if (state is LojasLoaded) {
+            debugPrint('🔍 [LojasListScreen] searchQuery no estado: "${state.searchQuery}"');
+          }
+
           return ResponsivePageScaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             drawer: const AppDrawer(),
@@ -288,7 +259,7 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     SliverToBoxAdapter(
-                      child: _buildSearchTrigger(state),
+                      child: _buildSearchBar(state, isSearching),
                     ),
                     _buildSliverBody(state),
                   ],
@@ -301,104 +272,59 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
     );
   }
 
-  Widget _buildSearchTrigger(LojasState state) {
-    String summary = 'Pesquisar lojas...';
-    bool hasFilters = false;
-
+  Widget _buildSearchBar(LojasState state, bool isSearching) {
     if (state is LojasLoaded) {
-      final List<String> parts = [];
-      if (state.searchQuery != null && state.searchQuery!.isNotEmpty) {
-        parts.add('"${state.searchQuery}"');
-      }
-      if (state.categoriaSelecionada != null) {
-        parts.add(_getCategoriaLabel(state.categoriaSelecionada!, state.categorias));
-      }
-      if (state.ordenacaoAtual != null) {
-        parts.add(_getOrdenacaoLabel(state.ordenacaoAtual!));
-      }
+      debugPrint('🔍 [LojasListScreen] _buildSearchBar: passando searchQuery="${state.searchQuery}" para SearchWithFiltersLojas');
 
-      if (parts.isNotEmpty) {
-        summary = parts.join(' • ');
-        hasFilters = true;
-      }
+      return SearchWithFiltersLojas(
+        key: ValueKey(state.searchQuery),
+        categorias: state.categorias,
+        selectedCategoria: state.categoriaSelecionada,
+        selectedOrdenacao: state.ordenacaoAtual,
+        searchQuery: state.searchQuery,
+        isSearching: isSearching,
+        onApply: (search, categoria, ordenacao) {
+          context.read<LojasCubit>().applyFilters(
+            search: search,
+            categoria: categoria,
+            ordenacao: ordenacao,
+          );
+        },
+        onClearFilters: () {
+          context.read<LojasCubit>().clearAllFilters();
+        },
+        // 🔥 Novo callback para limpar só a busca
+        onClearSearch: () {
+          context.read<LojasCubit>().clearSearchOnly();
+        },
+      );
     }
 
-    final primaryColor = Theme.of(context).primaryColor;
-    final hintColor = Theme.of(context).hintColor;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: GestureDetector(
-        onTap: () {
-          if (state is LojasLoaded) _showFilter(state);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: hasFilters ? primaryColor : Colors.grey.shade300,
-              width: hasFilters ? 1.5 : 1.0,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: SizedBox(
+        height: 48,
+        child: TextField(
+          enabled: false,
+          style: Theme.of(context).textTheme.bodyMedium,
+          decoration: InputDecoration(
+            hintText: 'Pesquisar lojas...',
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).hintColor,
             ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.search,
-                color: hasFilters ? primaryColor : hintColor,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  summary,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: hasFilters ? Theme.of(context).textTheme.bodyLarge?.color : hintColor,
-                    fontWeight: hasFilters ? FontWeight.w500 : FontWeight.normal,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (hasFilters)
-                GestureDetector(
-                  onTap: () {
-                    _searchController.clear();
-                    context.read<LojasCubit>().clearAllFilters();
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Icon(Icons.close, size: 20, color: Colors.orange),
-                  ),
-                ),
-            ],
+            prefixIcon: Icon(
+              Icons.search,
+              size: 20,
+              color: Theme.of(context).hintColor,
+            ),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
         ),
       ),
     );
-  }
-
-  String _getCategoriaLabel(String value, List<LojasListFilterOptionModel> categorias) {
-    try {
-      return categorias.firstWhere((c) => c.value == value).label;
-    } catch (_) {
-      return value;
-    }
-  }
-
-  String _getOrdenacaoLabel(String value) {
-    switch (value) {
-      case 'nota':
-        return 'Melhor avaliados';
-      case 'tempo_entrega':
-        return 'Menor tempo';
-      case 'taxa_entrega':
-        return 'Menor taxa';
-      case 'pedido_minimo':
-        return 'Menor pedido mínimo';
-      default:
-        return value;
-    }
   }
 
   Widget _buildSliverBody(LojasState state) {
@@ -488,6 +414,7 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
   }
 
   Widget _buildEmptyState(bool isOverallEmpty) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -495,18 +422,18 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
           Icon(
             Icons.storefront_outlined,
             size: 80,
-            color: Theme.of(context).hintColor.withValues(alpha: 0.5),
+            color: theme.hintColor.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             'Nenhuma loja encontrada',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
             isOverallEmpty ? 'Volte mais tarde!' : 'Tente outros filtros',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
             ),
           ),
           if (!isOverallEmpty)
@@ -520,7 +447,6 @@ class _LojasListScreenState extends State<LojasListScreen> with AutomaticKeepAli
   }
 }
 
-// 🛡️ Classe Throttle simples para controle de intervalo
 class Throttle {
   final Duration interval;
   DateTime? _lastRun;

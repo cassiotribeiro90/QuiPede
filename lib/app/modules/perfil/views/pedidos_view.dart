@@ -190,10 +190,10 @@ class _PedidosViewState extends State<PedidosView> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: pedido.statusColor.withOpacity(0.12),
+                          color: pedido.statusColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: pedido.statusColor.withOpacity(0.3),
+                            color: pedido.statusColor.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(

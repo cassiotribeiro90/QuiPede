@@ -1,251 +1,197 @@
-import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme_extension.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/theme/app_decoration.dart';
-import '../../../models/categoria_filter_model.dart';
-import '../../../core/theme/input_styles.dart';
+// lib/app/modules/loja_home/widgets/filter_bottom_sheet.dart
 
+import 'package:flutter/material.dart';
+
+/// Bottom sheet de ORDENAÇÃO para produtos
+/// - Apenas ordenação (sem categorias, sem busca)
+/// - Design minimalista sem bordas arredondadas
 class FilterBottomSheet extends StatefulWidget {
-  final List<CategoriaFilterModel> categorias;
-  final int? selectedCategoriaId;
   final String? selectedOrderBy;
-  final String? initialSearch;
-  final Function(String? search, int? categoriaId, String? orderBy) onApply;
+  final Function(String? orderBy) onApply;
   final VoidCallback onClear;
 
   const FilterBottomSheet({
     super.key,
-    required this.categorias,
-    this.selectedCategoriaId,
     this.selectedOrderBy,
-    this.initialSearch,
     required this.onApply,
     required this.onClear,
   });
 
   @override
   State<FilterBottomSheet> createState() => _FilterBottomSheetState();
+
+  static Future<void> show({
+    required BuildContext context,
+    String? selectedOrderBy,
+    required Function(String? orderBy) onApply,
+    required VoidCallback onClear,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FilterBottomSheet(
+        selectedOrderBy: selectedOrderBy,
+        onApply: onApply,
+        onClear: onClear,
+      ),
+    );
+  }
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  late int? _tempCategoriaId;
   late String? _tempOrderBy;
-  late TextEditingController _searchController;
 
-  final List<Map<String, dynamic>> _orderOptions = [
-    {'value': 'relevancia', 'label': 'Relevância', 'icon': '⭐'},
-    {'value': 'avaliacao', 'label': 'Melhor avaliados', 'icon': '⭐'},
-    {'value': 'destaque', 'label': 'Destaques', 'icon': '🔥'},
-    {'value': 'preco_asc', 'label': 'Menor preço', 'icon': '💰'},
-    {'value': 'preco_desc', 'label': 'Maior preço', 'icon': '💸'},
+  final List<_OrderOption> _orderOptions = const [
+    _OrderOption(value: 'relevancia', label: 'Relevância', icon: Icons.trending_up),
+    _OrderOption(value: 'avaliacao', label: 'Melhor avaliados', icon: Icons.star),
+    _OrderOption(value: 'destaque', label: 'Destaques', icon: Icons.whatshot),
+    _OrderOption(value: 'preco_asc', label: 'Menor preço', icon: Icons.attach_money),
+    _OrderOption(value: 'preco_desc', label: 'Maior preço', icon: Icons.money_off),
   ];
 
   @override
   void initState() {
     super.initState();
-    _tempCategoriaId = widget.selectedCategoriaId;
-    _tempOrderBy = widget.selectedOrderBy;
-    _searchController = TextEditingController(text: widget.initialSearch);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+    _tempOrderBy = widget.selectedOrderBy ?? 'relevancia';
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.50,
       decoration: BoxDecoration(
-        color: context.backgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
           _buildHandle(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Filtrar produtos',
-                  style: context.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ),
+          _buildHeader(),
           const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: _buildSearchField(),
-          ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  _buildOrderSection(),
-                  const SizedBox(height: 24),
-                  _buildCategoriesSection(),
-                  const SizedBox(height: 24),
-                ],
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: _buildOrderList(),
             ),
           ),
-          _buildFixedFooter(),
+          _buildFooter(),
         ],
       ),
     );
   }
 
   Widget _buildHandle() {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(top: 12),
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: context.textHint.withValues(alpha: 0.3),
+        color: theme.hintColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(2),
       ),
     );
   }
 
-  Widget _buildSearchField() {
-    return TextField(
-      controller: _searchController,
-      decoration: InputStyles.decoration(
-        label: 'Pesquisar produtos',
-        hint: 'Ex: Pizza, Hambúrguer...',
-        prefixIcon: Icons.search,
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-          icon: const Icon(Icons.close, size: 20),
-          onPressed: () {
-            setState(() {
-              _searchController.clear();
-            });
-          },
-        )
-            : null,
+  Widget _buildHeader() {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 12, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Ordenar por',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 24,
+          ),
+        ],
       ),
-      onChanged: (val) => setState(() {}),
     );
   }
 
-  Widget _buildOrderSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Ordenar por',
-          style: context.titleSmall.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _orderOptions.map((option) {
-            final isSelected = _tempOrderBy == option['value'];
-            final chipTheme = AppDecoration.chipStyle(
-              selected: isSelected,
-              context: context,
-            );
-            
-            return ChoiceChip(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    option['icon'],
-                    style: AppTextStyles.bodyLarge,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    option['label'],
-                    style: AppTextStyles.bodyLarge,
-                  ),
-                ],
-              ),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _tempOrderBy = selected ? option['value'] : null;
-                });
-              },
-              selectedColor: chipTheme.selectedColor,
-              backgroundColor: chipTheme.backgroundColor,
-              labelStyle: chipTheme.labelStyle,
-              shape: chipTheme.shape,
-              showCheckmark: false,
-              padding: AppDecoration.chipPadding, // 🔥 PADDING CENTRALIZADO
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoriesSection() {
-    if (widget.categorias.isEmpty) return const SizedBox.shrink();
+  Widget _buildOrderList() {
+    final theme = Theme.of(context);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Categorias',
-          style: context.titleSmall.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: widget.categorias.map((cat) {
-            final isSelected = _tempCategoriaId == cat.id;
-            final chipTheme = AppDecoration.chipStyle(
-              selected: isSelected,
-              context: context,
-            );
-            
-            return ChoiceChip(
-              label: Text(
-                '${cat.icone ?? ''} ${cat.nome}'.trim(),
-                style: AppTextStyles.bodyLarge,
-              ),
-              selected: isSelected,
-              onSelected: (selected) {
+      children: _orderOptions.asMap().entries.map((entry) {
+        final index = entry.key;
+        final option = entry.value;
+        final isSelected = _tempOrderBy == option.value;
+
+        return Column(
+          children: [
+            // 🔥 OPÇÃO MINIMALISTA SEM BORDA
+            GestureDetector(
+              onTap: () {
                 setState(() {
-                  _tempCategoriaId = selected ? cat.id : null;
+                  _tempOrderBy = isSelected ? 'relevancia' : option.value;
                 });
               },
-              selectedColor: chipTheme.selectedColor,
-              backgroundColor: chipTheme.backgroundColor,
-              labelStyle: chipTheme.labelStyle,
-              shape: chipTheme.shape,
-              showCheckmark: false,
-              padding: AppDecoration.chipPadding, // 🔥 PADDING CENTRALIZADO
-            );
-          }).toList(),
-        ),
-      ],
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Row(
+                  children: [
+                    Icon(
+                      option.icon,
+                      size: 22,
+                      color: isSelected ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        option.label,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Icon(
+                        Icons.check_circle,
+                        size: 22,
+                        color: theme.primaryColor,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            // 🔥 SEPARADOR SUAVE (exceto no último)
+            if (index < _orderOptions.length - 1)
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                color: theme.dividerColor.withValues(alpha: 0.3),
+              ),
+          ],
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildFixedFooter() {
+  Widget _buildFooter() {
+    final theme = Theme.of(context);
+    final hasActiveFilters = _tempOrderBy != null && _tempOrderBy != 'relevancia';
+
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 16),
       decoration: BoxDecoration(
-        color: context.backgroundColor,
+        color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -257,42 +203,50 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                setState(() {
-                  _tempCategoriaId = null;
-                  _tempOrderBy = null;
-                  _searchController.clear();
-                });
-                widget.onClear();
-                Navigator.pop(context);
-              },
-              style: AppDecoration.clearButton,
-              child: Text(
-                'Limpar',
-                style: AppTextStyles.button.copyWith(
-                  color: context.textPrimary,
+            child: SizedBox(
+              height: 56,
+              child: OutlinedButton(
+                onPressed: hasActiveFilters ? _clearFilters : null,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: hasActiveFilters ? theme.primaryColor : theme.hintColor,
+                  side: BorderSide(
+                    color: hasActiveFilters ? theme.primaryColor : theme.dividerColor,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Limpar',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: hasActiveFilters ? theme.primaryColor : theme.hintColor,
+                  ),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                widget.onApply(
-                  _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
-                  _tempCategoriaId,
-                  _tempOrderBy,
-                );
-                Navigator.pop(context);
-              },
-              style: AppDecoration.filterButton,
-              child: Text(
-                'Aplicar',
-                style: AppTextStyles.button.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            child: SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _applyFilters,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Aplicar',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -301,4 +255,29 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       ),
     );
   }
+
+  void _applyFilters() {
+    widget.onApply(_tempOrderBy == 'relevancia' ? null : _tempOrderBy);
+    Navigator.pop(context);
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _tempOrderBy = 'relevancia';
+    });
+    widget.onClear();
+    Navigator.pop(context);
+  }
+}
+
+class _OrderOption {
+  final String value;
+  final String label;
+  final IconData icon;
+
+  const _OrderOption({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
 }

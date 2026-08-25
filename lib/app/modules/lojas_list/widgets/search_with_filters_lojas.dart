@@ -1,35 +1,38 @@
-// lib/app/modules/loja_home/widgets/search_with_filters.dart
+// lib/app/modules/lojas_list/widgets/search_with_filters_lojas.dart
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '../../../models/lojas_list_filter_option_model.dart';
 import 'filter_bottom_sheet.dart';
 
-class SearchWithFilters extends StatefulWidget {
+class SearchWithFiltersLojas extends StatefulWidget {
+  final List<LojasListFilterOptionModel> categorias;
+  final String? selectedCategoria;
+  final String? selectedOrdenacao;
   final String? searchQuery;
-  final String? selectedOrderBy;
   final bool isSearching;
-  final Function(String? search) onSearch;
-  final Function(String? orderBy) onOrderBy;
+  final Function(String? search, String? categoria, String? ordenacao) onApply;
   final VoidCallback onClearFilters;
   final VoidCallback onClearSearch; // 🔥 Novo: limpar somente a busca
 
-  const SearchWithFilters({
+  const SearchWithFiltersLojas({
     super.key,
+    required this.categorias,
+    this.selectedCategoria,
+    this.selectedOrdenacao,
     this.searchQuery,
-    this.selectedOrderBy,
     this.isSearching = false,
-    required this.onSearch,
-    required this.onOrderBy,
+    required this.onApply,
     required this.onClearFilters,
     required this.onClearSearch,
   });
 
   @override
-  State<SearchWithFilters> createState() => _SearchWithFiltersState();
+  State<SearchWithFiltersLojas> createState() => _SearchWithFiltersLojasState();
 }
 
-class _SearchWithFiltersState extends State<SearchWithFilters> {
+class _SearchWithFiltersLojasState extends State<SearchWithFiltersLojas> {
   late TextEditingController _searchController;
   final FocusNode _focusNode = FocusNode();
   Timer? _debounceTimer;
@@ -40,17 +43,17 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
     super.initState();
     _searchController = TextEditingController(text: widget.searchQuery ?? '');
     _lastSearchedValue = widget.searchQuery;
-    debugPrint('🔍 [SearchWithFilters] initState: searchQuery=${widget.searchQuery}');
+    debugPrint('🔍 [SearchWithFiltersLojas] initState: searchQuery=${widget.searchQuery}');
   }
 
   @override
-  void didUpdateWidget(SearchWithFilters oldWidget) {
+  void didUpdateWidget(SearchWithFiltersLojas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    debugPrint('🔍 [SearchWithFilters] didUpdateWidget: old=${oldWidget.searchQuery}, new=${widget.searchQuery}');
+    debugPrint('🔍 [SearchWithFiltersLojas] didUpdateWidget: old=${oldWidget.searchQuery}, new=${widget.searchQuery}');
     if (widget.searchQuery != oldWidget.searchQuery) {
       _searchController.text = widget.searchQuery ?? '';
       _lastSearchedValue = widget.searchQuery;
-      debugPrint('🔍 [SearchWithFilters] Atualizando texto para: "${widget.searchQuery}"');
+      debugPrint('🔍 [SearchWithFiltersLojas] Atualizando texto para: "${widget.searchQuery}"');
       setState(() {});
     }
   }
@@ -64,9 +67,10 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
   }
 
   bool get _hasActiveFilters {
-    final has = (widget.selectedOrderBy != null && widget.selectedOrderBy != 'relevancia') ||
+    final has = widget.selectedCategoria != null ||
+        widget.selectedOrdenacao != null ||
         (widget.searchQuery != null && widget.searchQuery!.isNotEmpty);
-    debugPrint('🔍 [SearchWithFilters] _hasActiveFilters: $has (searchQuery=${widget.searchQuery})');
+    debugPrint('🔍 [SearchWithFiltersLojas] _hasActiveFilters: $has (searchQuery=${widget.searchQuery})');
     return has;
   }
 
@@ -77,23 +81,31 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
       parts.add('"${widget.searchQuery!}"');
     }
 
-    if (widget.selectedOrderBy != null && widget.selectedOrderBy != 'relevancia') {
-      parts.add(_getOrderByLabel(widget.selectedOrderBy!));
+    if (widget.selectedCategoria != null) {
+      try {
+        final cat = widget.categorias.firstWhere(
+              (c) => c.value == widget.selectedCategoria,
+        );
+        parts.add(cat.label);
+      } catch (_) {}
+    }
+
+    if (widget.selectedOrdenacao != null) {
+      parts.add(_getOrdenacaoLabel(widget.selectedOrdenacao!));
     }
 
     final summary = parts.isEmpty ? '' : parts.join(' • ');
-    debugPrint('🔍 [SearchWithFilters] _getFilterSummary: "$summary"');
+    debugPrint('🔍 [SearchWithFiltersLojas] _getFilterSummary: "$summary"');
     return summary;
   }
 
-  String _getOrderByLabel(String orderBy) {
-    switch (orderBy) {
-      case 'relevancia': return 'Relevância';
-      case 'avaliacao': return 'Melhor avaliados';
-      case 'destaque': return 'Destaques';
-      case 'preco_asc': return 'Menor preço';
-      case 'preco_desc': return 'Maior preço';
-      default: return orderBy;
+  String _getOrdenacaoLabel(String value) {
+    switch (value) {
+      case 'nota': return 'Melhor avaliados';
+      case 'tempo_entrega': return 'Menor tempo';
+      case 'taxa_entrega': return 'Menor taxa';
+      case 'pedido_minimo': return 'Menor pedido mínimo';
+      default: return value;
     }
   }
 
@@ -102,8 +114,8 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
     final searchValue = trimmedValue.isEmpty ? null : trimmedValue;
     if (searchValue == _lastSearchedValue) return;
     _lastSearchedValue = searchValue;
-    debugPrint('🔍 [SearchWithFilters] _performSearch: "$searchValue"');
-    widget.onSearch(searchValue);
+    debugPrint('🔍 [SearchWithFiltersLojas] _performSearch: "$searchValue"');
+    widget.onApply(searchValue, widget.selectedCategoria, widget.selectedOrdenacao);
   }
 
   void _handleSearchChanged(String value) {
@@ -130,26 +142,26 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
 
   // 🔥 Limpa TUDO (busca + filtros) - usado pelo botão "Limpar" do resumo
   void _clearSearch() {
-    debugPrint('🔍 [SearchWithFilters] _clearSearch chamado!');
+    debugPrint('🔍 [SearchWithFiltersLojas] _clearSearch chamado!');
     _debounceTimer?.cancel();
     _searchController.clear();
     _lastSearchedValue = null;
-    debugPrint('🔍 [SearchWithFilters] _clearSearch: chamando onClearFilters');
+    debugPrint('🔍 [SearchWithFiltersLojas] _clearSearch: chamando onClearFilters');
     widget.onClearFilters();
     setState(() {});
-    debugPrint('🔍 [SearchWithFilters] _clearSearch: setState chamado');
+    debugPrint('🔍 [SearchWithFiltersLojas] _clearSearch: setState chamado');
   }
 
   // 🔥 Limpa somente a busca textual - usado pelo X no campo de texto
   void _clearSearchOnly() {
-    debugPrint('🔍 [SearchWithFilters] _clearSearchOnly chamado!');
+    debugPrint('🔍 [SearchWithFiltersLojas] _clearSearchOnly chamado!');
     _debounceTimer?.cancel();
     _searchController.clear();
     _lastSearchedValue = null;
-    debugPrint('🔍 [SearchWithFilters] _clearSearchOnly: chamando onClearSearch');
+    debugPrint('🔍 [SearchWithFiltersLojas] _clearSearchOnly: chamando onClearSearch');
     widget.onClearSearch();
     setState(() {});
-    debugPrint('🔍 [SearchWithFilters] _clearSearchOnly: setState chamado');
+    debugPrint('🔍 [SearchWithFiltersLojas] _clearSearchOnly: setState chamado');
   }
 
   @override
@@ -159,7 +171,7 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
     final filterSummary = _getFilterSummary();
     final isSearching = widget.isSearching;
 
-    debugPrint('🔍 [SearchWithFilters] build: hasActiveFilters=$hasActiveFilters, summary="$filterSummary", isSearching=$isSearching');
+    debugPrint('🔍 [SearchWithFiltersLojas] build: hasActiveFilters=$hasActiveFilters, summary="$filterSummary", isSearching=$isSearching');
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -176,7 +188,7 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
                     enabled: !isSearching,
                     style: theme.textTheme.bodyMedium,
                     decoration: InputDecoration(
-                      hintText: 'Pesquisar produtos...',
+                      hintText: 'Pesquisar lojas...',
                       hintStyle: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.hintColor,
                       ),
@@ -207,7 +219,7 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
                                     ? theme.primaryColor
                                     : theme.hintColor,
                               ),
-                              onPressed: isSearching ? null : () => _showOrderBottomSheet(context),
+                              onPressed: isSearching ? null : () => _showFilterBottomSheet(context),
                               splashRadius: 18,
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -295,12 +307,18 @@ class _SearchWithFiltersState extends State<SearchWithFilters> {
     );
   }
 
-  void _showOrderBottomSheet(BuildContext context) {
+  void _showFilterBottomSheet(BuildContext context) {
     FilterBottomSheet.show(
       context: context,
-      selectedOrderBy: widget.selectedOrderBy,
-      onApply: (orderBy) {
-        widget.onOrderBy(orderBy);
+      categorias: widget.categorias,
+      selectedCategoria: widget.selectedCategoria,
+      selectedOrdenacao: widget.selectedOrdenacao,
+      onApply: (categoria, ordenacao) {
+        widget.onApply(
+          _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
+          categoria,
+          ordenacao,
+        );
       },
       onClear: () {
         _clearSearch();

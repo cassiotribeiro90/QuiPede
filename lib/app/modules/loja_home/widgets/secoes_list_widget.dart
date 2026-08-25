@@ -10,7 +10,7 @@ class SecoesListWidget extends StatelessWidget {
   final Function(ProdutoModel) onProdutoTap;
   final Map<int, int> quantidadesPorProduto;
   final Map<int, int> itemIdsPorProduto;
-  final Map<int, GlobalKey>? sectionKeys; // chave = secao.id
+  final Map<int, GlobalKey>? sectionKeys;
 
   const SecoesListWidget({
     super.key,
@@ -44,7 +44,8 @@ class SecoesListWidget extends StatelessWidget {
     final nomesVistosGlobal = <String>{};
     final List<Widget> children = [];
 
-    for (final secao in secoes) {
+    for (int i = 0; i < secoes.length; i++) {
+      final secao = secoes[i];
       final produtosUnicos = secao.produtos.where((p) {
         final chaveUnica = p.nome.trim().toLowerCase();
         final jaVisto = nomesVistosGlobal.contains(chaveUnica);
@@ -52,9 +53,8 @@ class SecoesListWidget extends StatelessWidget {
         return !jaVisto;
       }).toList();
 
-      final sectionKey = sectionKeys?[secao.id];
+      final GlobalKey? sectionKey = sectionKeys?[secao.id];
 
-      // ✅ Cabeçalho da seção SEMPRE presente para garantir que a GlobalKey exista
       children.add(
         Container(
           key: sectionKey,
@@ -79,7 +79,7 @@ class SecoesListWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${secao.totalProdutos}', // Usar total real da API
+                  '${secao.totalProdutos}',
                   style: context.caption.copyWith(
                     color: context.primaryColor,
                     fontWeight: FontWeight.w500,
@@ -91,7 +91,6 @@ class SecoesListWidget extends StatelessWidget {
         ),
       );
 
-      // Cards dos produtos (somente se já carregados)
       if (produtosUnicos.isNotEmpty) {
         for (final produto in produtosUnicos) {
           children.add(
@@ -106,7 +105,6 @@ class SecoesListWidget extends StatelessWidget {
           );
         }
       } else if (secao.hasMore) {
-        // Feedback visual se a seção existe mas produtos ainda estão vindo
         children.add(
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
@@ -115,7 +113,6 @@ class SecoesListWidget extends StatelessWidget {
         );
       }
 
-      // Divisor entre seções
       children.add(
         Column(
           children: [

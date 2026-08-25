@@ -1,3 +1,5 @@
+// lib/app/modules/loja_home/bloc/loja_home_state.dart
+
 import 'package:equatable/equatable.dart';
 import '../../../models/loja_detalhe_model.dart';
 import '../../../models/secao_model.dart';
@@ -57,11 +59,12 @@ class LojaHomeLoaded extends LojaHomeState {
   final bool hasMore;
   final bool isLoadingMore;
   final bool isFiltering;
+  final bool isSearching;
   final List<int> selectedCategories;
   final int currentPage;
   final int totalPages;
   final int activeFilterCount;
-  final int? loadingSectionId; // 🆕 Controla qual seção está sendo carregada
+  final int? loadingSectionId;
 
   const LojaHomeLoaded({
     required LojaDetalheModel loja,
@@ -71,6 +74,7 @@ class LojaHomeLoaded extends LojaHomeState {
     this.hasMore = false,
     this.isLoadingMore = false,
     this.isFiltering = false,
+    this.isSearching = false,
     super.searchQuery,
     super.orderBy,
     super.selectedCategoriaId,
@@ -86,6 +90,9 @@ class LojaHomeLoaded extends LojaHomeState {
   @override
   LojaDetalheModel get loja => super.loja!;
 
+  // Sentinela para distinguir "não informado" de "null" nos campos escalares
+  static const _unset = Object();
+
   LojaHomeLoaded copyWith({
     LojaDetalheModel? loja,
     List<SecaoModel>? secoes,
@@ -94,18 +101,17 @@ class LojaHomeLoaded extends LojaHomeState {
     bool? hasMore,
     bool? isLoadingMore,
     bool? isFiltering,
-    int? selectedCategoriaId,
-    String? searchQuery,
-    String? orderBy,
-    List<int>? selectedCategories,
+    bool? isSearching,
+    Object? selectedCategoriaId = _unset,
+    Object? searchQuery = _unset,
+    Object? orderBy = _unset,
+    List<int>? selectedCategories,  // 🔥 Volta a ser List<int>? sem sentinela
+    Object? addingProductId = _unset,
+    Object? loadingSectionId = _unset,
     int? currentPage,
     int? totalPages,
     int? activeFilterCount,
     bool? isAddingToCart,
-    int? addingProductId,
-    int? loadingSectionId,
-    bool resetLoadingSectionId = false, // 🆕 Flag para limpar explicitamente
-    bool resetAddingProductId = false,   // 🆕 Flag para limpar explicitamente
   }) {
     return LojaHomeLoaded(
       loja: loja ?? this.loja,
@@ -115,16 +121,27 @@ class LojaHomeLoaded extends LojaHomeState {
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isFiltering: isFiltering ?? this.isFiltering,
-      selectedCategoriaId: selectedCategoriaId ?? this.selectedCategoriaId,
-      searchQuery: searchQuery ?? this.searchQuery,
-      orderBy: orderBy ?? this.orderBy,
+      isSearching: isSearching ?? this.isSearching,
+      selectedCategoriaId: identical(selectedCategoriaId, _unset)
+          ? this.selectedCategoriaId
+          : selectedCategoriaId as int?,
+      searchQuery: identical(searchQuery, _unset)
+          ? this.searchQuery
+          : searchQuery as String?,
+      orderBy: identical(orderBy, _unset)
+          ? this.orderBy
+          : orderBy as String?,
       selectedCategories: selectedCategories ?? this.selectedCategories,
+      addingProductId: identical(addingProductId, _unset)
+          ? this.addingProductId
+          : addingProductId as int?,
+      loadingSectionId: identical(loadingSectionId, _unset)
+          ? this.loadingSectionId
+          : loadingSectionId as int?,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       activeFilterCount: activeFilterCount ?? this.activeFilterCount,
       isAddingToCart: isAddingToCart ?? this.isAddingToCart,
-      addingProductId: resetAddingProductId ? null : (addingProductId ?? this.addingProductId),
-      loadingSectionId: resetLoadingSectionId ? null : (loadingSectionId ?? this.loadingSectionId),
     );
   }
 
@@ -137,6 +154,7 @@ class LojaHomeLoaded extends LojaHomeState {
     hasMore,
     isLoadingMore,
     isFiltering,
+    isSearching,
     selectedCategoriaId,
     searchQuery,
     orderBy,
@@ -146,7 +164,7 @@ class LojaHomeLoaded extends LojaHomeState {
     activeFilterCount,
     isAddingToCart,
     addingProductId,
-    loadingSectionId, // 🆕
+    loadingSectionId,
   ];
 }
 
