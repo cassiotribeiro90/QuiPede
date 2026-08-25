@@ -286,21 +286,20 @@ class LojaHomeCubit extends Cubit<LojaHomeState> {
         final current = state;
         if (current is! LojaHomeLoaded) break;
 
-        final sectionIndex = current.secoes.indexWhere((s) => s.id == sectionId);
+        final sectionExists = current.secoes.any((s) => s.id == sectionId);
 
-        if (sectionIndex == -1) {
-          if (!_hasMore) break;
-          debugPrint('📥 [Cubit] Buscando seção $sectionId...');
-          await loadMore();
-        } else {
-          final secao = current.secoes[sectionIndex];
+        if (sectionExists) {
+          final secao = current.secoes.firstWhere((s) => s.id == sectionId);
           if (!secao.hasMore) break;
-          debugPrint('📥 [Cubit] Completando seção $sectionId...');
-          await loadMore();
         }
 
+        if (!_hasMore) break;
+        
+        debugPrint('📥 [Cubit] Carregando mais para encontrar/completar seção $sectionId...');
+        await loadMore();
+
         iterations++;
-        await Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 100));
       }
     } finally {
       final finalState = state;

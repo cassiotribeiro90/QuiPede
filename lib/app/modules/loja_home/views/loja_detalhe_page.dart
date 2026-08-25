@@ -35,7 +35,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage>
   final ScrollController _scrollController = ScrollController();
   late TabController _categoryTabController;
   final Map<int, GlobalKey> _sectionKeys = {};
-  bool _isLoadingMore = false;
+  bool _isLoadingMoreLocal = false;
   bool _carrinhoJaCarregado = false;
   bool _isAutoScrolling = false;
   bool _isScrollingToCategory = false;
@@ -86,10 +86,10 @@ class _LojaDetalhePageState extends State<LojaDetalhePage>
       if (state is LojaHomeLoaded &&
           state.hasMore &&
           !state.isLoadingMore &&
-          !_isLoadingMore) {
-        _isLoadingMore = true;
+          !_isLoadingMoreLocal) {
+        _isLoadingMoreLocal = true;
         _cubit.loadMore().whenComplete(() {
-          _isLoadingMore = false;
+          _isLoadingMoreLocal = false;
           if (mounted) setState(() {});
         });
       }
@@ -151,6 +151,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage>
 
       if (secao.hasMore) {
         await _cubit.loadSectionCompletelyById(secao.id);
+        // Pequeno delay para garantir que o widget da seção foi renderizado/atualizado
         await Future.delayed(const Duration(milliseconds: 300));
       }
 
@@ -502,7 +503,7 @@ class _LojaDetalhePageState extends State<LojaDetalhePage>
 
     return RefreshIndicator(
       onRefresh: () async {
-        _isLoadingMore = false;
+        _isLoadingMoreLocal = false;
         await Future.wait([
           _cubit.refresh(),
           if (_carrinhoJaCarregado)
