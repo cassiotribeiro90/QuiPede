@@ -58,6 +58,10 @@ class AppTheme {
         style: AppDecoration.secondaryButton,
       ),
 
+      textButtonTheme: TextButtonThemeData(
+        style: AppDecoration.textButton,
+      ),
+
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface,
         selectedColor: AppColors.primarySurface,

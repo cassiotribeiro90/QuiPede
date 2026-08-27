@@ -97,7 +97,8 @@ class AppDecoration {
   static ButtonStyle get primaryButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+    minimumSize: const Size(double.infinity, 56), // 🔥 Altura mínima de 56
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     textStyle: AppTextStyles.button,
     elevation: 0,
@@ -106,7 +107,8 @@ class AppDecoration {
   static ButtonStyle get primaryLargeButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 30),
+    minimumSize: const Size(double.infinity, 64), // 🔥 Altura mínima de 64
+    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 20),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     textStyle: AppTextStyles.button.copyWith(fontSize: 18),
     elevation: 0,
@@ -115,7 +117,8 @@ class AppDecoration {
   static ButtonStyle get secondaryButton => OutlinedButton.styleFrom(
     foregroundColor: AppColors.primary,
     side: const BorderSide(color: AppColors.primary),
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+    minimumSize: const Size(double.infinity, 56), // 🔥 Altura mínima de 56
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     textStyle: AppTextStyles.button,
   );
@@ -123,7 +126,8 @@ class AppDecoration {
   static ButtonStyle get clearButton => OutlinedButton.styleFrom(
     foregroundColor: AppColors.textSecondary,
     side: const BorderSide(color: AppColors.border),
-    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+    minimumSize: const Size(double.infinity, 56),
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     textStyle: AppTextStyles.button.copyWith(
       color: AppColors.textSecondary,
@@ -133,7 +137,8 @@ class AppDecoration {
   static ButtonStyle get actionButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+    minimumSize: const Size(double.infinity, 56),
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     textStyle: AppTextStyles.button.copyWith(fontWeight: FontWeight.bold),
     elevation: 0,
@@ -142,7 +147,8 @@ class AppDecoration {
   static ButtonStyle get filterButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+    minimumSize: const Size(double.infinity, 48),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     textStyle: AppTextStyles.button.copyWith(fontWeight: FontWeight.bold),
     elevation: 0,
@@ -150,7 +156,8 @@ class AppDecoration {
 
   static ButtonStyle get textButton => TextButton.styleFrom(
     foregroundColor: AppColors.primary,
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+    minimumSize: const Size(48, 48),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     textStyle: AppTextStyles.bodyMedium.copyWith(
       fontWeight: FontWeight.w500,
@@ -160,7 +167,8 @@ class AppDecoration {
   static ButtonStyle get smallButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    minimumSize: const Size(60, 40),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     textStyle: AppTextStyles.bodySmall.copyWith(
       fontWeight: FontWeight.w500,
@@ -171,7 +179,8 @@ class AppDecoration {
   static ButtonStyle get confirmButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+    minimumSize: const Size(double.infinity, 60),
+    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     textStyle: AppTextStyles.button.copyWith(
       fontSize: 17,
@@ -183,7 +192,8 @@ class AppDecoration {
   static ButtonStyle get cancelButton => OutlinedButton.styleFrom(
     foregroundColor: AppColors.textSecondary,
     side: const BorderSide(color: AppColors.border),
-    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 28),
+    minimumSize: const Size(double.infinity, 60),
+    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     textStyle: AppTextStyles.button.copyWith(
       fontSize: 17,
@@ -194,7 +204,8 @@ class AppDecoration {
   static ButtonStyle get dangerButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.error,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+    minimumSize: const Size(double.infinity, 56),
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     textStyle: AppTextStyles.button,
     elevation: 0,
@@ -203,7 +214,8 @@ class AppDecoration {
   static ButtonStyle get disabledButton => ElevatedButton.styleFrom(
     backgroundColor: AppColors.border,
     foregroundColor: AppColors.textHint,
-    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+    minimumSize: const Size(double.infinity, 56),
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     textStyle: AppTextStyles.button,
     elevation: 0,

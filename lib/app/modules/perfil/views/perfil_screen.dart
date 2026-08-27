@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
@@ -21,9 +22,9 @@ class PerfilScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Text('Bem-vindo!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 32),
-                  ElevatedButton(
+                  PrimaryButton(
                     onPressed: () => _confirmarLogout(context),
-                    child: const Text('Sair da Conta'),
+                    label: 'Sair da Conta',
                   ),
                 ],
               ),

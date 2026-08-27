@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quipede/app/core/widgets/primary_button.dart';
 import '../../../di/dependencies.dart';
 import '../../../models/secao_model.dart';
 import '../bloc/loja_home_cubit.dart';
@@ -489,9 +490,10 @@ class _LojaDetalhePageState extends State<LojaDetalhePage>
           children: [
             Text(state.message),
             const SizedBox(height: 16),
-            ElevatedButton(
+            PrimaryButton(
               onPressed: () => _cubit.loadLoja(),
-              child: const Text('Tentar novamente'),
+              label: 'Tentar novamente',
+              isFullWidth: false,
             ),
           ],
         ),

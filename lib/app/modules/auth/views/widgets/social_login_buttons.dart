@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/auth_cubit.dart';
+import '../../../../core/widgets/primary_button.dart';
 
 class SocialLoginButtons extends StatelessWidget {
   const SocialLoginButtons({super.key});
@@ -28,17 +29,16 @@ class SocialLoginButtons extends StatelessWidget {
         // Google
         _SocialButton(
           onPressed: () => context.read<AuthCubit>().socialLogin('google'),
-          icon: const Icon(Icons.g_mobiledata, color: Colors.black87, size: 24),
+          icon: Icons.g_mobiledata,
           label: 'Google',
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
-          hasBorder: true,
         ),
         const SizedBox(height: 12),
         // Facebook
         _SocialButton(
           onPressed: () => context.read<AuthCubit>().socialLogin('facebook'),
-          icon: const Icon(Icons.facebook, color: Colors.white, size: 24),
+          icon: Icons.facebook,
           label: 'Facebook',
           backgroundColor: const Color(0xFF1877F2),
           foregroundColor: Colors.white,
@@ -48,7 +48,7 @@ class SocialLoginButtons extends StatelessWidget {
           // Apple (apenas iOS nativo)
           _SocialButton(
             onPressed: () => context.read<AuthCubit>().socialLogin('apple'),
-            icon: const Icon(Icons.apple, color: Colors.white, size: 24),
+            icon: Icons.apple,
             label: 'Apple',
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
@@ -61,11 +61,10 @@ class SocialLoginButtons extends StatelessWidget {
 
 class _SocialButton extends StatelessWidget {
   final VoidCallback onPressed;
-  final Widget icon;
+  final IconData icon;
   final String label;
   final Color backgroundColor;
   final Color foregroundColor;
-  final bool hasBorder;
 
   const _SocialButton({
     required this.onPressed,
@@ -73,37 +72,17 @@ class _SocialButton extends StatelessWidget {
     required this.label,
     required this.backgroundColor,
     required this.foregroundColor,
-    this.hasBorder = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
+    return PrimaryButton(
+      onPressed: onPressed,
+      label: 'Entrar com $label',
+      icon: icon,
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
       height: 48,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: foregroundColor,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: hasBorder ? BorderSide(color: Colors.grey.shade300) : BorderSide.none,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            icon,
-            const SizedBox(width: 12),
-            Text(
-              'Entrar com $label',
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

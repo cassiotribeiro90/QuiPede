@@ -5,6 +5,7 @@ import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../../core/theme/input_styles.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class ProdutoSimplesBottomSheet extends StatefulWidget {
   final dynamic produto;
@@ -232,30 +233,10 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
   Widget _buildBotaoAcao(bool isEdicao) {
     final precoTotal = (widget.produto.preco ?? 0) * _quantidade;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: _isAdding ? null : _handleAcao,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-        ),
-        child: _isAdding
-            ? const SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-          ),
-        )
-            : Text(
-          '${isEdicao ? 'Atualizar' : 'Adicionar'} • R\$ ${precoTotal.toStringAsFixed(2)}',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
+    return PrimaryButton(
+      onPressed: _handleAcao,
+      label: '${isEdicao ? 'Atualizar' : 'Adicionar'} • R\$ ${precoTotal.toStringAsFixed(2)}',
+      isLoading: _isAdding,
     );
   }
 
@@ -320,17 +301,15 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
             },
             child: const Text('Manter carrinho'),
           ),
-          ElevatedButton(
+          PrimaryButton(
             onPressed: () {
               Navigator.pop(dialogContext); // ✅ Mantém (diálogo)
               setState(() => _isAdding = true);
               context.read<CarrinhoCubit>().limparEAdicionar(conflito);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Sim, substituir'),
+            label: 'Sim, substituir',
+            backgroundColor: Colors.green,
+            isFullWidth: false,
           ),
         ],
       ),

@@ -30,6 +30,11 @@ dependencies:
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^7.0.1
   sign_in_with_apple: ^6.1.0
+  flutter_local_notifications: ^17.2.2
+  rxdart: ^0.27.7
+  universal_platform: ^1.0.0+1
+  connectivity_plus: ^6.1.0
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
   flutter_test:

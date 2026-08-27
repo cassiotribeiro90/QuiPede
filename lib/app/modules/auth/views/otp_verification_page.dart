@@ -9,6 +9,7 @@ import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class OtpVerificationPage extends StatefulWidget {
   final String telefone;
@@ -179,32 +180,10 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                         onFieldSubmitted: (_) => _verificarOTP(),
                       ),
                       const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _verificarOTP,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                              : const Text(
-                            'Verificar',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
-                        ),
+                      PrimaryButton(
+                        onPressed: _verificarOTP,
+                        label: 'Verificar',
+                        isLoading: _isLoading,
                       ),
                     ],
                   ),

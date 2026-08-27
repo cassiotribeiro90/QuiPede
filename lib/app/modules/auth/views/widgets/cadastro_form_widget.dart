@@ -7,6 +7,7 @@ import '../../../../core/utils/validators.dart';
 import '../../bloc/auth_cubit.dart';
 import '../../bloc/auth_state.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/primary_button.dart';
 
 class CadastroFormWidget extends StatefulWidget {
   final bool isCompletarCadastro;
@@ -124,25 +125,10 @@ class _CadastroFormWidgetState extends State<CadastroFormWidget> {
               const SizedBox(height: 20),
               _buildTermos(primaryColor),
               const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : Text(
-                        widget.isCompletarCadastro ? 'FINALIZAR E COMPRAR' : 'SALVAR DADOS',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
+              PrimaryButton(
+                onPressed: _submit,
+                label: widget.isCompletarCadastro ? 'FINALIZAR E COMPRAR' : 'SALVAR DADOS',
+                isLoading: isLoading,
               ),
             ],
           ),

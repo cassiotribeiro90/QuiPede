@@ -1,6 +1,7 @@
 // lib/app/routes/app_router.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../modules/auth/views/splash_screen.dart';
 import '../modules/auth/views/phone_input_page.dart';
@@ -19,6 +20,8 @@ import '../modules/home/views/endereco_confirmacao_page.dart';
 import '../modules/enderecos/views/endereco_edit_view.dart';
 import '../modules/pedido/views/pedido_detalhe_page.dart';
 import '../modules/enderecos/models/endereco_model.dart';
+import '../modules/auth/bloc/auth_cubit.dart';
+import '../modules/auth/bloc/auth_state.dart';
 
 import '../../shared/api/api_client.dart';
 
@@ -27,7 +30,69 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   debugLogDiagnostics: true,
 
+  redirect: (context, state) {
+    // Busca o estado de autenticação
+    final authState = context.read<AuthCubit>().state;
+
+    // 🔥 VERIFICA SE ESTÁ AUTENTICADO (inclui Guest, Authenticated, PerfilCompleto)
+    final isAuthenticated = authState is AuthAuthenticated ||
+        authState is AuthGuest ||
+        authState is AuthPerfilCompleto;
+
+    final path = state.matchedLocation;
+    debugPrint('🚦 [GoRouter Redirect] Path: $path, Auth: ${authState.runtimeType}');
+
+    // 🔥 1. Se está carregando, fica no Splash
+    if (authState is AuthLoading) {
+      debugPrint('🚦 [GoRouter Redirect] AuthLoading → Mantendo Splash');
+      return path == '/splash' ? null : '/splash';
+    }
+
+    // 🔥 2. Se está na splash e já terminou de carregar, o NavigationCubit vai lidar
+    if (path == '/splash') return null;
+
+    // 🔥 3. LISTA DE ROTAS PÚBLICAS (NÃO exigem autenticação completa)
+    // 🔥 HOME (/) AGORA É PÚBLICA PARA CONVIDADOS
+    const publicRoutes = [
+      '/splash',
+      '/onboarding',
+      '/phone-input',
+      '/otp-verify',
+      '/completar-perfil',
+      '/cep-input',
+      '/busca-endereco',
+      '/endereco-confirmacao',
+      '/', // 🔥 HOME É PÚBLICA PARA CONVIDADOS
+    ];
+
+    final isPublic = publicRoutes.any((route) => path.startsWith(route));
+
+    // 🔥 4. Se é pública, permite o acesso (inclusive Home para convidados)
+    if (isPublic) {
+      debugPrint('🚦 [GoRouter Redirect] Rota pública: $path → permitir');
+      return null;
+    }
+
+    // 🔥 5. Se NÃO está autenticado e tenta acessar rota privada → /onboarding
+    if (!isAuthenticated && !isPublic) {
+      debugPrint('🚦 [GoRouter Redirect] Não autenticado em rota protegida: $path → Onboarding');
+      return '/onboarding';
+    }
+
+    // 🔥 6. Se está autenticado e na raiz, mantém
+    if (isAuthenticated && path == '/') {
+      debugPrint('🚦 [GoRouter Redirect] Autenticado na raiz → mantendo');
+      return null;
+    }
+
+    return null;
+  },
+
   routes: [
+    // ============================================================
+    // 🔥 ROTAS PÚBLICAS (NÃO exigem autenticação)
+    // ============================================================
+
     GoRoute(
       path: '/splash',
       name: 'splash',
@@ -41,17 +106,21 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/phone-input',
       name: 'phone-input',
-      builder: (context, state) => const PhoneInputPage(),
+      builder: (context, state) {
+        final queryParams = state.uri.queryParameters;
+        final redirectToCheckout = queryParams['redirectToCheckout'] == 'true';
+        final origem = queryParams['origem'];
+
+        return PhoneInputPage(
+          redirectToCheckout: redirectToCheckout,
+          origem: origem,
+        );
+      },
     ),
-    // lib/app/routes/app_router.dart
-
-    // lib/app/routes/app_router.dart
-
     GoRoute(
       path: '/otp-verify',
       name: 'otp-verify',
       builder: (context, state) {
-        // ✅ CORRETO: usa state.uri.queryParameters
         final queryParams = state.uri.queryParameters;
         final telefone = queryParams['telefone'] ?? '';
         final redirectToCheckout = queryParams['redirectToCheckout'] == 'true';
@@ -70,8 +139,39 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/completar-perfil',
       name: 'completar-perfil',
-      builder: (context, state) => const CompletarPerfilPage(),
+      builder: (context, state) {
+        final queryParams = state.uri.queryParameters;
+        final redirectToCheckout = queryParams['redirectToCheckout'] == 'true';
+        final origem = queryParams['origem'];
+
+        return CompletarPerfilPage(
+          redirectToCheckout: redirectToCheckout,
+          origem: origem,
+        );
+      },
     ),
+
+    // ============================================================
+    // 🔥 ROTAS PÚBLICAS DE ENDEREÇO (com parentNavigatorKey)
+    // ============================================================
+
+    GoRoute(
+      path: '/busca-endereco',
+      name: 'busca-endereco',
+      parentNavigatorKey: ApiClient.navigatorKey,
+      builder: (context, state) => const BuscaEnderecoPage(),
+    ),
+    GoRoute(
+      path: '/cep-input',
+      name: 'cep-input',
+      parentNavigatorKey: ApiClient.navigatorKey,
+      builder: (context, state) => const CepInputPage(),
+    ),
+
+    // ============================================================
+    // 🔥 ROTAS PROTEGIDAS (exigem autenticação completa)
+    // ============================================================
+
     GoRoute(
       path: '/pedidos',
       name: 'pedidos',
@@ -88,6 +188,11 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
+
+    // ============================================================
+    // 🔥 ROTA HOME (com sub-rotas)
+    // ============================================================
+
     GoRoute(
       path: '/',
       name: 'home',
@@ -116,16 +221,6 @@ final GoRouter appRouter = GoRouter(
           path: 'meus-enderecos',
           name: 'meus-enderecos',
           builder: (context, state) => const EnderecosListView(),
-        ),
-        GoRoute(
-          path: 'busca-endereco',
-          name: 'busca-endereco',
-          builder: (context, state) => const BuscaEnderecoPage(),
-        ),
-        GoRoute(
-          path: 'cep-input',
-          name: 'cep-input',
-          builder: (context, state) => const CepInputPage(),
         ),
         GoRoute(
           path: 'endereco-confirmacao',

@@ -15,6 +15,7 @@ import '../../../widgets/app_scaffold.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../../core/theme/input_styles.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class CarrinhoPage extends StatefulWidget {
   const CarrinhoPage({super.key});
@@ -142,9 +143,10 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                           style: context.titleMedium.copyWith(color: context.textSecondary),
                         ),
                         const SizedBox(height: 24),
-                        ElevatedButton(
+                        PrimaryButton(
                           onPressed: () => navigationCubit.pop(),
-                          child: const Text('Continuar Comprando'),
+                          label: 'Continuar Comprando',
+                          isFullWidth: false,
                         ),
                       ],
                     ),
@@ -556,28 +558,12 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             BlocBuilder<PedidoCubit, PedidoState>(
               builder: (context, pedidoState) {
                 final isCriando = pedidoState is PedidoCriando;
-                return ElevatedButton(
+                return PrimaryButton(
                   onPressed: (isBlocked || isCriando || state.formaPagamentoSelecionada == null) ? null : () {
                     _finalizarPedido(context, state);
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.primaryColor,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: (isBlocked || isCriando)
-                      ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                  )
-                      : const Text(
-                    'Finalizar Pedido',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  label: 'Finalizar Pedido',
+                  isLoading: isBlocked || isCriando,
                 );
               },
             ),
@@ -644,10 +630,12 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          PrimaryButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Limpar'),
+            label: 'Limpar',
+            backgroundColor: Colors.red,
+            isFullWidth: false,
+            height: 44,
           ),
         ],
       ),

@@ -10,6 +10,7 @@ import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class PhoneInputPage extends StatelessWidget {
   final bool redirectToCheckout;
@@ -207,35 +208,10 @@ class _PhoneInputBodyState extends State<_PhoneInputBody> {
                       onFieldSubmitted: (_) => _enviar(),
                     ),
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _enviar,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                            : const Text(
-                          'Continuar',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                    PrimaryButton(
+                      onPressed: _enviar,
+                      label: 'Continuar',
+                      isLoading: _isLoading,
                     ),
                   ],
                 ),

@@ -5,6 +5,7 @@ import 'package:quipede/app/modules/auth/bloc/auth_state.dart';
 import 'package:quipede/app/modules/auth/models/cadastro_models.dart';
 import 'package:quipede/app/modules/home/bloc/localizacao_cubit.dart';
 import 'package:quipede/app/modules/home/bloc/localizacao_state.dart';
+import 'package:quipede/app/core/widgets/primary_button.dart';
 
 class CadastroConfirmacaoPage extends StatelessWidget {
   final CadastroInfoModel dadosPessoais;
@@ -30,8 +31,6 @@ class CadastroConfirmacaoPage extends StatelessWidget {
   Widget build(BuildContext context) {
 
     debugPrint('🔍 [LOG] CadastroConfirmacaoPage foi construída');
-
-    const primaryColor = Color(0xFFF57C00);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -65,15 +64,9 @@ class CadastroConfirmacaoPage extends StatelessWidget {
                 style: TextStyle(color: Colors.grey, fontSize: 16),
               ),
               const Spacer(),
-              ElevatedButton(
+              PrimaryButton(
                 onPressed: () => _finalizar(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('FINALIZAR E ENTRAR', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: 'FINALIZAR E ENTRAR',
               ),
             ],
           ),

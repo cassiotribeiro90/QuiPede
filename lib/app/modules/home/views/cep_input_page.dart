@@ -6,6 +6,7 @@ import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/routes/app_routes.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
+import 'package:quipede/app/core/widgets/primary_button.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
 
@@ -154,28 +155,11 @@ class _CepInputBodyState extends State<_CepInputBody> {
                   autofocus: true,
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
+                PrimaryButton(
+                  onPressed: _buscarCep,
+                  label: 'Buscar CEP',
+                  isLoading: _isLoading,
                   height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _buscarCep,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                      width: 24, height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                        : Text(
-                      'Buscar CEP',
-                      style: AppTextStyles.button.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
                 ),
               ],
             ),

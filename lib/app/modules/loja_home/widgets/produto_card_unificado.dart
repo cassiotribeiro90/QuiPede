@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme_extension.dart';
 import '../../../models/produto_model.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../carrinho/widgets/quantity_selector.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class ProdutoCardUnificado extends StatelessWidget {
   final ProdutoModel produto;
@@ -77,24 +78,12 @@ class ProdutoCardUnificado extends StatelessWidget {
                     )
                   else
                     // ✅ Botão "Adicionar" também abre o bottom sheet (onTap)
-                    SizedBox(
+                    PrimaryButton(
+                      onPressed: onTap,
+                      label: 'Adicionar',
                       height: 32,
-                      child: ElevatedButton(
-                        onPressed: onTap, // ✅ MESMO callback do card!
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: context.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Adicionar', 
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)
-                        ),
-                      ),
+                      fontSize: 12,
+                      isFullWidth: false,
                     ),
                 ],
               ),

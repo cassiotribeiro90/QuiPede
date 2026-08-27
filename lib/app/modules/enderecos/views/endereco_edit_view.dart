@@ -3,13 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../bloc/endereco_cubit.dart';
 import '../bloc/endereco_state.dart';
 import '../models/endereco_model.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/utils/estados_brasil.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class EnderecoEditView extends StatefulWidget {
   final EnderecoModel? endereco;
@@ -308,35 +308,10 @@ class _EnderecoEditViewState extends State<EnderecoEditView> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _salvar,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                          : Text(
-                        isEditing ? 'Atualizar Endereço' : 'Criar Endereço',
-                        style: AppTextStyles.button.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                  PrimaryButton(
+                    onPressed: _salvar,
+                    label: isEditing ? 'Atualizar Endereço' : 'Criar Endereço',
+                    isLoading: _isLoading,
                   ),
                   const SizedBox(height: 12),
                 ],

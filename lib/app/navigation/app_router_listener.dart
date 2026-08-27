@@ -67,9 +67,14 @@ class AppRouterListener extends StatelessWidget {
 
           debugPrint('🔴 [AppRouterListener] Path completo: $fullPath');
 
-          // ✅ SEMPRE usa go (substitui push) para garantir URL no Web
-          debugPrint('🔴 [AppRouterListener] 🚀 Executando GO para: $fullPath');
-          appRouter.go(fullPath, extra: extra);
+          if (state.replace) {
+            debugPrint('🔴 [AppRouterListener] 🚀 Executando GO para: $fullPath');
+            appRouter.go(fullPath, extra: extra);
+          } else {
+            debugPrint('🔴 [AppRouterListener] 🚀 Executando PUSH para: $fullPath');
+            appRouter.push(fullPath, extra: extra);
+          }
+          
           debugPrint('🔴 [AppRouterListener] URL atual: ${appRouter.routerDelegate.currentConfiguration.uri}');
 
           debugPrint('🔴 [AppRouterListener] ✅ Navegação concluída com sucesso');

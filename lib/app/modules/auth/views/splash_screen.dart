@@ -32,44 +32,45 @@ class _SplashScreenState extends State<SplashScreen> {
       final authCubit = context.read<AuthCubit>();
       final navigationCubit = context.read<NavigationCubit>();
 
-      // ✅ Aguarda a inicialização do Auth
+      // ✅ 1. Inicializa autenticação (isso emite AuthLoading)
       await authCubit.inicializarApp();
 
-      // ✅ Aguarda 500ms para garantir que o estado foi processado
-      await Future.delayed(const Duration(milliseconds: 500));
+      // ✅ 2. Aguarda o estado final (não pode ser AuthLoading)
+      AuthState finalState = authCubit.state;
+      if (finalState is AuthLoading) {
+        debugPrint('🏠 [SplashScreen] Aguardando conclusão do AuthLoading...');
+        await for (final state in authCubit.stream) {
+          if (state is! AuthLoading) {
+            finalState = state;
+            debugPrint('🏠 [SplashScreen] AuthState final recebido: ${state.runtimeType}');
+            break;
+          }
+        }
+      }
 
       if (!mounted) return;
 
-      final authState = authCubit.state;
-      debugPrint('🏠 [SplashScreen] AuthState após inicialização: ${authState.runtimeType}');
+      // ✅ 3. Marca o NavigationCubit como inicializado
+      navigationCubit.setInitialized();
 
-      // ✅ Verifica se é autenticado
-      if (authState is AuthAuthenticated) {
-        debugPrint('🏠 [SplashScreen] ✅ Usuário autenticado! Navegando para Home');
+      // ✅ 4. NAVEGAÇÃO MANUAL DE SEGURANÇA (Roadmap)
+      // Se o NavigationCubit não disparou a navegação via listener, forçamos aqui.
+      if (finalState is AuthAuthenticated || finalState is AuthGuest || finalState is AuthPerfilCompleto) {
+        debugPrint('🏠 [SplashScreen] ✅ Autenticado → Indo para Home');
         navigationCubit.goToHomeDirectly();
-        return;
-      }
-
-      if (authState is AuthGuest) {
-        debugPrint('🏠 [SplashScreen] ✅ Usuário convidado! Navegando para Home');
-        navigationCubit.goToHomeDirectly();
-        return;
-      }
-
-      if (authState is AuthUnauthenticated) {
-        debugPrint('🏠 [SplashScreen] ❌ Usuário não autenticado! Navegando para Onboarding');
+      } else if (finalState is AuthUnauthenticated) {
+        debugPrint('🏠 [SplashScreen] ❌ Não autenticado → Indo para Onboarding');
         navigationCubit.goToOnboarding();
-        return;
       }
 
-      // ✅ Fallback
-      debugPrint('🏠 [SplashScreen] ⚠️ Estado inesperado: ${authState.runtimeType}');
-      navigationCubit.goToOnboarding();
+      debugPrint('🏠 [SplashScreen] Inicialização concluída');
 
     } catch (e) {
       debugPrint('❌ [SplashScreen] Erro no bootstrap: $e');
       if (mounted) {
-        context.read<NavigationCubit>().goToOnboarding();
+        final navigationCubit = context.read<NavigationCubit>();
+        navigationCubit.setInitialized();
+        navigationCubit.goToOnboarding();
       }
     }
   }

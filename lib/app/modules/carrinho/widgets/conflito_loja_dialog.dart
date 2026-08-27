@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quipede/app/core/widgets/primary_button.dart';
 
 class ConflitoLojaDialog extends StatelessWidget {
   final String lojaAtualNome;
@@ -25,13 +26,10 @@ class ConflitoLojaDialog extends StatelessWidget {
           onPressed: onCancelar,
           child: const Text('Cancelar'),
         ),
-        ElevatedButton(
+        PrimaryButton(
           onPressed: onLimpar,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Limpar e Adicionar'),
+          label: 'Limpar e Adicionar',
+          isFullWidth: false,
         ),
       ],
     );

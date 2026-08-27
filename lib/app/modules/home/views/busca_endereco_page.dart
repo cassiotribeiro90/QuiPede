@@ -10,6 +10,7 @@ import 'package:quipede/app/core/theme/app_text_styles.dart';
 import 'package:quipede/app/core/utils/location_permission_service.dart';
 import 'package:quipede/app/core/utils/estados_brasil.dart';
 import 'package:quipede/app/routes/app_routes.dart';
+import 'package:quipede/app/core/widgets/primary_button.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import 'widgets/endereco_sugestao_tile.dart';
 
@@ -75,12 +76,13 @@ class _BuscaEnderecoPageState extends State<BuscaEnderecoPage> {
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          PrimaryButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
               await LocationPermissionService.goToSettings();
             },
-            child: const Text('Configurações'),
+            label: 'Configurações',
+            isFullWidth: false,
           ),
         ],
       ),

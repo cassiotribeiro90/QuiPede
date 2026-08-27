@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme_extension.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class QuantitySelector extends StatelessWidget {
   final int quantity;
@@ -81,16 +82,14 @@ class QuantitySelector extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          PrimaryButton(
             onPressed: () {
               Navigator.pop(context);
               onChanged(0);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Remover'),
+            label: 'Remover',
+            backgroundColor: Colors.red,
+            isFullWidth: false,
           ),
         ],
       ),

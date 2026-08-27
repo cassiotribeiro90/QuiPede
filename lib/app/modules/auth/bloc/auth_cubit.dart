@@ -2,13 +2,14 @@
 
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../shared/api/api_client.dart';
+import '../../../di/dependencies.dart';
+import '../../../navigation/navigation_cubit.dart';
+import '../../../services/push_service.dart';
 import '../../home/bloc/localizacao_cubit.dart';
 import '../models/auth_response_model.dart';
 import '../models/usuario_model.dart';
@@ -52,82 +53,159 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
 
     try {
-      // ✅ 1. LOG DO TOKEN
       final token = _apiClient.tokenService.getAccessToken();
       final isGuest = _apiClient.tokenService.isGuest();
-      developer.log('🔐 [AuthCubit] Token: ${token != null ? "SIM (${token.substring(0, token.length > 10 ? 10 : token.length)}...)" : "NÃO"}', name: 'AUTH');
-      developer.log('🔐 [AuthCubit] isGuest: $isGuest', name: 'AUTH');
+      developer.log('🔐 [AuthCubit] Token: ${token != null ? "SIM" : "NÃO"}, isGuest: $isGuest', name: 'AUTH');
 
-      // ✅ 2. LIMPA LOCALIZAÇÃO
-      await _localizacaoCubit.limparLocalizacao();
-      developer.log('🗑️ [AuthCubit] Localização limpa', name: 'AUTH');
-
-      if (token != null && token.isNotEmpty) {
-        // ✅ 3. BUSCA USUÁRIO NO BACKEND
-        try {
-          developer.log('📡 [AuthCubit] Buscando usuário no backend...', name: 'AUTH');
-          final response = await _apiClient.get('app/auth/me', requiresAuth: true);
-
-          if (response.statusCode == 200 && response.data['success'] == true) {
-            final data = response.data['data'];
-            developer.log('✅ [AuthCubit] Usuário encontrado no backend', name: 'AUTH');
-
-            // ✅ 4. PROCESSA DADOS
-            final authResponse = AuthResponse.fromJson(data);
-            _usuario = authResponse.user;
-            developer.log('👤 [AuthCubit] Usuário: ${_usuario?.nome}, status: ${_usuario?.status}', name: 'AUTH');
-
-            if (_usuario != null) {
-              await _apiClient.tokenService.saveUser(_usuario!.toJson());
-              developer.log('💾 [AuthCubit] Usuário salvo no cache', name: 'AUTH');
-            }
-
-            final enderecosJson = data['enderecos'];
-            final enderecoPrincipalJson = data['endereco'];
-            await _sincronizarEnderecos(enderecosJson, enderecoPrincipalJson);
-
-            if (isGuest) {
-              emit(AuthGuest(accessToken: token, user: _usuario));
-            } else {
-              emit(AuthAuthenticated(accessToken: token, user: _usuario));
-            }
-
-            developer.log('✅ [AuthCubit] Autenticado com sucesso', name: 'AUTH');
-            await carregarEnderecoUsuario();
-            _isProcessing = false;
-            return;
-          }
-        } catch (e) {
-          developer.log('⚠️ [AuthCubit] Erro ao buscar /me, usando cache local: $e', name: 'AUTH');
-        }
-
-        // ✅ 5. FALLBACK PARA CACHE LOCAL
-        developer.log('📦 [AuthCubit] Usando cache local...', name: 'AUTH');
-        final userJson = _apiClient.tokenService.getUser();
-        if (userJson != null) {
-          _usuario = UsuarioModel.fromJson(userJson);
-          developer.log('👤 [AuthCubit] Usuário do cache: ${_usuario?.nome}', name: 'AUTH');
-        }
-
-        if (isGuest) {
-          emit(AuthGuest(accessToken: token, user: _usuario));
-        } else {
-          emit(AuthAuthenticated(accessToken: token, user: _usuario));
-        }
-
-        await carregarEnderecoUsuario();
+      if (token == null || token.isEmpty) {
+        developer.log('🚫 [AuthCubit] Nenhum token encontrado', name: 'AUTH');
+        emit(AuthUnauthenticated());
         _isProcessing = false;
         return;
       }
 
-      developer.log('🚫 [AuthCubit] Nenhum token encontrado', name: 'AUTH');
-      emit(AuthUnauthenticated());
+      // ✅ LIMPA LOCALIZAÇÃO NO ARRANQUE (força recarregar endereço do usuário)
+      await _localizacaoCubit.limparLocalizacao();
+
+      try {
+        developer.log('📡 [AuthCubit] Buscando usuário /me...', name: 'AUTH');
+        final response = await _apiClient.get('app/auth/me', requiresAuth: true);
+
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          final data = response.data['data'];
+          final authResponse = AuthResponse.fromJson(data);
+          _usuario = authResponse.user;
+
+          if (_usuario != null) {
+            await _apiClient.tokenService.saveUser(_usuario!.toJson());
+          }
+
+          await _sincronizarEnderecos(data['enderecos'], data['endereco']);
+
+          if (isGuest) {
+            emit(AuthGuest(accessToken: token, user: _usuario));
+          } else {
+            emit(AuthAuthenticated(accessToken: token, user: _usuario));
+          }
+          
+          _onAuthenticated();
+
+          developer.log('✅ [AuthCubit] Autenticado via API', name: 'AUTH');
+          await carregarEnderecoUsuario();
+          _isProcessing = false;
+          return;
+        }
+      } catch (e) {
+        developer.log('⚠️ [AuthCubit] Erro na API /me: $e', name: 'AUTH');
+        
+        // ✅ TENTA REFRESH SE FOR 401
+        bool isUnauthorized = false;
+        if (e is DioException) {
+          isUnauthorized = e.response?.statusCode == 401;
+        } else {
+          isUnauthorized = e.toString().contains('401');
+        }
+
+        if (isUnauthorized) {
+          developer.log('🔄 [AuthCubit] Token expirado, tentando refresh...', name: 'AUTH');
+          
+          final success = await _refreshToken();
+          if (success) {
+            try {
+              final response = await _apiClient.get('app/auth/me', requiresAuth: true);
+              if (response.statusCode == 200 && response.data['success'] == true) {
+                final data = response.data['data'];
+                final authResponse = AuthResponse.fromJson(data);
+                _usuario = authResponse.user;
+                if (_usuario != null) await _apiClient.tokenService.saveUser(_usuario!.toJson());
+                await _sincronizarEnderecos(data['enderecos'], data['endereco']);
+                
+                final newToken = _apiClient.tokenService.getAccessToken() ?? '';
+                emit(AuthAuthenticated(accessToken: newToken, user: _usuario));
+                _onAuthenticated();
+                await carregarEnderecoUsuario();
+                _isProcessing = false;
+                return;
+              }
+            } catch (e2) {
+              developer.log('❌ [AuthCubit] Erro ao buscar /me após refresh: $e2', name: 'AUTH');
+            }
+          }
+          
+          developer.log('🚫 [AuthCubit] Falha no refresh ou token ainda inválido → Logout', name: 'AUTH');
+          await logout();
+          _isProcessing = false;
+          return;
+        }
+      }
+
+      // ✅ FALLBACK: Cache local (se a API falhar mas não for 401)
+      developer.log('📦 [AuthCubit] Usando cache local...', name: 'AUTH');
+      final userJson = _apiClient.tokenService.getUser();
+      if (userJson != null) {
+        _usuario = UsuarioModel.fromJson(userJson);
+      }
+
+      if (isGuest) {
+        emit(AuthGuest(accessToken: token, user: _usuario));
+      } else {
+        emit(AuthAuthenticated(accessToken: token, user: _usuario));
+      }
+      
+      _onAuthenticated();
+      await carregarEnderecoUsuario();
+
     } catch (e) {
-      developer.log('❌ [AuthCubit] ERRO NA INICIALIZAÇÃO: $e', name: 'AUTH', error: e);
+      developer.log('❌ [AuthCubit] ERRO CRÍTICO NA INICIALIZAÇÃO: $e', name: 'AUTH');
       emit(AuthUnauthenticated());
     } finally {
       _isProcessing = false;
     }
+  }
+
+  /// ✅ MÉTODO PRIVADO PARA REFRESH TOKEN (usado na inicialização)
+  Future<bool> _refreshToken() async {
+    try {
+      final refreshToken = _apiClient.tokenService.getRefreshToken();
+      if (refreshToken == null) {
+        developer.log('🔐 [AuthCubit] ❌ Refresh token não encontrado', name: 'AUTH');
+        return false;
+      }
+
+      developer.log('🔐 [AuthCubit] 🔄 Tentando refresh silencioso...', name: 'AUTH');
+
+      final response = await _apiClient.post(
+        'app/auth/refresh-token',
+        data: {'refresh_token': refreshToken},
+        requiresAuth: false,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final data = response.data['data'];
+        final newAccessToken = data['access_token'];
+        final newRefreshToken = data['refresh_token'];
+        
+        await _apiClient.tokenService.saveTokens(newAccessToken, newRefreshToken, isGuest: false);
+        developer.log('✅ [AuthCubit] Refresh token bem-sucedido', name: 'AUTH');
+        return true;
+      }
+      
+      developer.log('❌ [AuthCubit] Refresh token falhou', name: 'AUTH');
+      return false;
+      
+    } catch (e) {
+      developer.log('❌ [AuthCubit] Erro no refresh: $e', name: 'AUTH');
+      return false;
+    }
+  }
+
+  void _onAuthenticated() {
+    // Inicializa PushService e solicita permissões
+    PushService().init().then((_) {
+      if (_usuario != null) {
+        PushService().requestPermissionAndGetToken();
+      }
+    });
   }
 
   Future<void> recarregarUsuario() async {
@@ -227,44 +305,12 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(AuthOtpVerificando(telefone: telefone));
     try {
-      debugPrint('[AUTH_CUBIT] 📱 Obtendo FCM token...');
-      String? fcmToken;
-
-      // ✅ Proteção Robusta para Web e Windows
-      if (kIsWeb) {
-        try {
-          // No Web, getToken pode exigir vapidKey ou falhar se não houver permissão
-          fcmToken = await FirebaseMessaging.instance.getToken().timeout(
-            const Duration(seconds: 2),
-            onTimeout: () {
-              debugPrint('[AUTH_CUBIT] ⏰ FCM Token timeout no Web');
-              return null;
-            },
-          );
-        } catch (e) {
-          debugPrint('[AUTH_CUBIT] ⚠️ Erro FCM Web: $e');
-        }
-      } else {
-        // Mobile (Android/iOS)
-        try {
-          // Evita usar dart:io Platform diretamente sem check kIsWeb
-          // Mas aqui já sabemos que não é Web
-          bool isWindows = false;
-          try {
-            isWindows = Platform.isWindows;
-          } catch (_) {}
-
-          if (!isWindows) {
-            fcmToken = await FirebaseMessaging.instance.getToken();
-          }
-        } catch (e) {
-          debugPrint('[AUTH_CUBIT] ⚠️ Erro FCM Mobile: $e');
-        }
-      }
-
-      if (fcmToken != null) {
-        debugPrint('[AUTH_CUBIT] 📱 FCM Token obtido: ${fcmToken.substring(0, 15)}...');
-      }
+      debugPrint('[AUTH_CUBIT] 📱 Obtendo Token para notificações...');
+      
+      // ✅ Usa o PushService para gerenciar a permissão e obter o token
+      await PushService().requestPermissionAndGetToken();
+      
+      String? fcmToken = PushService().token;
 
       debugPrint('[AUTH_CUBIT] 📤 Chamando service.verificarOTP...');
       final responseData = await _authService.verificarOTP(telefone, codigo, deviceToken: fcmToken);
@@ -324,10 +370,8 @@ class AuthCubit extends Cubit<AuthState> {
         await _apiClient.tokenService.saveUser(_usuario!.toJson());
         debugPrint('💾 [AuthCubit] verificarOTP: usuário salvo: ${_usuario?.nome}');
 
-        debugPrint('🔐 [AuthCubit] Estado emitido: AuthAuthenticated');
-        debugPrint('🔐 [AuthCubit] Dados do usuário: status=${_usuario!.status}, telefone=${_usuario!.telefone}, nome=${_usuario!.nome}');
-
-        emit(AuthAuthenticated(accessToken: accessToken, user: _usuario));
+        debugPrint('🔐 [AuthCubit] Estado emitido via onOtpVerified');
+        onOtpVerified(_usuario!);
 
         // ✅ Se TEM endereço, define; se NÃO tem, já foi limpo
         if (enderecoJson != null) {
@@ -389,8 +433,8 @@ class AuthCubit extends Cubit<AuthState> {
 
         debugPrint('🔐 [AuthCubit] _salvarPerfil: _usuario definido: nome=${_usuario?.nome}, email=${_usuario?.email}, status=${_usuario?.status}');
 
-        // ✅ SEMPRE emite AuthAuthenticated
-        emit(AuthAuthenticated(accessToken: token ?? '', user: _usuario));
+        // ✅ SEMPRE chama onPerfilCompleto
+        onPerfilCompleto(_usuario!);
       } else {
         emit(const AuthError('Erro ao salvar perfil. Tente novamente.'));
       }
@@ -440,6 +484,8 @@ class AuthCubit extends Cubit<AuthState> {
           accessToken: _apiClient.tokenService.getAccessToken() ?? '',
           user: _usuario,
         ));
+        
+        _onAuthenticated();
       } else {
         emit(const AuthError('Erro ao confirmar atualização de telefone'));
       }
@@ -542,26 +588,36 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> checkAuthStatus() => inicializarApp();
 
-  Future<void> setConvidado(String token, Map<String, dynamic> usuarioJson) async {
-    debugPrint('🔐 [AuthCubit] Definindo sessão de Convidado');
-    _usuario = UsuarioModel.fromJson(usuarioJson);
+  Future<void> setConvidado(UsuarioModel usuario, {EnderecoModel? enderecoPrincipal}) async {
+    debugPrint('🔐 [AuthCubit] setConvidado chamado para: ${usuario.nome}');
+    _usuario = usuario;
 
-    await _apiClient.tokenService.saveTokens(token, null, isGuest: true);
-    await _apiClient.tokenService.saveUser(usuarioJson);
+    // 🔥 SALVA USUÁRIO NO CACHE
+    await _apiClient.tokenService.saveUser(usuario.toJson());
     debugPrint('💾 [AuthCubit] setConvidado: usuário salvo: ${_usuario?.nome}');
 
-    final enderecosJson = usuarioJson['enderecos'];
-    final enderecoPrincipalJson = usuarioJson['endereco'];
-    await _sincronizarEnderecos(enderecosJson, enderecoPrincipalJson);
+    // 🔥 SE TEM ENDEREÇO, DEFINE COMO PRINCIPAL ANTES DE EMITIR ESTADO
+    if (enderecoPrincipal != null) {
+      debugPrint('📍 [AuthCubit] setConvidado: definindo endereço principal: ${enderecoPrincipal.logradouro}');
+      await _localizacaoCubit.definirEnderecoCompleto(enderecoPrincipal, origem: 'auth_guest');
+    }
 
-    emit(AuthGuest(accessToken: token, user: _usuario));
-    await carregarEnderecoUsuario();
+    final token = _apiClient.tokenService.getAccessToken();
+    emit(AuthGuest(accessToken: token ?? '', user: _usuario));
+    _onAuthenticated();
+    
+    // Se não tinha endereço passado mas o JSON tem, sincroniza (caso de recarregamento)
+    if (enderecoPrincipal == null) {
+       // O setConvidado original fazia isso, mas agora priorizamos o passado por parâmetro
+       // para garantir sincronia imediata na criação.
+    }
   }
 
-  Future<void> onEnderecoCriadoComToken(String token, Map<String, dynamic> usuarioJson) async {
+  Future<void> onEnderecoCriadoComToken(String token, Map<String, dynamic> usuarioJson, {EnderecoModel? endereco}) async {
     debugPrint('🔐 [AuthCubit] onEnderecoCriadoComToken chamado');
-    await setConvidado(token, usuarioJson);
-    debugPrint('🔐 [AuthCubit] AuthGuest deve ter sido emitido via setConvidado');
+    // Salva o token primeiro para que as chamadas subsequentes funcionem
+    await _apiClient.tokenService.saveTokens(token, null, isGuest: true);
+    await setConvidado(UsuarioModel.fromJson(usuarioJson), enderecoPrincipal: endereco);
   }
 
   Future<void> carregarEnderecoUsuario() async {
@@ -651,5 +707,25 @@ class AuthCubit extends Cubit<AuthState> {
     if (state is! AuthPhoneEnviado) {
       emit(AuthPhoneEnviado(telefone: telefone));
     }
+  }
+
+  /// 🔥 Método chamado após OTP verificado com sucesso (Roadmap)
+  void onOtpVerified(UsuarioModel usuario) {
+    debugPrint('✅ [AuthCubit] OTP verificado para: ${usuario.nome}');
+    _usuario = usuario;
+    emit(AuthAuthenticated(accessToken: _apiClient.tokenService.getAccessToken() ?? '', user: _usuario));
+  }
+
+  /// 🔥 Método chamado após completar perfil com sucesso (Roadmap)
+  void onPerfilCompleto(UsuarioModel usuario) {
+    debugPrint('✅ [AuthCubit] Perfil completado para: ${usuario.nome}');
+    _usuario = usuario;
+    emit(AuthAuthenticated(accessToken: _apiClient.tokenService.getAccessToken() ?? '', user: _usuario));
+  }
+
+  /// 🔥 Verifica autenticação para o fluxo do carrinho (Roadmap)
+  Future<void> verificarAutenticacaoParaCarrinho() async {
+    final navigationCubit = getIt<NavigationCubit>();
+    navigationCubit.navigateToCart();
   }
 }

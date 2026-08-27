@@ -4,6 +4,7 @@ import '../bloc/localizacao_cubit.dart';
 import '../bloc/localizacao_state.dart';
 import '../../lojas_list/views/lojas_list_screen.dart';
 import '../../../navigation/navigation_cubit.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -34,46 +35,83 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildNoAddressWidget(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('QuiPede'),
-        centerTitle: true,
-      ),
-      body: Center(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.location_off_outlined, size: 80, color: Colors.grey[400]),
-              const SizedBox(height: 24),
-              const Text(
-                'Onde você está?',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              // 🔥 Ilustração minimalista (usando um ícone grande com container decorado)
+              Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.location_searching_outlined,
+                  size: 72,
+                  color: Theme.of(context).primaryColor,
+                ),
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'Adicione um endereço para ver as lojas que entregam na sua região',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+
+              const SizedBox(height: 40),
+
+              // 🔥 Título principal
+              Text(
+                'Nenhum endereço cadastrado',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                  letterSpacing: -0.5,
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.read<NavigationCubit>().goToBuscaEndereco();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Adicionar Endereço',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+              const SizedBox(height: 12),
+
+              // 🔥 Subtítulo descritivo
+              Text(
+                'Adicione um endereço para encontrar\nos melhores restaurantes da sua região',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 40),
+
+              // 🔥 Botão principal - vai para Meus Endereços
+              PrimaryButton(
+                onPressed: () {
+                  // 🔥 Vai para a tela de endereços
+                  context.read<NavigationCubit>().goToMeusEnderecos();
+                },
+                label: 'Adicionar Endereço',
+                icon: Icons.add_location_alt,
+              ),
+
+              const SizedBox(height: 12),
+
+              // 🔥 Botão secundário - Explorar sem endereço (opcional)
+              TextButton(
+                onPressed: () {
+                  // 🔥 Pular a tela de endereço (se quiser)
+                  // context.read<NavigationCubit>().goToHome();
+                },
+                child: Text(
+                  'Explorar sem endereço',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                   ),
                 ),
               ),

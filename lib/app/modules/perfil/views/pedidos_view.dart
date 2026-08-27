@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_theme_extension.dart';
@@ -5,6 +6,8 @@ import '../../../navigation/navigation_cubit.dart';
 import '../../pedido/bloc/pedido_cubit.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../pedido/models/pedido_detalhe_model.dart';
+import '../../../services/push_service.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class PedidosView extends StatefulWidget {
   const PedidosView({super.key});
@@ -14,10 +17,25 @@ class PedidosView extends StatefulWidget {
 }
 
 class _PedidosViewState extends State<PedidosView> {
+  StreamSubscription? _pushSubscription;
+
   @override
   void initState() {
     super.initState();
     context.read<PedidoCubit>().carregarPedidos();
+    
+    _pushSubscription = PushService().onPedidoStatus.listen((event) {
+      if (mounted) {
+        // Se for evento de polling ou push de qualquer pedido, recarrega a lista
+        context.read<PedidoCubit>().carregarPedidos();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pushSubscription?.cancel();
+    super.dispose();
   }
 
   String _formatarMoeda(double valor) {
@@ -100,9 +118,10 @@ class _PedidosViewState extends State<PedidosView> {
             const SizedBox(height: 16),
             Text('Você ainda não fez nenhum pedido', style: context.bodyLarge),
             const SizedBox(height: 24),
-            ElevatedButton(
+            PrimaryButton(
               onPressed: () => navigationCubit.goToHomeAndRemoveAll(),
-              child: const Text('Ir às compras'),
+              label: 'Ir às compras',
+              isFullWidth: false,
             ),
           ],
         ),

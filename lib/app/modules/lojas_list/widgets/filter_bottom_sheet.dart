@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final List<LojasListFilterOptionModel> categorias;
@@ -312,52 +313,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       child: Row(
         children: [
           Expanded(
-            child: SizedBox(
-              height: 56,
-              child: OutlinedButton(
-                onPressed: hasActiveFilters ? _clearFilters : null,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: hasActiveFilters ? theme.primaryColor : theme.hintColor,
-                  side: BorderSide(
-                    color: hasActiveFilters ? theme.primaryColor : theme.dividerColor,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  'Limpar',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: hasActiveFilters ? theme.primaryColor : theme.hintColor,
-                  ),
-                ),
-              ),
+            child: SecondaryOutlineButton(
+              onPressed: hasActiveFilters ? _clearFilters : null,
+              label: 'Limpar',
+              color: hasActiveFilters ? theme.primaryColor : theme.hintColor,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: SizedBox(
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _applyFilters,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Aplicar',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+            child: PrimaryButton(
+              onPressed: _applyFilters,
+              label: 'Aplicar',
             ),
           ),
         ],

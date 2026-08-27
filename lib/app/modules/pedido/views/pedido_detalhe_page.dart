@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quipede/app/core/widgets/primary_button.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../bloc/pedido_cubit.dart';
 import '../widgets/pedido_status_timeline.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../../services/push_service.dart';
 
 class PedidoDetalhePage extends StatefulWidget {
   final int pedidoId;
@@ -17,7 +19,7 @@ class PedidoDetalhePage extends StatefulWidget {
 }
 
 class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
-  Timer? _pollingTimer;
+  StreamSubscription? _pushSubscription;
 
   @override
   void initState() {
@@ -26,21 +28,21 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PedidoCubit>().carregarDetalhes(widget.pedidoId);
     });
-    _startPolling();
+
+    _pushSubscription = PushService().onPedidoStatus.listen((event) {
+      if (!mounted) return;
+
+      // Se for polling ou atualização específica deste pedido
+      if (event.pedidoId == 'polling' || event.pedidoId == widget.pedidoId.toString()) {
+        context.read<PedidoCubit>().carregarDetalhes(widget.pedidoId);
+      }
+    });
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
+    _pushSubscription?.cancel();
     super.dispose();
-  }
-
-  void _startPolling() {
-    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) {
-        context.read<PedidoCubit>().carregarDetalhes(widget.pedidoId);
-      }
-    });
   }
 
   String _formatarMoeda(double valor) {
@@ -62,7 +64,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
         if (state is PedidoDetalheCarregado) {
           final status = state.pedido.status.toLowerCase();
           if (status == 'entregue' || status == 'cancelado') {
-            _pollingTimer?.cancel();
+            // Polling removido, PushService cuida das atualizações
           }
         }
       },
@@ -199,37 +201,25 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             const SizedBox(height: 32),
 
             if (pedido.status == 'pendente' || pedido.status == 'confirmado' || pedido.status == 'novo')
-              OutlinedButton(
+              SecondaryOutlineButton(
                 onPressed: () => _confirmarCancelamento(context, pedido.id),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  side: const BorderSide(color: Colors.red),
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Cancelar Pedido'),
+                label: 'Cancelar Pedido',
+                color: Colors.red,
+                height: 50,
               ),
             const SizedBox(height: 12),
-            OutlinedButton(
+            SecondaryOutlineButton(
               onPressed: () => navigationCubit.goToPedidos(),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Ver Meus Pedidos'),
+              label: 'Ver Meus Pedidos',
+              height: 50,
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
+            PrimaryButton(
               onPressed: () {
                 navigationCubit.goToHomeAndRemoveAll();
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Voltar para Lojas'),
+              label: 'Voltar para Lojas',
+              height: 50,
             ),
             const SizedBox(height: 32),
           ],
@@ -279,13 +269,11 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Não'),
           ),
-          ElevatedButton(
+          PrimaryButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Sim, cancelar'),
+            label: 'Sim, cancelar',
+            backgroundColor: Colors.red,
+            isFullWidth: false,
           ),
         ],
       ),

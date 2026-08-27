@@ -17,6 +17,11 @@ class NavigationCubit extends Cubit<NavigationState> {
 
   bool _isRedirectingToCheckout = false;
   String? _pendingOrigem;
+  bool _isInitialized = false;
+
+  // 🔥 FILA DE NAVEGAÇÃO PARA REDIRECIONAMENTO
+  String? _pendingRoute;
+  Map<String, String>? _pendingRouteParams;
 
   NavigationCubit({
     required this.authCubit,
@@ -32,10 +37,44 @@ class NavigationCubit extends Cubit<NavigationState> {
     });
   }
 
+  // 🔥 SALVA A ROTA PENDENTE
+  void savePendingRoute(String route, {Map<String, String>? params}) {
+    _pendingRoute = route;
+    _pendingRouteParams = params;
+    debugPrint('🧭 [NavigationCubit] Rota pendente salva: $route');
+  }
+
+  // 🔥 EXECUTA A ROTA PENDENTE (se existir)
+  Future<void> executePendingRoute() async {
+    if (_pendingRoute != null) {
+      debugPrint('🧭 [NavigationCubit] Executando rota pendente: $_pendingRoute');
+      final route = _pendingRoute!;
+      _pendingRoute = null;
+      final params = _pendingRouteParams;
+      _pendingRouteParams = null;
+      
+      // 🔥 Pequeno delay para garantir que a UI está pronta
+      await Future.delayed(const Duration(milliseconds: 300));
+      _go(route, queryParams: params);
+    }
+  }
+
+  /// 🔥 Marca o app como inicializado e processa navegação inicial
+  void setInitialized() {
+    debugPrint('🧭 [NavigationCubit] 🔥 APP MARCADO COMO INICIALIZADO');
+    _isInitialized = true;
+    
+    // 🔥 Se já terminou de carregar o Auth, decide para onde ir imediatamente
+    final authState = authCubit.state;
+    if (authState is! AuthLoading) {
+      debugPrint('🧭 [NavigationCubit] AuthState atual: ${authState.runtimeType} → Processando navegação inicial');
+      _handleAuthChange(authState);
+    }
+  }
+
   // --- Gerenciamento de estado interno ---
 
   void setInitialPath(String path) {
-    if (state.path != null) return;
     debugPrint('📍 [NavigationCubit] Sincronizando path inicial: $path');
     emit(NavigationState.pushTo(path));
   }
@@ -45,101 +84,91 @@ class NavigationCubit extends Cubit<NavigationState> {
     
     if (isClosed) return;
 
+    // 🔥 Só navega depois que o app estiver inicializado
+    if (!_isInitialized) {
+      debugPrint('🧭 [NavigationCubit] App não inicializado, ignorando navegação');
+      return;
+    }
+
+    // 🔥 AuthLoading não navega (mantém Splash)
+    if (authState is AuthLoading) {
+      debugPrint('🧭 [NavigationCubit] AuthLoading detectado, mantendo Splash');
+      return;
+    }
+
     final currentPath = state.path;
-    // Se não temos path no Cubit, ainda não sabemos onde o app está
-    if (currentPath == null) {
-      debugPrint('⏳ [NavigationCubit] Aguardando sincronização de path para decidir navegação...');
-      return;
-    }
+    debugPrint('🔴 [NavigationCubit] Path atual no estado: $currentPath');
 
-    final effectivePath = currentPath;
-    debugPrint('🔴 [NavigationCubit] Path atual: $effectivePath');
-
-    // 🔥 Rotas do fluxo de onboarding
-    final onboardingFlowRoutes = [
-      Routes.splash,
-      Routes.onboarding,
-      Routes.phoneInput,
-      Routes.otpVerify,
-      Routes.completarPerfil,
-      Routes.login,
-      Routes.cepInput,
-      Routes.buscaEndereco,
-      Routes.enderecoConfirmacao,
-    ];
-
-    // ✅ AuthPhoneEnviado → OTP
-    if (authState is AuthPhoneEnviado) {
-      if (effectivePath == Routes.otpVerify) {
-        debugPrint('⏭️ [NavigationCubit] Já está em OTP, ignorando');
-        return;
-      }
-      debugPrint('🧭 [NavigationCubit] AuthPhoneEnviado → OTP');
-      emit(NavigationState.pushTo(
-        Routes.otpVerify,
-        queryParams: {
-          'telefone': authState.telefone,
-          if (_isRedirectingToCheckout) 'redirectToCheckout': 'true',
-          if (_pendingOrigem != null) 'origem': _pendingOrigem!,
-        },
-      ));
-      return;
-    }
-
-    // ✅ AuthAuthenticated → HOME (direto, sem verificar localização)
-    if (authState is AuthAuthenticated || authState is AuthPerfilCompleto) {
-      debugPrint('🔴 [NavigationCubit] 🔥 AuthAuthenticated detectado!');
-      
-      final user = authState.user;
-      final status = user?.status;
-
-      // Se perfil pendente → Completar Perfil
-      if (status == 'pendente' || (user != null && user.nome.isEmpty)) {
-        if (effectivePath == Routes.completarPerfil) {
-          debugPrint('⏭️ [NavigationCubit] Já está em Completar Perfil, ignorando');
-          return;
-        }
-        debugPrint('🧭 [NavigationCubit] Perfil incompleto → Completar Perfil');
-        emit(const NavigationState.goTo(Routes.completarPerfil));
-        return;
-      }
-
-      // ✅ VAI DIRETO PARA HOME - NÃO VERIFICA LOCALIZAÇÃO NO ARRANQUE
-      final isInOnboardingFlow = onboardingFlowRoutes.any((r) => 
-        effectivePath.startsWith(r.replaceAll(':id', ''))
-      );
-
-      if (isInOnboardingFlow) {
-        if (_isRedirectingToCheckout) {
-          _isRedirectingToCheckout = false;
-          _pendingOrigem = null;
-          emit(const NavigationState.goTo(Routes.carrinho));
-        } else {
-          if (effectivePath != Routes.home) {
-            debugPrint('🧭 [NavigationCubit] AuthAuthenticated → Home (direto)');
-            goToHomeDirectly();
-          }
-        }
-      } else {
-        debugPrint('⏭️ [NavigationCubit] Já está em rota protegida ($effectivePath), ignorando');
-      }
-      return;
-    }
-
-    // ✅ AuthUnauthenticated → Onboarding
+    // 1. PRIORIDADE: NÃO AUTENTICADO
     if (authState is AuthUnauthenticated) {
       debugPrint('🔴 [NavigationCubit] 🔥 AuthUnauthenticated detectado!');
       _isRedirectingToCheckout = false;
       _pendingOrigem = null;
 
-      final isInOnboardingFlow = onboardingFlowRoutes.any((r) => 
-        effectivePath.startsWith(r.replaceAll(':id', ''))
-      );
-
-      // ✅ Permitir sair da Splash para Onboarding se não estiver autenticado
-      if (!isInOnboardingFlow || effectivePath == Routes.splash) {
-        debugPrint('🧭 [NavigationCubit] AuthUnauthenticated → Onboarding');
+      // Se não sabemos o path (null) ou não estamos em rota pública, vai para onboarding
+      final publicRoutes = [Routes.onboarding, Routes.phoneInput, Routes.otpVerify, Routes.splash];
+      if (currentPath == null || !publicRoutes.contains(currentPath)) {
+        debugPrint('🧭 [NavigationCubit] Redirecionando para Onboarding');
         emit(const NavigationState.goTo(Routes.onboarding));
+      }
+      return;
+    }
+
+    // 2. AUTH PHONE ENVIADO (Fluxo intermediário)
+    if (authState is AuthPhoneEnviado) {
+      if (currentPath != Routes.otpVerify) {
+        debugPrint('🧭 [NavigationCubit] AuthPhoneEnviado → OTP');
+        emit(NavigationState.pushTo(
+          Routes.otpVerify,
+          queryParams: {
+            'telefone': authState.telefone,
+            if (_isRedirectingToCheckout) 'redirectToCheckout': 'true',
+            if (_pendingOrigem != null) 'origem': _pendingOrigem!,
+          },
+        ));
+      }
+      return;
+    }
+
+    // 3. AUTENTICADO
+    if (authState is AuthAuthenticated || authState is AuthPerfilCompleto || authState is AuthGuest) {
+      debugPrint('🔴 [NavigationCubit] 🔥 Auth State (${authState.runtimeType}) detectado!');
+      
+      final user = authState.user;
+      
+      // Se perfil pendente → Completar Perfil (Exceto se for AuthGuest)
+      if (authState is! AuthGuest && user != null && (user.status == 'pendente' || user.nome.isEmpty)) {
+        if (currentPath != Routes.completarPerfil) {
+          debugPrint('🧭 [NavigationCubit] Perfil incompleto → Completar Perfil');
+          emit(const NavigationState.goTo(Routes.completarPerfil));
+        }
+        return;
+      }
+
+      // 🔥 EXECUTA ROTA PENDENTE SE EXISTIR
+      if (_pendingRoute != null) {
+        debugPrint('🧭 [NavigationCubit] Finalizando fluxo de autenticação, executando rota pendente: $_pendingRoute');
+        executePendingRoute();
+        return;
+      }
+
+      // Se estiver em rota de Onboarding/Splash ou se o path inicial ainda não foi sincronizado → Decide para onde ir
+      final onboardingFlowRoutes = [Routes.splash, Routes.onboarding, Routes.phoneInput, Routes.otpVerify];
+      if (currentPath == null || onboardingFlowRoutes.contains(currentPath)) {
+        if (_isRedirectingToCheckout) {
+          _isRedirectingToCheckout = false;
+          _pendingOrigem = null;
+          emit(const NavigationState.goTo(Routes.carrinho));
+        } else {
+          debugPrint('🧭 [NavigationCubit] No Onboarding/Splash → Verificando endereço para Home');
+          final locState = localizacaoCubit.state;
+          if (locState is LocalizacaoCarregada) {
+            goToHomeDirectly();
+          } else {
+            debugPrint('🧭 [NavigationCubit] Sem endereço → Busca Endereço');
+            goToBuscaEndereco();
+          }
+        }
       }
       return;
     }
@@ -267,8 +296,8 @@ class NavigationCubit extends Cubit<NavigationState> {
   }
 
   void goToCarrinho({String? origem}) {
-    debugPrint('🔴 [NavigationCubit] goToCarrinho chamado');
-    _push(Routes.carrinho, queryParams: origem != null ? {'origem': origem} : null);
+    debugPrint('🧭 [NavigationCubit] goToCarrinho → /carrinho');
+    navigateToCart(origem: origem);
   }
 
   void goToMeusEnderecos() {
@@ -303,11 +332,11 @@ class NavigationCubit extends Cubit<NavigationState> {
 
   void goToCepInput() {
     debugPrint('🔴 [NavigationCubit] goToCepInput chamado');
-    _go(Routes.cepInput);
+    _push(Routes.cepInput);
   }
 
   void goToBuscaEndereco() {
-    debugPrint('🔴 [NavigationCubit] goToBuscaEndereco chamado');
+    debugPrint('🧭 [NavigationCubit] goToBuscaEndereco → /busca-endereco');
     _go(Routes.buscaEndereco);
   }
 
@@ -328,7 +357,13 @@ class NavigationCubit extends Cubit<NavigationState> {
 
   void goToHomeAndRemoveAll() {
     debugPrint('🔴 [NavigationCubit] goToHomeAndRemoveAll chamado');
-    _go(Routes.home);
+    final locState = localizacaoCubit.state;
+    if (locState is LocalizacaoCarregada) {
+      _go(Routes.home);
+    } else {
+      debugPrint('🧭 [NavigationCubit] Sem endereço → Busca Endereço');
+      goToBuscaEndereco();
+    }
   }
 
   void goToCarrinhoAndRemoveAll() {
@@ -360,42 +395,39 @@ class NavigationCubit extends Cubit<NavigationState> {
   }
 
   void navigateToCart({String? origem}) {
-    debugPrint('🔴 [NavigationCubit] navigateToCart chamado');
+    debugPrint('🔴 [NavigationCubit] navigateToCart chamado. origem: $origem');
     final authState = authCubit.state;
-    final user = authState.user;
+    final user = authCubit.usuario;
     final status = user?.status;
 
-    debugPrint('🔴 [NavigationCubit] authState: ${authState.runtimeType}, status: $status');
+    debugPrint('🔴 [NavigationCubit] authState: ${authState.runtimeType}, status: $status, user: ${user?.nome}');
+
+    // 🔥 SALVA A ROTA PENDENTE
+    savePendingRoute(Routes.carrinho);
 
     if (authState is AuthAuthenticated || authState is AuthGuest || authState is AuthPerfilCompleto) {
-      if (status == 'convidado') {
+      if (status == 'convidado' || (user != null && user.nome == 'Convidado')) {
         debugPrint('🔴 [NavigationCubit] Usuário convidado → phoneInput');
         _isRedirectingToCheckout = true;
         _pendingOrigem = origem;
-        emit(NavigationState.pushTo(
-          Routes.phoneInput,
-          queryParams: {'redirectToCheckout': 'true', 'origem': origem ?? ''},
-        ));
+        // NavigationState.pushTo already handles the emission
+        _push(Routes.phoneInput, queryParams: {'redirectToCheckout': 'true', 'origem': origem ?? ''});
       } else if (status == 'pendente' || (user != null && user.nome.isEmpty)) {
         debugPrint('🔴 [NavigationCubit] Perfil pendente → completarPerfil');
         _isRedirectingToCheckout = true;
         _pendingOrigem = origem;
-        emit(NavigationState.pushTo(
-          Routes.completarPerfil,
-          queryParams: {'redirectToCheckout': 'true', 'origem': origem ?? ''},
-        ));
+        _push(Routes.completarPerfil, queryParams: {'redirectToCheckout': 'true', 'origem': origem ?? ''});
       } else {
         debugPrint('🔴 [NavigationCubit] Usuário válido → carrinho');
-        emit(const NavigationState.pushTo(Routes.carrinho));
+        // Se já é válido, limpa a rota pendente e vai direto
+        _pendingRoute = null;
+        _go(Routes.carrinho);
       }
     } else {
       debugPrint('🔴 [NavigationCubit] Não autenticado → onboarding');
       _isRedirectingToCheckout = true;
       _pendingOrigem = origem;
-      emit(NavigationState.pushTo(
-        Routes.onboarding,
-        queryParams: {'origem': origem ?? ''},
-      ));
+      _push(Routes.onboarding, queryParams: {'origem': origem ?? ''});
     }
   }
 

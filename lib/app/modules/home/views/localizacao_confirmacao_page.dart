@@ -10,6 +10,7 @@ import 'widgets/endereco_card.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/utils/estados_brasil.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class LocalizacaoConfirmacaoPage extends StatefulWidget {
   final Map<String, dynamic> endereco;
@@ -187,36 +188,10 @@ class _LocalizacaoConfirmacaoPageState extends State<LocalizacaoConfirmacaoPage>
                     maxLines: 2,
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _confirmar,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                          : const Text(
-                        'Confirmar Endereço',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                  PrimaryButton(
+                    onPressed: _confirmar,
+                    label: 'Confirmar Endereço',
+                    isLoading: _isLoading,
                   ),
                   const SizedBox(height: 12),
                   TextButton(

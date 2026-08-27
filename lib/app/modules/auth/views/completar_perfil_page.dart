@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/primary_button.dart';
 import '../bloc/auth_cubit.dart';
 import '../bloc/auth_state.dart';
 
@@ -116,8 +117,8 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
                     const SizedBox(height: 32),
                     AppTextField(
                       controller: _nomeController,
-                      label: 'Nome completo',
-                      hint: 'Seu nome completo',
+                      label: 'Nome',
+                      hint: 'Seu nome',
                       prefixIcon: Icons.person_outline,
                       isRequired: true,
                       validator: (value) {
@@ -143,20 +144,11 @@ class _CompletarPerfilBodyState extends State<_CompletarPerfilBody> {
                       },
                     ),
                     const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
+                    PrimaryButton(
+                      onPressed: _salvar,
+                      label: 'Finalizar Cadastro',
+                      isLoading: _isLoading,
                       height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _salvar,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text('Finalizar Cadastro', style: AppTextStyles.button.copyWith(color: Colors.white)),
-                      ),
                     ),
                   ],
                 ),

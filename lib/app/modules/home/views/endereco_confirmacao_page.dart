@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quipede/app/navigation/navigation_cubit.dart';
-import '../../../core/theme/app_text_styles.dart';
+import 'package:quipede/app/core/widgets/primary_button.dart';
 import '../../enderecos/bloc/endereco_cubit.dart';
 import '../../enderecos/bloc/endereco_state.dart';
 import '../../enderecos/models/endereco_model.dart';
@@ -196,35 +196,10 @@ class _EnderecoConfirmacaoBodyState extends State<_EnderecoConfirmacaoBody> {
                     maxLines: 2,
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _confirmar,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                          : Text(
-                        'Confirmar Endereço',
-                        style: AppTextStyles.button.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                  PrimaryButton(
+                    onPressed: _confirmar,
+                    label: 'Confirmar Endereço',
+                    isLoading: _isLoading,
                   ),
                   const SizedBox(height: 12),
                 ],

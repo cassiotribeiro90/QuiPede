@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
+import '../../../core/widgets/primary_button.dart';
 
 class PerfilView extends StatefulWidget {
   const PerfilView({super.key});
@@ -140,23 +141,10 @@ class _PerfilViewState extends State<PerfilView> {
                 const SizedBox(height: 32),
 
                 // 🔹 Botão salvar
-                ElevatedButton(
-                  onPressed: state is AuthLoading ? null : _salvar,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: state is AuthLoading 
-                    ? const SizedBox(
-                        height: 20, 
-                        width: 20, 
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                      )
-                    : const Text('Salvar alterações'),
+                PrimaryButton(
+                  onPressed: _salvar,
+                  label: 'Salvar alterações',
+                  isLoading: state is AuthLoading,
                 ),
               ],
             ),

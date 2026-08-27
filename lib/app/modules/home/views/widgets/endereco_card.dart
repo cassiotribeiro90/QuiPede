@@ -84,7 +84,7 @@ class EnderecoCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      padding: const EdgeInsets.fromLTRB(14, 14, 8, 5),
       decoration: BoxDecoration(
         color: displayPrincipal
             ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
@@ -93,7 +93,7 @@ class EnderecoCard extends StatelessWidget {
         border: Border.all(
           color: displayPrincipal
               ? Theme.of(context).primaryColor
-              : Colors.grey.shade300,
+              : Colors.grey.shade200,
           width: displayPrincipal ? 2 : 1,
         ),
       ),
@@ -104,7 +104,7 @@ class EnderecoCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Padding(
-                padding: EdgeInsets.only(top: 2),
+                padding: EdgeInsets.only(top: 2, right: 4),
                 child: Icon(
                   Icons.check_circle,
                   color: AppColors.primary,
@@ -121,7 +121,6 @@ class EnderecoCard extends StatelessWidget {
                       displayCompleto,
                       style: const TextStyle(
                         fontSize: 17, // ✅ Tamanho bom (era 19, reduzimos 2px)
-                        color: Colors.grey,
                         height: 1.4,
                         fontWeight: FontWeight.w500,
                       ),

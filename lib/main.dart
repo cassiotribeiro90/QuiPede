@@ -16,7 +16,6 @@ import 'app/modules/pedido/bloc/pedido_cubit.dart';
 import 'app/modules/enderecos/bloc/endereco_cubit.dart';
 import 'app/routes/app_router.dart';
 import 'app/theme/theme_cubit.dart';
-import 'app/core/services/fcm_service.dart';
 import 'app/navigation/app_router_listener.dart';
 import 'app/navigation/navigation_cubit.dart';
 import 'firebase_options.dart';
@@ -36,10 +35,7 @@ Future<void> setupApp() async {
   );
   developer.log('✅ [setupApp] Firebase inicializado', name: 'APP');
 
-  // 🔥 INICIALIZA FCM
-  developer.log('📌 [setupApp] Inicializando FCM...', name: 'APP');
-  await FcmService().init();
-  developer.log('✅ [setupApp] FCM inicializado', name: 'APP');
+  // PushService agora é inicializado após autenticação no AuthCubit
 
   developer.log('📌 [setupApp] Configurando dependências...', name: 'APP');
   await setupDependencies();
@@ -64,13 +60,6 @@ Future<void> main() async {
     developer.log('❌ [main] ERRO FATAL: $e', name: 'APP', error: e, stackTrace: stack);
     runApp(ErrorApp(error: e.toString()));
   }
-
-  // 🔥 SOLICITA PERMISSÃO APÓS O APP ABRIR (Evita tela branca na Web)
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Future.delayed(const Duration(seconds: 2), () {
-      FcmService().requestPermissionAndGetToken();
-    });
-  });
 }
 
 // ✅ WIDGET DE ERRO PARA DEBUG
@@ -143,6 +132,7 @@ class _QuiPedeAppState extends State<QuiPedeApp> {
       final authCubit = getIt<AuthCubit>();
       final localizacaoCubit = getIt<LocalizacaoCubit>();
       final enderecoCubit = getIt<EnderecoCubit>();
+      final navigationCubit = getIt<NavigationCubit>();
       
       developer.log('📌 [QuiPedeApp] AuthCubit carregado de getIt', name: 'APP');
       
@@ -150,6 +140,17 @@ class _QuiPedeAppState extends State<QuiPedeApp> {
       developer.log('📌 [QuiPedeApp] Chamando AuthCubit.inicializarApp()...', name: 'APP');
       await authCubit.inicializarApp();
       
+      // 🔥 AGUARDA O ESTADO FINAL (Não Loading)
+      if (authCubit.state is AuthLoading) {
+        developer.log('📌 [QuiPedeApp] Aguardando fim do AuthLoading...', name: 'APP');
+        await for (final state in authCubit.stream) {
+          if (state is! AuthLoading) {
+            developer.log('✅ [QuiPedeApp] AuthState final recebido: ${state.runtimeType}', name: 'APP');
+            break;
+          }
+        }
+      }
+
       // ✅ Carrega endereços se estiver autenticado
       final authState = authCubit.state;
       if (authState is AuthAuthenticated || authState is AuthGuest || authState is AuthPerfilCompleto) {
@@ -166,6 +167,9 @@ class _QuiPedeAppState extends State<QuiPedeApp> {
         developer.log('📌 [QuiPedeApp] Carregando endereço padrão...', name: 'APP');
         await localizacaoCubit.carregarLocalizacaoDoEnderecoPadrao();
       }
+
+      // ✅ MARCA COMO INICIALIZADO NO NAVIGATION CUBIT
+      navigationCubit.setInitialized();
       
       developer.log('✅ [QuiPedeApp] INICIALIZAÇÃO CONCLUÍDA COM SUCESSO', name: 'APP');
     } catch (e, stack) {

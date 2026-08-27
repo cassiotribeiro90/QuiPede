@@ -62,13 +62,13 @@ class EnderecoCubit extends Cubit<EnderecoState> {
       if (!isClosed) {
         final token = result['token'];
         final usuarioJson = result['usuario'];
+        final enderecoData = result['endereco'];
 
         if (token != null && usuarioJson != null) {
           debugPrint('🔑 [EnderecoCubit] Token de convidado detectado. Notificando AuthCubit...');
-          getIt<AuthCubit>().onEnderecoCriadoComToken(token, usuarioJson);
+          final novo = enderecoData != null ? EnderecoModel.fromJson(enderecoData) : endereco;
+          getIt<AuthCubit>().onEnderecoCriadoComToken(token, usuarioJson, endereco: novo);
         }
-
-        final enderecoData = result['endereco'];
 
         if (enderecoData != null && enderecoData is Map<String, dynamic>) {
           final novo = EnderecoModel.fromJson(enderecoData);
