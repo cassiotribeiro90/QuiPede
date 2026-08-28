@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'filter_bottom_sheet.dart';
 
 class SearchWithFilters extends StatefulWidget {

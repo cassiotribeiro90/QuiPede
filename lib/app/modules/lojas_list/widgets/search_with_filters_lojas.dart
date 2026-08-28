@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import '../../../models/lojas_list_filter_option_model.dart';
 import 'filter_bottom_sheet.dart';
 
