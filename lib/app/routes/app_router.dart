@@ -11,7 +11,7 @@ import '../modules/home/views/home_screen.dart';
 import '../modules/home/views/onboarding_page.dart';
 import '../modules/loja_home/views/loja_detalhe_page.dart';
 import '../modules/carrinho/views/carrinho_page.dart';
-import '../modules/perfil/views/pedidos_view.dart';
+import '../modules/pedido/views/pedidos_view.dart';
 import '../modules/perfil/views/perfil_view.dart';
 import '../modules/enderecos/views/enderecos_list_view.dart';
 import '../modules/home/views/busca_endereco_page.dart';

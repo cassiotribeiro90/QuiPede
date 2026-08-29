@@ -25,7 +25,11 @@ class PedidoDetalheModel extends Equatable {
   final EnderecoModel endereco;
   final List<PedidoItemModel> itens;
   final String? lojaNome;
-  final String? lojaLogo; // 🔥 NOVO
+  final String? lojaLogo;
+  final int? lojaId; // 🔥 NOVO
+  final String? pedidoCodigo; // 🔥 NOVO
+  final bool chatDisponivel; // 🔥 NOVO
+  final int totalMensagens; // 🔥 NOVO
 
   const PedidoDetalheModel({
     required this.id,
@@ -48,7 +52,11 @@ class PedidoDetalheModel extends Equatable {
     required this.endereco,
     required this.itens,
     this.lojaNome,
-    this.lojaLogo, // 🔥 NOVO
+    this.lojaLogo,
+    this.lojaId, // 🔥 NOVO
+    this.pedidoCodigo, // 🔥 NOVO
+    this.chatDisponivel = true, // 🔥 NOVO
+    this.totalMensagens = 0, // 🔥 NOVO
   });
 
   // Mapa de status para labels
@@ -167,17 +175,26 @@ class PedidoDetalheModel extends Equatable {
     // 🔥 LOJA – NOME E LOGO
     String? lojaNome;
     String? lojaLogo;
+    int? lojaId;
     if (json['loja'] is Map) {
       lojaNome = json['loja']['nome']?.toString();
       lojaLogo = json['loja']['logo']?.toString();
+      lojaId = json['loja']['id'] is int ? json['loja']['id'] : int.tryParse(json['loja']['id']?.toString() ?? '');
     } else if (json['loja_nome'] != null) {
       lojaNome = json['loja_nome'].toString();
     }
+    
+    if (json['loja_id'] != null) {
+      lojaId = json['loja_id'] is int ? json['loja_id'] : int.tryParse(json['loja_id'].toString());
+    }
+
     if (json['loja_logo'] != null) {
       lojaLogo = json['loja_logo'].toString();
     }
 
     final statusStr = json['status']?.toString() ?? 'desconhecido';
+    final chatDisponivel = json['chat_disponivel'] ?? false;
+    final totalMensagens = (json['total_mensagens'] as num?)?.toInt() ?? 0;
 
     return PedidoDetalheModel(
       id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
@@ -203,7 +220,11 @@ class PedidoDetalheModel extends Equatable {
       endereco: endereco,
       itens: itens,
       lojaNome: lojaNome,
-      lojaLogo: lojaLogo, // 🔥 NOVO
+      lojaLogo: lojaLogo, 
+      lojaId: lojaId,
+      pedidoCodigo: json['codigo']?.toString(),
+      chatDisponivel: chatDisponivel,
+      totalMensagens: totalMensagens,
     );
   }
 
@@ -219,7 +240,10 @@ class PedidoDetalheModel extends Equatable {
     endereco,
     itens,
     lojaNome,
-    lojaLogo, // 🔥 NOVO
+    lojaLogo, 
+    lojaId,
+    pedidoCodigo,
+    chatDisponivel,
   ];
 }
 

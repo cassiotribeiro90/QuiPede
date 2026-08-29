@@ -5,6 +5,8 @@ class ResponsivePageScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final Widget body;
   final Widget? bottomNavigationBar;
+  final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
   final Widget? drawer;
   final Color? backgroundColor;
 
@@ -13,6 +15,8 @@ class ResponsivePageScaffold extends StatelessWidget {
     this.appBar,
     required this.body,
     this.bottomNavigationBar,
+    this.floatingActionButton,
+    this.floatingActionButtonLocation,
     this.drawer,
     this.backgroundColor,
   });
@@ -26,6 +30,8 @@ class ResponsivePageScaffold extends StatelessWidget {
       drawer: drawer,
       backgroundColor: bgColor,
       bottomNavigationBar: bottomNavigationBar,
+      floatingActionButton: floatingActionButton,
+      floatingActionButtonLocation: floatingActionButtonLocation,
       body: LayoutBuilder(
         builder: (context, constraints) {
           // 🔥 DETECTA SE É WEB E AJUSTA A LARGURA

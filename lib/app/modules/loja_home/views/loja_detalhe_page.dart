@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quipede/app/core/theme/app_colors.dart';
 import 'package:quipede/app/core/widgets/primary_button.dart';
 import '../../../di/dependencies.dart';
 import '../../../models/secao_model.dart';
@@ -14,6 +15,7 @@ import '../widgets/search_with_filters.dart';
 import '../widgets/secoes_list_widget.dart';
 import '../../carrinho/bloc/carrinho_cubit.dart';
 import '../../carrinho/widgets/carrinho_bottom_bar.dart';
+import '../../chat/views/chat_screen.dart';
 import '../../produtos/widgets/produto_simples_bottom_sheet.dart';
 import '../../auth/bloc/auth_cubit.dart';
 import '../../auth/bloc/auth_state.dart';
@@ -422,6 +424,25 @@ class _LojaDetalhePageState extends State<LojaDetalhePage>
                 ),
                 backgroundColor: theme.cardColor,
                 elevation: 0,
+                actions: [
+                  if (state.loja != null)
+                    IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      color: AppColors.chatPrimary,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatScreen(
+                              lojaId: state.loja!.id,
+                              mensagemInicial: 'Olá! Gostaria de tirar uma dúvida sobre a loja.',
+                            ),
+                          ),
+                        );
+                      },
+                      tooltip: 'Falar com a loja',
+                    ),
+                ],
               ),
               bottomNavigationBar: _buildBottomBar(context, state),
               body: Column(

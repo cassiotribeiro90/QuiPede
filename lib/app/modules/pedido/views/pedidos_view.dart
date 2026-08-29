@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../navigation/navigation_cubit.dart';
-import '../../pedido/bloc/pedido_cubit.dart';
-import '../../../../shared/widgets/responsive_page_scaffold.dart';
-import '../../pedido/models/pedido_detalhe_model.dart';
+import '../bloc/pedido_cubit.dart';
+import '../models/pedido_detalhe_model.dart';
 import '../../../services/push_service.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../chat/bloc/chat_bloc.dart';
+import '../../../shared/widgets/chat_button.dart';
+import '../../../shared/widgets/badge_widget.dart';
 
 class PedidosView extends StatefulWidget {
   const PedidosView({super.key});
@@ -22,11 +24,15 @@ class _PedidosViewState extends State<PedidosView> {
   @override
   void initState() {
     super.initState();
-    context.read<PedidoCubit>().carregarPedidos();
-    
-    _pushSubscription = PushService().onPedidoStatus.listen((event) {
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        // Se for evento de polling ou push de qualquer pedido, recarrega a lista
+        context.read<PedidoCubit>().carregarPedidos();
+      }
+    });
+
+    _pushSubscription = PushService().onPedidoStatus.listen((event) {
+      if (mounted && event.pedidoId != 'polling') {
         context.read<PedidoCubit>().carregarPedidos();
       }
     });
@@ -50,29 +56,37 @@ class _PedidosViewState extends State<PedidosView> {
   Widget build(BuildContext context) {
     final navigationCubit = context.read<NavigationCubit>();
 
-    return BlocBuilder<PedidoCubit, PedidoState>(
-      builder: (context, state) {
-        return ResponsivePageScaffold(
-          appBar: AppBar(
-            title: const Text('Meus Pedidos'),
-            backgroundColor: context.surfaceColor,
-            foregroundColor: context.textPrimary,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => navigationCubit.goToHomeAndRemoveAll(),
+    return BlocProvider(
+      create: (context) => ChatBloc(),
+      child: BlocBuilder<PedidoCubit, PedidoState>(
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: context.backgroundColor,
+            appBar: AppBar(
+              title: const Text('Meus Pedidos'),
+              backgroundColor: context.surfaceColor,
+              foregroundColor: context.textPrimary,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => navigationCubit.goToHomeAndRemoveAll(),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => context.read<PedidoCubit>().carregarPedidos(),
+                  tooltip: 'Atualizar pedidos',
+                ),
+              ],
             ),
-          ),
-          backgroundColor: context.backgroundColor,
-          body: _buildBody(context, state),
-        );
-      },
+            body: _buildBody(context, state),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildBody(BuildContext context, PedidoState state) {
-    context.read<NavigationCubit>();
-
     if (state is PedidoLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -128,36 +142,32 @@ class _PedidosViewState extends State<PedidosView> {
       );
     }
 
-    return Column(
-      children: [
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () => context.read<PedidoCubit>().carregarPedidos(),
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: pedidos.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final pedido = pedidos[index];
-                return _buildPedidoItem(context, pedido);
-              },
-            ),
-          ),
-        ),
-      ],
+    return RefreshIndicator(
+      onRefresh: () => context.read<PedidoCubit>().carregarPedidos(),
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: pedidos.length,
+        separatorBuilder: (_, __) => const Divider(height: 0.5),
+        itemBuilder: (context, index) {
+          final pedido = pedidos[index];
+          return _buildPedidoItem(context, pedido);
+        },
+      ),
     );
   }
 
-  Widget _buildPedidoItem(BuildContext context, dynamic pedido) {
+  Widget _buildPedidoItem(BuildContext context, PedidoDetalheModel pedido) {
     final navigationCubit = context.read<NavigationCubit>();
 
     return InkWell(
       onTap: () => navigationCubit.goToPedidoDetalhe(pedido.id),
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // 🔥 PADDING INTERNO
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // 🔥 ÍCONE DA LOJA
             Container(
               width: 56,
               height: 56,
@@ -177,6 +187,7 @@ class _PedidosViewState extends State<PedidosView> {
             ),
             const SizedBox(width: 14),
 
+            // 🔥 INFORMAÇÕES DO PEDIDO
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,6 +217,7 @@ class _PedidosViewState extends State<PedidosView> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
+                      // 🔥 STATUS
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
@@ -236,6 +248,7 @@ class _PedidosViewState extends State<PedidosView> {
                         ),
                       ),
                       const SizedBox(width: 10),
+                      // 🔥 ITENS
                       Row(
                         children: [
                           Icon(Icons.shopping_bag_outlined, size: 14, color: context.textHint),
@@ -254,12 +267,41 @@ class _PedidosViewState extends State<PedidosView> {
 
             const SizedBox(width: 8),
 
-            Text(
-              _formatarMoeda(pedido.total),
-              style: context.titleMedium.copyWith(
-                fontWeight: FontWeight.bold,
-                color: context.textPrimary,
-              ),
+            // 🔥 VALOR E CHAT
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _formatarMoeda(pedido.total),
+                  style: context.titleMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: context.textPrimary,
+                  ),
+                ),
+                if (pedido.chatDisponivel) ...[
+                  const SizedBox(height: 8),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      ChatButton(
+                        pedidoId: pedido.id,
+                        mensagemInicial: 'Olá! Estou com uma dúvida sobre o pedido #${pedido.pedidoCodigo ?? pedido.id}.',
+                        showLabel: false,
+                      ),
+                      if (pedido.totalMensagens > 0)
+                        Positioned(
+                          top: -4,
+                          right: -4,
+                          child: BadgeWidget(
+                            count: pedido.totalMensagens,
+                            size: 18,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
             ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right, size: 20, color: context.textHint),

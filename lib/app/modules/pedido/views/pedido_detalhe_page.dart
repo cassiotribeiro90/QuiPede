@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quipede/app/core/theme/app_colors.dart';
 import 'package:quipede/app/core/widgets/primary_button.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../bloc/pedido_cubit.dart';
+import '../../chat/views/chat_screen.dart';
 import '../widgets/pedido_status_timeline.dart';
 import '../../../../shared/widgets/responsive_page_scaffold.dart';
 import '../../../services/push_service.dart';
@@ -24,15 +26,12 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
   @override
   void initState() {
     super.initState();
-    // 🔥 Chamada imediata para carregar os dados
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PedidoCubit>().carregarDetalhes(widget.pedidoId);
     });
 
     _pushSubscription = PushService().onPedidoStatus.listen((event) {
       if (!mounted) return;
-
-      // Se for polling ou atualização específica deste pedido
       if (event.pedidoId == 'polling' || event.pedidoId == widget.pedidoId.toString()) {
         context.read<PedidoCubit>().carregarDetalhes(widget.pedidoId);
       }
@@ -60,13 +59,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
-
-        if (state is PedidoDetalheCarregado) {
-          final status = state.pedido.status.toLowerCase();
-          if (status == 'entregue' || status == 'cancelado') {
-            // Polling removido, PushService cuida das atualizações
-          }
-        }
       },
       builder: (context, state) {
         return ResponsivePageScaffold(
@@ -82,8 +74,60 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
           ),
           backgroundColor: context.backgroundColor,
           body: _buildBody(context, state),
+          floatingActionButton: _buildFab(context, state),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
       },
+    );
+  }
+
+  Widget? _buildFab(BuildContext context, PedidoState state) {
+    if (state is PedidoDetalheCarregado) {
+      final pedido = state.pedido;
+      if (pedido.chatDisponivel) {
+        return FloatingActionButton.extended(
+          onPressed: () => _iniciarChat(context, pedido),
+          icon: const Icon(Icons.chat_bubble_outline),
+          label: Row(
+            children: [
+              const Text('Falar sobre o pedido'),
+              if (pedido.totalMensagens > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${pedido.totalMensagens}',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          backgroundColor: AppColors.chatPrimary,
+          foregroundColor: Colors.white,
+        );
+      }
+    }
+    return null;
+  }
+
+  void _iniciarChat(BuildContext context, dynamic pedido) {
+    final mensagem = 'Olá! Estou com uma dúvida sobre o pedido #${pedido.pedidoCodigo ?? pedido.id}.';
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          pedidoId: pedido.id,
+          mensagemInicial: mensagem,
+        ),
+      ),
     );
   }
 
@@ -221,7 +265,7 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
               label: 'Voltar para Lojas',
               height: 50,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 68),
           ],
         ),
       );

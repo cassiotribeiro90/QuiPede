@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Cores principais
+  // ================================================================
+  // 🔥 CORES DA MARCA (LARANJA)
+  // ================================================================
   static const Color primary = Color(0xFFF57C00);      // Laranja principal
   static const Color primaryDark = Color(0xFFE65100);   // Laranja escuro
   static const Color primaryLight = Color(0xFFFF9800);  // Laranja claro
   static const Color primaryBackground = Color(0xFFFFF3E0); // Fundo laranja suave
   static const Color primarySurface = Color(0xFFFFF8E1);    // Superfície laranja
-  
+  static const Color primaryOrangeBackground = Color(0xFFFFF3E0); // 🔥 NOVO
+  // ================================================================
+  // 🔥 CORES DO CHAT E COMUNICAÇÃO (AZUL)
+  // ================================================================
+// ================================================================
+// 🔥 CORES DO CHAT (LARANJA DA MARCA)
+// ================================================================
+  static const Color chatPrimary = Color(0xFFFF6B35);      // Laranja principal da marca
+  static const Color chatLight = Color(0xFFFF8A65);         // Laranja claro
+  static const Color chatDark = Color(0xFFE64A19);          // Laranja escuro
+  static const Color chatPastel = Color(0xFFFFCCBC);        // Laranja pastel
+  static const Color chatBackground = Color(0xFFFFF3E0);    // Fundo laranja claríssimo
+
   // Cores neutras
   static const Color background = Color(0xFFFFFFFF);     // Fundo branco
   static const Color surface = Color(0xFFF5F5F5);        // Superfície cinza claro
