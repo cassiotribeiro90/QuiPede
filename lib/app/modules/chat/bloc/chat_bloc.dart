@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:quipede/app/models/chat/chat_model.dart';
-import 'package:quipede/app/models/chat/chat_mensagem_model.dart';
+import 'package:quipede/app/models/chat_model.dart';
+import 'package:quipede/app/models/chat_mensagem_model.dart';
 import 'package:quipede/app/repositories/chat_repository.dart';
 
 part 'chat_event.dart';

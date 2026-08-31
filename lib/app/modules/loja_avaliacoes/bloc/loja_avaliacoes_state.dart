@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../models/avaliacao_model.dart';
 
+
 abstract class LojaAvaliacoesState extends Equatable {
   const LojaAvaliacoesState();
 
@@ -14,7 +15,7 @@ class LojaAvaliacoesInitial extends LojaAvaliacoesState {}
 class LojaAvaliacoesLoading extends LojaAvaliacoesState {}
 
 class LojaAvaliacoesLoaded extends LojaAvaliacoesState {
-  final List<Avaliacao> avaliacoes;
+  final List<AvaliacaoModel> avaliacoes;
 
   const LojaAvaliacoesLoaded(this.avaliacoes);
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:quipede/app/models/avaliacao/avaliacao_model.dart';
+import 'package:quipede/app/models/avaliacao_model.dart';
 import 'package:quipede/app/shared/widgets/star_rating.dart';
 
 class AvaliacaoCard extends StatelessWidget {

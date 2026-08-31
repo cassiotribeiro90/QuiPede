@@ -50,7 +50,7 @@ class LojaAvaliacoesView extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(avaliacao.nomeUsuario, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(avaliacao.usuarioNome ?? 'Usuário Anônimo', style: const TextStyle(fontWeight: FontWeight.bold)),
                             Row(
                               children: List.generate(5, (starIndex) {
                                 return Icon(
@@ -63,7 +63,7 @@ class LojaAvaliacoesView extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(avaliacao.comentario),
+                        Text(avaliacao.comentario ?? 'sem comentár'),
                       ],
                     ),
                   ),

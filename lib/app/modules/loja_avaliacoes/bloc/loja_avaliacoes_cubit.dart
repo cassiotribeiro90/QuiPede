@@ -17,8 +17,8 @@ class LojaAvaliacoesCubit extends Cubit<LojaAvaliacoesState> {
       final Map<String, dynamic> jsonData = json.decode(jsonString);
       final List<dynamic> todasAvaliacoesJson = jsonData['avaliacoes'];
 
-      final List<Avaliacao> avaliacoesDaLoja = todasAvaliacoesJson
-          .map((json) => Avaliacao.fromJson(json))
+      final List<AvaliacaoModel> avaliacoesDaLoja = todasAvaliacoesJson
+          .map((json) => AvaliacaoModel.fromJson(json))
           .where((avaliacao) => avaliacao.lojaId == lojaId)
           .toList();
 

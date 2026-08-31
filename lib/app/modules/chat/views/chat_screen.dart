@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:quipede/app/core/theme/app_colors.dart';
-import 'package:quipede/app/models/chat/chat_model.dart';
-import 'package:quipede/app/models/chat/chat_mensagem_model.dart';
+import 'package:quipede/app/models/chat_model.dart';
+import 'package:quipede/app/models/chat_mensagem_model.dart';
 import 'package:quipede/app/repositories/chat_repository.dart';
 import 'package:quipede/app/shared/widgets/chat_input.dart';
 import 'package:quipede/app/shared/widgets/chat_message_bubble.dart';

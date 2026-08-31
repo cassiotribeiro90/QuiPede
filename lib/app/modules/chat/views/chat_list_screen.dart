@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quipede/app/core/theme/app_colors.dart';
-import 'package:quipede/app/models/chat/chat_model.dart';
+import 'package:quipede/app/models/chat_model.dart';
 import 'package:quipede/app/modules/chat/bloc/chat_bloc.dart';
 import 'package:quipede/app/modules/chat/views/chat_screen.dart';
 import 'package:quipede/app/shared/widgets/loading_widget.dart';

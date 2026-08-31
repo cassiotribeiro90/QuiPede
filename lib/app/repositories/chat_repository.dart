@@ -1,5 +1,5 @@
-import 'package:quipede/app/models/chat/chat_model.dart';
-import 'package:quipede/app/models/chat/chat_mensagem_model.dart';
+import 'package:quipede/app/models/chat_model.dart';
+import 'package:quipede/app/models/chat_mensagem_model.dart';
 import 'package:quipede/app/repositories/base_repository.dart';
 
 class ChatRepository extends BaseRepository {

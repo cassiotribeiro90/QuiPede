@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:quipede/app/models/avaliacao/avaliacao_model.dart';
-import 'package:quipede/app/models/avaliacao/resumo_avaliacao_model.dart';
+import 'package:quipede/app/models/avaliacao_model.dart';
+import 'package:quipede/app/models/resumo_avaliacao_model.dart';
 import 'package:quipede/app/repositories/avaliacao_repository.dart';
 
 part 'avaliacao_event.dart';

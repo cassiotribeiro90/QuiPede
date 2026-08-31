@@ -1,5 +1,5 @@
-import 'package:quipede/app/models/avaliacao/avaliacao_model.dart';
-import 'package:quipede/app/models/avaliacao/resumo_avaliacao_model.dart';
+import 'package:quipede/app/models/avaliacao_model.dart';
+import 'package:quipede/app/models/resumo_avaliacao_model.dart';
 import 'package:quipede/app/repositories/base_repository.dart';
 
 class AvaliacaoRepository extends BaseRepository {

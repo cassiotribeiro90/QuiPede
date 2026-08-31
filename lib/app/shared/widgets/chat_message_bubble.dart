@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quipede/app/core/theme/app_colors.dart';
-import 'package:quipede/app/models/chat/chat_mensagem_model.dart';
+import 'package:quipede/app/models/chat_mensagem_model.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   final ChatMensagemModel message;
