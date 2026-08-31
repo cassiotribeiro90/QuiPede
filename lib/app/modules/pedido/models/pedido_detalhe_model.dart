@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
+import '../../../models/avaliacao_model.dart';
 import '../../enderecos/models/endereco_model.dart';
 
 class PedidoDetalheModel extends Equatable {
@@ -26,10 +26,11 @@ class PedidoDetalheModel extends Equatable {
   final List<PedidoItemModel> itens;
   final String? lojaNome;
   final String? lojaLogo;
-  final int? lojaId; // 🔥 NOVO
-  final String? pedidoCodigo; // 🔥 NOVO
-  final bool chatDisponivel; // 🔥 NOVO
-  final int totalMensagens; // 🔥 NOVO
+  final int? lojaId;
+  final String? pedidoCodigo;
+  final bool chatDisponivel;
+  final int totalMensagens;
+  final AvaliacaoModel? avaliacaoPedido;
 
   const PedidoDetalheModel({
     required this.id,
@@ -53,13 +54,13 @@ class PedidoDetalheModel extends Equatable {
     required this.itens,
     this.lojaNome,
     this.lojaLogo,
-    this.lojaId, // 🔥 NOVO
-    this.pedidoCodigo, // 🔥 NOVO
-    this.chatDisponivel = true, // 🔥 NOVO
-    this.totalMensagens = 0, // 🔥 NOVO
+    this.lojaId,
+    this.pedidoCodigo,
+    this.chatDisponivel = true,
+    this.totalMensagens = 0,
+    this.avaliacaoPedido,
   });
 
-  // Mapa de status para labels
   static const Map<String, String> statusLabels = {
     'novo': 'Novo',
     'aguardando': 'Aguardando',
@@ -114,7 +115,6 @@ class PedidoDetalheModel extends Equatable {
     }
   }
 
-  // 🔥 HELPER DATA FORMATADA
   String get dataFormatada {
     final now = DateTime.now();
     final diff = now.difference(criadoEm);
@@ -124,7 +124,6 @@ class PedidoDetalheModel extends Equatable {
   }
 
   factory PedidoDetalheModel.fromJson(Map<String, dynamic> json) {
-    // 🔧 FUNÇÃO DE PARSE CORRIGIDA
     DateTime? parseDate(dynamic value) {
       if (value == null || value.toString().isEmpty) return null;
       final str = value.toString().trim();
@@ -147,7 +146,6 @@ class PedidoDetalheModel extends Equatable {
       return pagamentoLabels[forma.toLowerCase()] ?? forma;
     }
 
-    // Endereço
     EnderecoModel endereco;
     if (json['endereco'] is Map) {
       endereco = EnderecoModel.fromJson(json['endereco']);
@@ -164,7 +162,6 @@ class PedidoDetalheModel extends Equatable {
       );
     }
 
-    // Itens
     List<PedidoItemModel> itens = [];
     if (json['itens'] is List) {
       itens = (json['itens'] as List)
@@ -172,20 +169,23 @@ class PedidoDetalheModel extends Equatable {
           .toList();
     }
 
-    // 🔥 LOJA – NOME E LOGO
     String? lojaNome;
     String? lojaLogo;
     int? lojaId;
     if (json['loja'] is Map) {
       lojaNome = json['loja']['nome']?.toString();
       lojaLogo = json['loja']['logo']?.toString();
-      lojaId = json['loja']['id'] is int ? json['loja']['id'] : int.tryParse(json['loja']['id']?.toString() ?? '');
+      lojaId = json['loja']['id'] is int
+          ? json['loja']['id']
+          : int.tryParse(json['loja']['id']?.toString() ?? '');
     } else if (json['loja_nome'] != null) {
       lojaNome = json['loja_nome'].toString();
     }
-    
+
     if (json['loja_id'] != null) {
-      lojaId = json['loja_id'] is int ? json['loja_id'] : int.tryParse(json['loja_id'].toString());
+      lojaId = json['loja_id'] is int
+          ? json['loja_id']
+          : int.tryParse(json['loja_id'].toString());
     }
 
     if (json['loja_logo'] != null) {
@@ -196,8 +196,17 @@ class PedidoDetalheModel extends Equatable {
     final chatDisponivel = json['chat_disponivel'] ?? false;
     final totalMensagens = (json['total_mensagens'] as num?)?.toInt() ?? 0;
 
+    AvaliacaoModel? avaliacaoPedido;
+    if (json['avaliacao_pedido'] is Map) {
+      avaliacaoPedido = AvaliacaoModel.fromJson(json['avaliacao_pedido']);
+    } else if (json['avaliacao'] is Map) {
+      avaliacaoPedido = AvaliacaoModel.fromJson(json['avaliacao']);
+    }
+
     return PedidoDetalheModel(
-      id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
+      id: json['id'] is int
+          ? json['id']
+          : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
       itemCount: json['item_count'] ?? 0,
       status: statusStr,
       statusLabel: json['status_label']?.toString() ?? getStatusLabel(statusStr),
@@ -220,11 +229,12 @@ class PedidoDetalheModel extends Equatable {
       endereco: endereco,
       itens: itens,
       lojaNome: lojaNome,
-      lojaLogo: lojaLogo, 
+      lojaLogo: lojaLogo,
       lojaId: lojaId,
       pedidoCodigo: json['codigo']?.toString(),
       chatDisponivel: chatDisponivel,
       totalMensagens: totalMensagens,
+      avaliacaoPedido: avaliacaoPedido,
     );
   }
 
@@ -240,33 +250,50 @@ class PedidoDetalheModel extends Equatable {
     endereco,
     itens,
     lojaNome,
-    lojaLogo, 
+    lojaLogo,
     lojaId,
     pedidoCodigo,
     chatDisponivel,
+    avaliacaoPedido,
   ];
 }
 
 class PedidoItemModel extends Equatable {
   final int id;
+  final int produtoId;
   final String nome;
   final int quantidade;
   final double precoUnitario;
   final double precoTotal;
   final String? observacao;
+  final AvaliacaoModel? avaliacao;
 
   const PedidoItemModel({
     required this.id,
+    required this.produtoId,
     required this.nome,
     required this.quantidade,
     required this.precoUnitario,
     required this.precoTotal,
     this.observacao,
+    this.avaliacao,
   });
 
   factory PedidoItemModel.fromJson(Map<String, dynamic> json) {
+    AvaliacaoModel? avaliacao;
+    if (json['avaliacao'] is Map) {
+      avaliacao = AvaliacaoModel.fromJson(json['avaliacao']);
+    } else if (json['avaliacao_produto'] is Map) {
+      avaliacao = AvaliacaoModel.fromJson(json['avaliacao_produto']);
+    }
+
     return PedidoItemModel(
-      id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
+      id: json['id'] is int
+          ? json['id']
+          : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
+      produtoId: json['produto_id'] is int
+          ? json['produto_id']
+          : (int.tryParse(json['produto_id']?.toString() ?? '0') ?? 0),
       nome: json['nome']?.toString() ?? json['produto_nome']?.toString() ?? '',
       quantidade: json['quantidade'] is int
           ? json['quantidade']
@@ -274,9 +301,19 @@ class PedidoItemModel extends Equatable {
       precoUnitario: (json['preco_unitario'] as num?)?.toDouble() ?? 0.0,
       precoTotal: (json['preco_total'] as num?)?.toDouble() ?? 0.0,
       observacao: json['observacao']?.toString(),
+      avaliacao: avaliacao,
     );
   }
 
   @override
-  List<Object?> get props => [id, nome, quantidade, precoUnitario, precoTotal, observacao];
+  List<Object?> get props => [
+    id,
+    produtoId,
+    nome,
+    quantidade,
+    precoUnitario,
+    precoTotal,
+    observacao,
+    avaliacao,
+  ];
 }

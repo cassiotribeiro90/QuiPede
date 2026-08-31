@@ -50,6 +50,8 @@ class PedidoCubit extends Cubit<PedidoState> {
 
   PedidoCubit(this._service) : super(PedidoInitial());
 
+  PedidoService get service => _service;
+
   Future<void> criarPedido({
     required int enderecoId,
     required String formaPagamento,
@@ -70,14 +72,19 @@ class PedidoCubit extends Cubit<PedidoState> {
     }
   }
 
-  Future<void> carregarDetalhes(int pedidoId) async {
-    // 🔥 Mantemos a lista anterior no estado de loading se possível
-    emit(PedidoLoading());
+  /// Carrega detalhes do pedido.
+  /// Se [silencioso] for true, não emite PedidoLoading (apenas atualiza o estado).
+  Future<void> carregarDetalhes(int pedidoId, {bool silencioso = false}) async {
+    if (!silencioso) {
+      emit(PedidoLoading());
+    }
     try {
       final pedido = await _service.getPedidoDetalhe(pedidoId);
       emit(PedidoDetalheCarregado(pedido, pedidos: _lastPedidos));
     } catch (e) {
-      emit(PedidoError(e.toString()));
+      if (!silencioso) {
+        emit(PedidoError(e.toString()));
+      }
     }
   }
 
@@ -85,7 +92,7 @@ class PedidoCubit extends Cubit<PedidoState> {
     emit(PedidoLoading());
     try {
       final pedidos = await _service.getPedidos();
-      _lastPedidos = pedidos; // 🔥 Cache da lista
+      _lastPedidos = pedidos;
       emit(PedidoListaCarregada(pedidos));
     } catch (e) {
       emit(PedidoError(e.toString()));
@@ -102,6 +109,63 @@ class PedidoCubit extends Cubit<PedidoState> {
       }
     } catch (e) {
       emit(PedidoError(e.toString()));
+    }
+  }
+
+  Future<void> enviarAvaliacao({
+    required int pedidoId,
+    int? produtoId,
+    int? lojaId,
+    required int nota,
+    String? comentario,
+  }) async {
+    try {
+      await _service.enviarAvaliacao(
+        pedidoId: pedidoId,
+        produtoId: produtoId,
+        lojaId: lojaId,
+        nota: nota,
+        comentario: comentario,
+      );
+      // Recarrega silenciosamente para não perder scroll nem mostrar loading
+      await carregarDetalhes(pedidoId, silencioso: true);
+    } catch (e) {
+      emit(PedidoError(e.toString()));
+      rethrow;
+    }
+  }
+
+  Future<void> editarAvaliacao({
+    required int avaliacaoId,
+    required int nota,
+    String? comentario,
+  }) async {
+    try {
+      await _service.editarAvaliacao(
+        avaliacaoId: avaliacaoId,
+        nota: nota,
+        comentario: comentario,
+      );
+      if (state is PedidoDetalheCarregado) {
+        final pedidoId = (state as PedidoDetalheCarregado).pedido.id;
+        await carregarDetalhes(pedidoId, silencioso: true);
+      }
+    } catch (e) {
+      emit(PedidoError(e.toString()));
+      rethrow;
+    }
+  }
+
+  Future<void> excluirAvaliacao(int avaliacaoId) async {
+    try {
+      await _service.excluirAvaliacao(avaliacaoId);
+      if (state is PedidoDetalheCarregado) {
+        final pedidoId = (state as PedidoDetalheCarregado).pedido.id;
+        await carregarDetalhes(pedidoId, silencioso: true);
+      }
+    } catch (e) {
+      emit(PedidoError(e.toString()));
+      rethrow;
     }
   }
 }
