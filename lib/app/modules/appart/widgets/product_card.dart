@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import '../../../models/produto_model.dart';
 import '../../../theme/app_theme.dart';
 
@@ -76,7 +77,7 @@ class ProductCard extends StatelessWidget {
       padding: const EdgeInsets.only(left: 12),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.network(produto.imagem ?? "",
+        child: Image.network(ImageHelper.getFullImageUrl(produto.imagem),
           width: imageSize, height: imageSize, fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Container(
             width: imageSize, height: imageSize, color: Colors.grey[200],

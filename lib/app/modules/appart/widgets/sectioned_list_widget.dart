@@ -1,5 +1,6 @@
 // lib/app/widgets/sectioned_list_widget.dart
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 
 /// Modelo genérico para um item da lista
 class SectionItem<T> {
@@ -181,7 +182,7 @@ class SectionedListWidget<T> extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      item.imageUrl!,
+                      ImageHelper.getFullImageUrl(item.imageUrl),
                       width: 56,
                       height: 56,
                       fit: BoxFit.cover,

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../models/produto_model.dart';
@@ -179,7 +180,7 @@ class ProdutoCardUnificado extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: CachedNetworkImage(
-        imageUrl: produto.imagem!,
+        imageUrl: ImageHelper.getFullImageUrl(produto.imagem),
         width: 100,
         height: 100,
         fit: BoxFit.cover,

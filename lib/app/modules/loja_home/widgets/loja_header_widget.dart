@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import '../../../models/loja_detalhe_model.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../chat/views/chat_screen.dart';
@@ -22,7 +23,7 @@ class LojaHeaderWidget extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             CachedNetworkImage(
-              imageUrl: loja.capa,
+              imageUrl: ImageHelper.getFullImageUrl(loja.capa),
               height: 200,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -54,7 +55,7 @@ class LojaHeaderWidget extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.white,
-                  backgroundImage: CachedNetworkImageProvider(loja.logo),
+                  backgroundImage: CachedNetworkImageProvider(ImageHelper.getFullImageUrl(loja.logo)),
                 ),
               ),
             ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../navigation/navigation_cubit.dart';
@@ -217,7 +218,7 @@ class _CarrinhoPageState extends State<CarrinhoPage> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Image.network(
-                                      item.imagem!,
+                                      ImageHelper.getFullImageUrl(item.imagem),
                                       width: 60,
                                       height: 60,
                                       fit: BoxFit.cover,

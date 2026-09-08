@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../models/loja_resumo_model.dart';
 
@@ -30,7 +31,7 @@ class LojaItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: (loja.logo != null && loja.logo!.isNotEmpty)
                     ? Image.network(
-                        loja.logo!,
+                        ImageHelper.getFullImageUrl(loja.logo),
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Icon(Icons.store, color: context.textHint),
                       )

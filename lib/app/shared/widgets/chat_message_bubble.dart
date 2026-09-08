@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import 'package:quipede/app/core/theme/app_colors.dart';
 import 'package:quipede/app/models/chat_mensagem_model.dart';
 
@@ -142,7 +143,7 @@ class ChatMessageBubble extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                message.anexoUrl!,
+                ImageHelper.getFullImageUrl(message.anexoUrl),
                 height: 150,
                 width: 200,
                 fit: BoxFit.cover,

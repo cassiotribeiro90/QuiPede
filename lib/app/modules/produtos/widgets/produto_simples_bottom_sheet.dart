@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/bloc/auth_cubit.dart';
@@ -154,7 +155,7 @@ class _ProdutoSimplesBottomSheetState extends State<ProdutoSimplesBottomSheet> {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
-              produto.imagem,
+              ImageHelper.getFullImageUrl(produto.imagem),
               width: 80,
               height: 80,
               fit: BoxFit.cover,

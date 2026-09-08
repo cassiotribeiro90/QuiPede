@@ -80,6 +80,13 @@ class PedidoCubit extends Cubit<PedidoState> {
     }
     try {
       final pedido = await _service.getPedidoDetalhe(pedidoId);
+
+      // Se silencioso, só emite se o pedido for diferente do atual
+      if (silencioso && state is PedidoDetalheCarregado) {
+        final current = (state as PedidoDetalheCarregado).pedido;
+        if (current == pedido) return;
+      }
+
       emit(PedidoDetalheCarregado(pedido, pedidos: _lastPedidos));
     } catch (e) {
       if (!silencioso) {

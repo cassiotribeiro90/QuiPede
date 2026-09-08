@@ -9,7 +9,6 @@ import '../../../core/theme/app_theme_extension.dart';
 import '../../../navigation/navigation_cubit.dart';
 import '../bloc/pedido_cubit.dart';
 import '../../chat/views/chat_screen.dart';
-import '../models/pedido_detalhe_model.dart';
 import '../widgets/pedido_status_timeline.dart';
 import '../widgets/avaliacao_bottom_sheet.dart';
 import '../widgets/star_rating.dart';
@@ -29,7 +28,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
   StreamSubscription? _pushSubscription;
   Timer? _pollingTimer;
   final ScrollController _scrollController = ScrollController();
-  final ValueNotifier<PedidoDetalheModel?> _pedidoNotifier = ValueNotifier(null);
 
   @override
   void initState() {
@@ -55,18 +53,12 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
     _pushSubscription?.cancel();
     _pollingTimer?.cancel();
     _scrollController.dispose();
-    _pedidoNotifier.dispose();
     super.dispose();
   }
 
   Future<void> _atualizarSilenciosamente() async {
-    try {
-      final cubit = context.read<PedidoCubit>();
-      final novoPedido = await cubit.service.getPedidoDetalhe(widget.pedidoId);
-      if (mounted) {
-        _pedidoNotifier.value = novoPedido;
-      }
-    } catch (_) {}
+    if (!mounted) return;
+    context.read<PedidoCubit>().carregarDetalhes(widget.pedidoId, silencioso: true);
   }
 
   String _formatarMoeda(double valor) {
@@ -78,14 +70,22 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
     final navigationCubit = context.read<NavigationCubit>();
 
     return BlocConsumer<PedidoCubit, PedidoState>(
+      buildWhen: (previous, current) {
+        // Se já temos os detalhes, não queremos o loading full screen no silent poll
+        if (current is PedidoLoading && previous is PedidoDetalheCarregado) {
+          return false;
+        }
+        // Evita rebuilds se o pedido for o mesmo (Equatable ajuda, mas aqui garantimos)
+        if (previous is PedidoDetalheCarregado && current is PedidoDetalheCarregado) {
+          return previous.pedido != current.pedido;
+        }
+        return true;
+      },
       listener: (context, state) {
         if (state is PedidoError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
-        }
-        if (state is PedidoDetalheCarregado) {
-          _pedidoNotifier.value = state.pedido;
         }
       },
       builder: (context, state) {
@@ -159,22 +159,21 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
   Widget _buildBody(BuildContext context, PedidoState state) {
     final navigationCubit = context.read<NavigationCubit>();
 
+    // Mostra loading apenas se não houver dados carregados
     if (state is PedidoLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (state is PedidoDetalheCarregado) {
-      return ValueListenableBuilder<PedidoDetalheModel?>(
-        valueListenable: _pedidoNotifier,
-        builder: (context, pedidoAtual, _) {
-          final pedido = pedidoAtual ?? state.pedido;
+      final pedido = state.pedido;
 
-          return SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      return SingleChildScrollView(
+        key: PageStorageKey('pedido_detalhe_${widget.pedidoId}'),
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
                 // 🔥 AVALIAÇÃO DO PEDIDO NO TOPO ABSOLUTO (se entregue)
                 if (pedido.status == 'entregue') ...[
                   _buildAvaliacaoPedidoCard(context, pedido),
@@ -332,8 +331,6 @@ class _PedidoDetalhePageState extends State<PedidoDetalhePage> {
               ],
             ),
           );
-        },
-      );
     }
 
     return const Center(child: Text('Nenhum dado encontrado para este pedido.'));

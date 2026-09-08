@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import 'package:quipede/app/core/theme/app_colors.dart';
 import 'package:quipede/app/modules/avaliacao/bloc/avaliacao_bloc.dart';
 import 'package:quipede/app/shared/widgets/star_rating.dart';
@@ -301,7 +302,7 @@ class _AvaliacaoScreenState extends State<AvaliacaoScreen> {
                       borderRadius: BorderRadius.circular(8),
                       image: produto['imagem'] != null
                           ? DecorationImage(
-                              image: NetworkImage(produto['imagem']),
+                              image: NetworkImage(ImageHelper.getFullImageUrl(produto['imagem'])),
                               fit: BoxFit.cover,
                             )
                           : null,

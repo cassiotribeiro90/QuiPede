@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:quipede/shared/utils/image_helper.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_theme_extension.dart';
 import '../../../navigation/navigation_cubit.dart';
@@ -176,7 +177,7 @@ class _PedidosViewState extends State<PedidosView> {
                 borderRadius: BorderRadius.circular(12),
                 image: pedido.lojaLogo != null && pedido.lojaLogo!.isNotEmpty
                     ? DecorationImage(
-                  image: NetworkImage(pedido.lojaLogo!),
+                  image: NetworkImage(ImageHelper.getFullImageUrl(pedido.lojaLogo)),
                   fit: BoxFit.cover,
                 )
                     : null,
